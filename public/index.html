@@ -1,0 +1,1320 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>whats4dinner — twee weken plannen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --base:#EBEEE8;
+  --surface:#FFFFFF;
+  --ink:#172622;
+  --ink-2:#3D504A;
+  --muted:#7C8B85;
+  --line:#D6DCD5;
+  --pine:#256B5B;
+  --pine-soft:#E2EFEA;
+  --ball:#E4572E;
+  --ball-soft:#FBE7DE;
+  --amber:#B8860B;
+  --radius:14px;
+  --display:'Outfit',ui-sans-serif,system-ui,'Segoe UI',sans-serif;
+  --body:'Inter',ui-sans-serif,system-ui,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--base);color:var(--ink);font-family:var(--body);
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:var(--display);margin:0;letter-spacing:-0.015em}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:0 18px 80px}
+
+/* ---------- header ---------- */
+header.top{background:var(--ink);color:#fff;padding:22px 0 0}
+header.top .wrap{padding-bottom:0}
+.brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.brand h1{font-size:26px;font-weight:800;color:#fff}
+.brand .sub{color:#9FB3AC;font-size:13px}
+.syncbadge{
+  font-size:11px;font-weight:600;color:#9FB3AC;border:1px solid #33453F;
+  padding:2px 9px;border-radius:99px;white-space:nowrap;
+}
+.syncbadge[data-st="live"]{color:#7FD1B9;border-color:#2E5B4F}
+.syncbadge[data-st="fout"]{color:#F0A58C;border-color:#6B3A2A}
+.tabs{display:flex;gap:4px;margin-top:18px;flex-wrap:wrap}
+.tab{
+  background:transparent;border:0;border-radius:10px 10px 0 0;color:#9FB3AC;
+  padding:11px 16px;cursor:pointer;font-family:var(--display);font-weight:600;font-size:14px;
+}
+.tab:hover{color:#fff}
+.tab[aria-selected="true"]{background:var(--base);color:var(--ink)}
+
+/* ---------- controls ---------- */
+.bar{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 16px;margin:18px 0;display:flex;gap:18px;align-items:flex-end;flex-wrap:wrap;
+}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.field input,.field select{
+  border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:#fff;min-width:130px;
+}
+.btn{
+  border:1px solid var(--ink);background:var(--ink);color:#fff;border-radius:10px;
+  padding:9px 16px;cursor:pointer;font-family:var(--display);font-weight:600;font-size:14px;
+}
+.btn:hover{background:#0d1a16}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{background:#F3F6F2;border-color:var(--ink-2)}
+.btn.small{padding:5px 10px;font-size:13px;border-radius:8px}
+.btn.pine{background:var(--pine);border-color:var(--pine)}
+.btn.pine:hover{background:#1d5546}
+:focus-visible{outline:2.5px solid var(--ball);outline-offset:2px}
+
+/* ---------- week / day ---------- */
+.weekhead{display:flex;align-items:center;gap:12px;margin:26px 0 12px}
+.weekhead h2{font-size:19px}
+.weekhead .rule{flex:1;height:1px;background:var(--line)}
+.weekhead .meta{font-size:12px;color:var(--muted)}
+.days{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:700px){
+  .days{grid-template-columns:repeat(2,1fr)}
+  /* kolom 1 wordt ma – wo – vr – za, kolom 2 di – do – (leeg) – zo */
+  .days>.wd5{grid-column:1}
+}
+.day{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:10px}
+.day.weekend{background:#F6F8F4;border-color:#C9D4C7}
+.day-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.day-name{font-family:var(--display);font-weight:600;font-size:16px;text-transform:capitalize}
+.day-date{font-size:12px;color:var(--muted)}
+.chip{
+  display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
+  padding:3px 8px;border-radius:99px;white-space:nowrap;
+}
+.chip.train{background:var(--ball-soft);color:#A63B1B}
+.chip.rush{background:#FFF3D6;color:#8A6400}
+.chip.prep{background:var(--pine-soft);color:var(--pine)}
+.chip.verg{background:#EDE4F5;color:#5B3E7A}
+.day.vergaderdag{border-color:#C4AEDC;box-shadow:inset 3px 0 0 #8B6BB1}
+.vergtoggle{
+  margin-top:8px;border:1px dashed var(--line);background:transparent;border-radius:9px;
+  padding:6px 10px;font-size:12px;color:var(--muted);cursor:pointer;width:100%;text-align:left;
+}
+.vergtoggle:hover{border-color:#8B6BB1;color:#5B3E7A}
+.vergtoggle.on{border-style:solid;border-color:#C4AEDC;background:#F7F2FB;color:#5B3E7A}
+.chip.prot-hoog{background:var(--pine-soft);color:var(--pine)}
+.chip.prot-gemiddeld{background:#EEF0EC;color:var(--ink-2)}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+
+/* signature: time strip */
+.strip{position:relative;height:34px;border-radius:8px;background:#F1F3EF;border:1px solid var(--line);overflow:hidden}
+.strip .blk{position:absolute;top:0;bottom:0}
+.strip .eat{background:rgba(37,107,91,.16);border-left:2px solid var(--pine);border-right:2px solid var(--pine)}
+.strip .tr{background:var(--ball);opacity:.85}
+.strip .tr span{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:10px;font-weight:700;letter-spacing:.02em;overflow:hidden;
+}
+.strip .eat span{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  color:var(--pine);font-size:10px;font-weight:700;
+}
+.strip .tick{position:absolute;top:0;bottom:0;width:1px;background:rgba(0,0,0,.07)}
+.striplabels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px}
+.trainlist{font-size:12px;color:var(--ink-2);margin:0}
+
+/* slots */
+.slot{border-top:1px dashed var(--line);padding-top:10px}
+.slot-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:5px}
+.slot-row{display:flex;gap:6px;align-items:center}
+.slot-row select{flex:1;min-width:0;border:1px solid var(--line);border-radius:9px;padding:8px 9px;background:#fff}
+.iconbtn{
+  border:1px solid var(--line);background:#fff;border-radius:9px;width:34px;height:34px;
+  cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+}
+.iconbtn:hover{border-color:var(--ink-2);background:#F3F6F2}
+.iconbtn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.slot-note{font-size:12px;color:var(--ink-2);margin-top:6px}
+.slot-note b{font-weight:600}
+
+/* ---------- generic panels ---------- */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:14px}
+.panel h3{font-size:17px;margin-bottom:4px}
+.hint{color:var(--muted);font-size:13px}
+.empty{border:1px dashed var(--line);border-radius:var(--radius);padding:26px;text-align:center;color:var(--muted)}
+
+/* meals */
+.meal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.meal-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:8px}
+.meal-card.off{opacity:.5}
+.meal-card h4{font-size:15px}
+.ing{font-size:13px;color:var(--ink-2);margin:0;padding-left:16px}
+.ing li{margin:1px 0}
+.meal-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}
+.toggle{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-2);cursor:pointer}
+.ingrow{display:grid;grid-template-columns:1fr 80px 90px 130px 34px;gap:6px;margin-bottom:6px}
+.ingrow input,.ingrow select{border:1px solid var(--line);border-radius:8px;padding:7px 8px;min-width:0;width:100%}
+@media(max-width:620px){.ingrow{grid-template-columns:1fr 1fr;}.ingrow .del{grid-column:span 2}}
+
+/* groceries */
+.seg{display:inline-flex;background:#E3E7E0;border-radius:10px;padding:3px;gap:3px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:7px 13px;border-radius:8px;cursor:pointer;font-family:var(--display);font-weight:600;font-size:13px;color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.cats{columns:2;column-gap:22px}
+@media(max-width:760px){.cats{columns:1}}
+.cat{break-inside:avoid;margin-bottom:18px}
+.cat h4{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--pine);border-bottom:1px solid var(--line);padding-bottom:5px;margin-bottom:7px}
+.gitem{display:flex;gap:9px;align-items:flex-start;padding:4px 0;font-size:14px}
+.gitem input{margin-top:3px;width:17px;height:17px;accent-color:var(--pine);flex:0 0 auto;cursor:pointer}
+.gitem.done label{text-decoration:line-through;color:var(--muted)}
+.gitem .qty{color:var(--muted);font-size:13px}
+.gitem label{cursor:pointer}
+.permeal{border-top:1px solid var(--line);padding:12px 0}
+.permeal summary{cursor:pointer;font-family:var(--display);font-weight:600;font-size:15px}
+.permeal .ing{margin-top:8px}
+.progress{height:6px;background:#E3E7E0;border-radius:99px;overflow:hidden;margin:10px 0 0}
+.progress i{display:block;height:100%;background:var(--pine);border-radius:99px;transition:width .25s}
+
+.toast{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;
+  padding:10px 18px;border-radius:99px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50;
+}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{
+  header.top,.tabs,.bar,.iconbtn,.btn,.seg,.toast{display:none!important}
+  body{background:#fff}
+  .panel,.day,.meal-card{border-color:#bbb}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <h1>whats4dinner</h1>
+      <span class="sub">Twee weken avondeten — met de basketkalender erbij</span>
+      <span class="syncbadge" id="sync"></span>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="plan" aria-selected="true">Planning</button>
+      <button class="tab" role="tab" data-tab="meals" aria-selected="false">Maaltijden</button>
+      <button class="tab" role="tab" data-tab="shop" aria-selected="false">Boodschappen</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section id="tab-plan"></section>
+  <section id="tab-meals" hidden></section>
+  <section id="tab-shop" hidden></section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   1. Vaste gegevens
+   ============================================================ */
+const DAGEN = ['maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag','zondag'];
+
+// weekdag-index 0 = maandag
+const TRAINING = {
+  0:[{wie:'Dries',van:'18:00',tot:'19:30',waar:'Sportoase Wilsele'}],
+  1:[{wie:'Bram', van:'19:30',tot:'21:00',waar:'Sportoase Leuven'}],
+  2:[{wie:'Dries',van:'16:30',tot:'18:00',waar:'Sporthal Wilsele'}],
+  3:[{wie:'Bram', van:'18:00',tot:'19:30',waar:'Sportoase Leuven'}],
+  4:[{wie:'Bram', van:'19:30',tot:'21:00',waar:'Sportoase Leuven'},
+     {wie:'Dries',van:'19:30',tot:'21:00',waar:'Sporthal Wilsele'}],
+  5:[],6:[]
+};
+
+// Per weekdag: welke maaltijden, wanneer er gegeten wordt, en of het gerecht op te warmen moet zijn
+const DAGREGELS = {
+  0:{slots:['diner'],samen:'20:00',max:45,note:'Samen eten om 20:00, na de training van Dries.'},
+  1:{slots:['diner'],samen:'18:30',opwarmen:true,max:45,note:'Samen eten om 18:30. Bram eet later, dus het moet op te warmen zijn.'},
+  2:{slots:['diner'],samen:'18:30',max:45,note:'Samen eten om 18:30, meteen na de training van Dries.'},
+  3:{slots:['diner'],samen:'20:00',max:45,note:'Samen eten om 20:00, na de training van Bram.'},
+  4:{slots:['diner'],opwarmen:true,max:45,note:'Moet op te warmen zijn — allebei training tot 21:00.'},
+  5:{slots:['lunch','diner'],max:999,maxLunch:30,note:'Vaak wedstrijd — hou de lunch licht en snel.'},
+  6:{slots:['lunch','diner'],max:999,maxLunch:45,note:'Goede dag om voor de week voor te bereiden.'}
+};
+
+const CATS = {
+  groenten:'Groenten & fruit', vlees:'Vlees & vis', zuivel:'Zuivel & eieren',
+  droog:'Voorraadkast', brood:'Brood & bakkerij', diepvries:'Diepvries', overig:'Overig'
+};
+
+// Vergaderingen: op die avonden is er geen tijd om te koken.
+// Aanpasbaar in de app zelf met de knop op de dagkaart.
+const VERGADERINGEN = [
+  '2026-08-27','2026-09-15','2026-10-08','2026-10-19','2026-10-26','2026-11-19',
+  '2026-12-08','2027-01-07','2027-01-26','2027-02-18','2027-03-16','2027-04-15',
+  '2027-05-03','2027-05-27','2027-06-24'
+];
+
+/* Recepten: hoeveelheden voor 4 personen.
+   tijd = actieve kooktijd in minuten, prep = kan (deels) vooraf gemaakt worden. */
+const BASIS = [
+{id:'kipcurry',naam:'Kip-curry met bloemkoolrijst',tijd:30,eiwit:'hoog',bron:'kip',slots:['diner'],prep:true,opwarm:true,tip:'Maak de curry een dag vooraf; hij wordt alleen maar beter.',ing:[
+ {n:'kipfilet',q:600,u:'g',c:'vlees'},{n:'bloemkool',q:1,u:'st',c:'groenten'},{n:'kokosmelk',q:400,u:'ml',c:'droog'},
+ {n:'currypasta',q:2,u:'el',c:'droog'},{n:'ui',q:1,u:'st',c:'groenten'},{n:'erwten (diepvries)',q:200,u:'g',c:'diepvries'},
+ {n:'gember',q:1,u:'st',c:'groenten'},{n:'rijst',q:250,u:'g',c:'droog'}]},
+
+{id:'bolo',naam:'Spaghetti bolognese met linzen',tijd:40,eiwit:'hoog',bron:'rund',slots:['diner'],prep:true,opwarm:true,tip:'Saus vriest perfect in — maak dubbel.',ing:[
+ {n:'rundsgehakt',q:400,u:'g',c:'vlees'},{n:'rode linzen',q:100,u:'g',c:'droog'},{n:'gepelde tomaten',q:800,u:'g',c:'droog'},
+ {n:'ui',q:1,u:'st',c:'groenten'},{n:'wortel',q:2,u:'st',c:'groenten'},{n:'selder',q:2,u:'st',c:'groenten'},
+ {n:'spaghetti',q:400,u:'g',c:'droog'},{n:'geraspte kaas',q:100,u:'g',c:'zuivel'}]},
+
+{id:'ovenzalm',naam:'Ovenzalm met groenten en krieltjes',tijd:35,eiwit:'hoog',bron:'vis',slots:['diner'],prep:false,opwarm:false,tip:'Alles op één bakplaat — weinig afwas.',ing:[
+ {n:'zalmfilet',q:600,u:'g',c:'vlees'},{n:'krieltjes',q:800,u:'g',c:'groenten'},{n:'courgette',q:1,u:'st',c:'groenten'},
+ {n:'cherrytomaten',q:250,u:'g',c:'groenten'},{n:'citroen',q:1,u:'st',c:'groenten'},{n:'olijfolie',q:3,u:'el',c:'droog'}]},
+
+{id:'tajine',naam:'Kikkererwtentajine met couscous',tijd:30,eiwit:'gemiddeld',bron:'peulvrucht',slots:['lunch','diner'],prep:true,opwarm:true,tip:'',ing:[
+ {n:'kikkererwten (blik)',q:2,u:'blik',c:'droog'},{n:'zoete aardappel',q:2,u:'st',c:'groenten'},{n:'gepelde tomaten',q:400,u:'g',c:'droog'},
+ {n:'ui',q:1,u:'st',c:'groenten'},{n:'couscous',q:300,u:'g',c:'droog'},{n:'ras el hanout',q:2,u:'tl',c:'droog'},
+ {n:'platte peterselie',q:1,u:'bosje',c:'groenten'},{n:'Griekse yoghurt',q:250,u:'g',c:'zuivel'}]},
+
+{id:'roerbakkip',naam:'Roerbak kip-broccoli met noedels',tijd:20,eiwit:'hoog',bron:'kip',slots:['diner'],prep:false,opwarm:false,tip:'Snijwerk kan de avond ervoor.',ing:[
+ {n:'kipfilet',q:600,u:'g',c:'vlees'},{n:'broccoli',q:1,u:'st',c:'groenten'},{n:'paprika',q:2,u:'st',c:'groenten'},
+ {n:'eiernoedels',q:300,u:'g',c:'droog'},{n:'sojasaus',q:4,u:'el',c:'droog'},{n:'sesamzaad',q:1,u:'el',c:'droog'}]},
+
+{id:'chili',naam:'Chili con carne',tijd:40,eiwit:'hoog',bron:'rund',slots:['lunch','diner'],prep:true,opwarm:true,tip:'Ideaal om zondag te maken en maandag op te warmen.',ing:[
+ {n:'rundsgehakt',q:500,u:'g',c:'vlees'},{n:'kidneybonen (blik)',q:2,u:'blik',c:'droog'},{n:'maïs (blik)',q:1,u:'blik',c:'droog'},
+ {n:'gepelde tomaten',q:800,u:'g',c:'droog'},{n:'ui',q:2,u:'st',c:'groenten'},{n:'paprika',q:2,u:'st',c:'groenten'},
+ {n:'rijst',q:300,u:'g',c:'droog'},{n:'zure room',q:200,u:'ml',c:'zuivel'}]},
+
+{id:'frittata',naam:'Frittata met spinazie en feta',tijd:20,eiwit:'hoog',bron:'ei',slots:['lunch','diner'],prep:false,opwarm:true,tip:'Ook lekker koud in de brooddoos.',ing:[
+ {n:'eieren',q:10,u:'st',c:'zuivel'},{n:'spinazie',q:300,u:'g',c:'groenten'},{n:'feta',q:200,u:'g',c:'zuivel'},
+ {n:'aardappelen',q:500,u:'g',c:'groenten'},{n:'ui',q:1,u:'st',c:'groenten'},{n:'volkorenbrood',q:1,u:'st',c:'brood'}]},
+
+{id:'volauvent',naam:'Vol-au-vent met puree en salade',tijd:40,eiwit:'hoog',bron:'kip',slots:['diner'],prep:true,opwarm:true,tip:'De ragout kan twee dagen vooraf.',ing:[
+ {n:'kipfilet',q:600,u:'g',c:'vlees'},{n:'champignons',q:250,u:'g',c:'groenten'},{n:'bladerdeegkoekjes',q:4,u:'st',c:'diepvries'},
+ {n:'aardappelen',q:1,u:'kg',c:'groenten'},{n:'melk',q:200,u:'ml',c:'zuivel'},{n:'boter',q:50,u:'g',c:'zuivel'},
+ {n:'kropsla',q:1,u:'st',c:'groenten'}]},
+
+{id:'stoofvlees',naam:'Vlaams stoofvlees met puree',tijd:150,eiwit:'hoog',bron:'rund',slots:['diner'],prep:true,opwarm:true,tip:'Weekendwerk. Maak dubbel en vries de helft in.',ing:[
+ {n:'stoofvlees',q:800,u:'g',c:'vlees'},{n:'ui',q:3,u:'st',c:'groenten'},{n:'bruin bier',q:330,u:'ml',c:'droog'},
+ {n:'peperkoek',q:2,u:'sneden',c:'brood'},{n:'mosterd',q:2,u:'el',c:'droog'},{n:'aardappelen',q:1.2,u:'kg',c:'groenten'},
+ {n:'wortel',q:4,u:'st',c:'groenten'}]},
+
+{id:'kabeljauw',naam:'Ovenschotel kabeljauw, prei en aardappel',tijd:40,eiwit:'hoog',bron:'vis',slots:['diner'],prep:false,opwarm:true,tip:'',ing:[
+ {n:'kabeljauwfilet',q:600,u:'g',c:'vlees'},{n:'prei',q:3,u:'st',c:'groenten'},{n:'aardappelen',q:800,u:'g',c:'groenten'},
+ {n:'kookroom',q:200,u:'ml',c:'zuivel'},{n:'geraspte kaas',q:100,u:'g',c:'zuivel'},{n:'citroen',q:1,u:'st',c:'groenten'}]},
+
+{id:'wraps',naam:'Wraps met gekruide kip en yoghurtsaus',tijd:20,eiwit:'hoog',bron:'kip',slots:['lunch','diner'],prep:false,opwarm:false,tip:'',ing:[
+ {n:'kipfilet',q:600,u:'g',c:'vlees'},{n:'wraps',q:8,u:'st',c:'brood'},{n:'Griekse yoghurt',q:250,u:'g',c:'zuivel'},
+ {n:'ijsbergsla',q:1,u:'st',c:'groenten'},{n:'tomaat',q:3,u:'st',c:'groenten'},{n:'komkommer',q:1,u:'st',c:'groenten'},
+ {n:'paprikapoeder',q:2,u:'tl',c:'droog'}]},
+
+{id:'linzensoep',naam:'Linzensoep met volkorenbrood',tijd:30,eiwit:'gemiddeld',bron:'peulvrucht',slots:['lunch','diner'],prep:true,opwarm:true,tip:'Grote pot maken loont.',ing:[
+ {n:'rode linzen',q:300,u:'g',c:'droog'},{n:'wortel',q:4,u:'st',c:'groenten'},{n:'ui',q:1,u:'st',c:'groenten'},
+ {n:'selder',q:2,u:'st',c:'groenten'},{n:'groentebouillon',q:1.5,u:'l',c:'droog'},{n:'komijn',q:2,u:'tl',c:'droog'},
+ {n:'volkorenbrood',q:1,u:'st',c:'brood'},{n:'oude kaas',q:150,u:'g',c:'zuivel'}]},
+
+{id:'balletjes',naam:'Balletjes in tomatensaus met pasta',tijd:35,eiwit:'hoog',bron:'rund',slots:['diner'],prep:true,opwarm:true,tip:'Balletjes en saus kunnen vooraf.',ing:[
+ {n:'gemengd gehakt',q:600,u:'g',c:'vlees'},{n:'ei',q:1,u:'st',c:'zuivel'},{n:'paneermeel',q:50,u:'g',c:'droog'},
+ {n:'passata',q:700,u:'g',c:'droog'},{n:'ui',q:1,u:'st',c:'groenten'},{n:'penne',q:400,u:'g',c:'droog'},
+ {n:'wortel',q:2,u:'st',c:'groenten'}]},
+
+{id:'nasi',naam:'Nasi goreng met ei en kip',tijd:25,eiwit:'hoog',bron:'kip',slots:['diner'],prep:true,opwarm:true,tip:'Werkt het best met rijst van de dag ervoor.',ing:[
+ {n:'rijst',q:350,u:'g',c:'droog'},{n:'kipfilet',q:500,u:'g',c:'vlees'},{n:'eieren',q:4,u:'st',c:'zuivel'},
+ {n:'wortel',q:2,u:'st',c:'groenten'},{n:'prei',q:1,u:'st',c:'groenten'},{n:'ketjap',q:4,u:'el',c:'droog'},
+ {n:'erwten (diepvries)',q:150,u:'g',c:'diepvries'}]},
+
+{id:'couscousbowl',naam:'Couscousbowl met kip en feta',tijd:25,eiwit:'hoog',bron:'kip',slots:['lunch','diner'],prep:false,opwarm:false,tip:'',ing:[
+ {n:'kipfilet',q:500,u:'g',c:'vlees'},{n:'couscous',q:300,u:'g',c:'droog'},{n:'komkommer',q:1,u:'st',c:'groenten'},
+ {n:'cherrytomaten',q:250,u:'g',c:'groenten'},{n:'feta',q:150,u:'g',c:'zuivel'},{n:'citroen',q:1,u:'st',c:'groenten'},
+ {n:'munt',q:1,u:'bosje',c:'groenten'}]},
+
+{id:'tortilla',naam:'Spaanse tortilla met salade',tijd:35,eiwit:'hoog',bron:'ei',slots:['lunch','diner'],prep:true,opwarm:true,tip:'Koud even lekker als warm.',ing:[
+ {n:'eieren',q:10,u:'st',c:'zuivel'},{n:'aardappelen',q:800,u:'g',c:'groenten'},{n:'ui',q:2,u:'st',c:'groenten'},
+ {n:'olijfolie',q:5,u:'el',c:'droog'},{n:'kropsla',q:1,u:'st',c:'groenten'},{n:'tomaat',q:3,u:'st',c:'groenten'}]},
+
+{id:'quiche',naam:'Quiche met zalm en broccoli',tijd:45,eiwit:'hoog',bron:'vis',slots:['lunch','diner'],prep:true,opwarm:true,tip:'',ing:[
+ {n:'bladerdeeg',q:1,u:'rol',c:'diepvries'},{n:'zalmfilet',q:400,u:'g',c:'vlees'},{n:'broccoli',q:1,u:'st',c:'groenten'},
+ {n:'eieren',q:4,u:'st',c:'zuivel'},{n:'kookroom',q:200,u:'ml',c:'zuivel'},{n:'geraspte kaas',q:100,u:'g',c:'zuivel'}]},
+
+{id:'burger',naam:'Rundsburger met zoete-aardappelfriet',tijd:35,eiwit:'hoog',bron:'rund',slots:['diner'],prep:false,opwarm:false,tip:'',ing:[
+ {n:'rundsgehakt',q:600,u:'g',c:'vlees'},{n:'zoete aardappel',q:1,u:'kg',c:'groenten'},{n:'hamburgerbroodjes',q:4,u:'st',c:'brood'},
+ {n:'kropsla',q:1,u:'st',c:'groenten'},{n:'tomaat',q:2,u:'st',c:'groenten'},{n:'cheddar',q:4,u:'sneden',c:'zuivel'},
+ {n:'rode ui',q:1,u:'st',c:'groenten'}]},
+
+{id:'tofu',naam:'Tofu teriyaki met rijst en edamame',tijd:25,eiwit:'hoog',bron:'tofu',slots:['diner'],prep:false,opwarm:true,tip:'',ing:[
+ {n:'stevige tofu',q:500,u:'g',c:'zuivel'},{n:'edamame (diepvries)',q:250,u:'g',c:'diepvries'},{n:'rijst',q:300,u:'g',c:'droog'},
+ {n:'sojasaus',q:4,u:'el',c:'droog'},{n:'honing',q:2,u:'el',c:'droog'},{n:'lente-ui',q:1,u:'bosje',c:'groenten'},
+ {n:'wortel',q:2,u:'st',c:'groenten'}]},
+
+{id:'kalkoen',naam:'Kalkoenreepjes met witloof en aardappelen',tijd:35,eiwit:'hoog',bron:'kalkoen',slots:['diner'],prep:false,opwarm:true,tip:'',ing:[
+ {n:'kalkoenreepjes',q:600,u:'g',c:'vlees'},{n:'witloof',q:6,u:'st',c:'groenten'},{n:'aardappelen',q:1,u:'kg',c:'groenten'},
+ {n:'kookroom',q:150,u:'ml',c:'zuivel'},{n:'mosterd',q:1,u:'el',c:'droog'}]},
+
+{id:'pastapesto',naam:'Pasta pesto met kip en cherrytomaat',tijd:20,eiwit:'hoog',bron:'kip',slots:['lunch','diner'],prep:false,opwarm:false,tip:'Klaar in twintig minuten.',ing:[
+ {n:'kipfilet',q:500,u:'g',c:'vlees'},{n:'penne',q:400,u:'g',c:'droog'},{n:'groene pesto',q:1,u:'pot',c:'droog'},
+ {n:'cherrytomaten',q:250,u:'g',c:'groenten'},{n:'rucola',q:100,u:'g',c:'groenten'},{n:'pijnboompitten',q:40,u:'g',c:'droog'}]},
+
+{id:'groentesoep',naam:'Groentesoep met balletjes',tijd:40,eiwit:'gemiddeld',bron:'rund',slots:['lunch','diner'],prep:true,opwarm:true,tip:'',ing:[
+ {n:'gemengd gehakt',q:300,u:'g',c:'vlees'},{n:'wortel',q:4,u:'st',c:'groenten'},{n:'prei',q:2,u:'st',c:'groenten'},
+ {n:'selder',q:3,u:'st',c:'groenten'},{n:'aardappelen',q:300,u:'g',c:'groenten'},{n:'groentebouillon',q:2,u:'l',c:'droog'},
+ {n:'volkorenbrood',q:1,u:'st',c:'brood'}]},
+
+{id:'shakshuka',naam:'Shakshuka met brood',tijd:25,eiwit:'hoog',bron:'ei',slots:['lunch','diner'],prep:false,opwarm:false,tip:'',ing:[
+ {n:'eieren',q:8,u:'st',c:'zuivel'},{n:'gepelde tomaten',q:800,u:'g',c:'droog'},{n:'paprika',q:2,u:'st',c:'groenten'},
+ {n:'ui',q:1,u:'st',c:'groenten'},{n:'feta',q:150,u:'g',c:'zuivel'},{n:'komijn',q:2,u:'tl',c:'droog'},
+ {n:'ciabatta',q:1,u:'st',c:'brood'}]},
+
+{id:'poke',naam:'Poké bowl met zalm',tijd:25,eiwit:'hoog',bron:'vis',slots:['lunch','diner'],prep:false,opwarm:false,tip:'',ing:[
+ {n:'zalmfilet',q:500,u:'g',c:'vlees'},{n:'sushirijst',q:300,u:'g',c:'droog'},{n:'avocado',q:2,u:'st',c:'groenten'},
+ {n:'komkommer',q:1,u:'st',c:'groenten'},{n:'wortel',q:2,u:'st',c:'groenten'},{n:'edamame (diepvries)',q:200,u:'g',c:'diepvries'},
+ {n:'sojasaus',q:3,u:'el',c:'droog'}]},
+
+{id:'ovenschotel',naam:'Ovenschotel gehakt, courgette en feta',tijd:50,eiwit:'hoog',bron:'rund',slots:['diner'],prep:true,opwarm:true,tip:'Kan volledig vooraf; enkel nog in de oven.',ing:[
+ {n:'rundsgehakt',q:600,u:'g',c:'vlees'},{n:'courgette',q:3,u:'st',c:'groenten'},{n:'passata',q:500,u:'g',c:'droog'},
+ {n:'feta',q:200,u:'g',c:'zuivel'},{n:'ui',q:1,u:'st',c:'groenten'},{n:'aardappelen',q:600,u:'g',c:'groenten'}]},
+
+{id:'ovenkip',naam:'Hele ovenkip met rozemarijnaardappelen',tijd:75,eiwit:'hoog',bron:'kip',slots:['diner'],prep:false,opwarm:false,tip:'Restjes kip = wraps of soep de dag erna.',ing:[
+ {n:'hele kip',q:1,u:'st',c:'vlees'},{n:'aardappelen',q:1.2,u:'kg',c:'groenten'},{n:'rozemarijn',q:1,u:'takje',c:'groenten'},
+ {n:'citroen',q:1,u:'st',c:'groenten'},{n:'wortel',q:4,u:'st',c:'groenten'},{n:'olijfolie',q:3,u:'el',c:'droog'}]},
+
+{id:'stoemp',naam:'Stoemp met prei en worst',tijd:45,eiwit:'hoog',bron:'varken',slots:['diner'],prep:true,opwarm:true,tip:'',ing:[
+ {n:'aardappelen',q:1.2,u:'kg',c:'groenten'},{n:'prei',q:3,u:'st',c:'groenten'},{n:'braadworst',q:4,u:'st',c:'vlees'},
+ {n:'melk',q:150,u:'ml',c:'zuivel'},{n:'boter',q:40,u:'g',c:'zuivel'},{n:'nootmuskaat',q:1,u:'snuf',c:'droog'}]},
+
+{id:'broodplank',naam:'Broodplank met eieren, kaas en hummus',tijd:15,eiwit:'gemiddeld',bron:'gemengd',slots:['lunch'],prep:false,opwarm:false,tip:'Perfect na een wedstrijd.',ing:[
+ {n:'volkorenbrood',q:1,u:'st',c:'brood'},{n:'eieren',q:6,u:'st',c:'zuivel'},{n:'hummus',q:200,u:'g',c:'zuivel'},
+ {n:'oude kaas',q:200,u:'g',c:'zuivel'},{n:'cherrytomaten',q:250,u:'g',c:'groenten'},{n:'komkommer',q:1,u:'st',c:'groenten'}]},
+
+{id:'croque',naam:'Croques met tomatensoep',tijd:25,eiwit:'gemiddeld',bron:'kaas',slots:['lunch'],prep:true,opwarm:false,tip:'',ing:[
+ {n:'boterhammen',q:12,u:'sneden',c:'brood'},{n:'gekookte ham',q:8,u:'sneden',c:'vlees'},{n:'kaas (plakken)',q:12,u:'sneden',c:'zuivel'},
+ {n:'gepelde tomaten',q:800,u:'g',c:'droog'},{n:'ui',q:1,u:'st',c:'groenten'},{n:'groentebouillon',q:0.5,u:'l',c:'droog'}]},
+
+{id:'tonijnpasta',naam:'Spaghetti met tonijn en tomaat',tijd:20,eiwit:'hoog',bron:'vis',slots:['diner'],prep:false,opwarm:true,tip:'Alles uit de kast — noodplan-gerecht.',ing:[
+ {n:'tonijn (blik)',q:3,u:'blik',c:'droog'},{n:'spaghetti',q:400,u:'g',c:'droog'},{n:'passata',q:500,u:'g',c:'droog'},
+ {n:'kappertjes',q:2,u:'el',c:'droog'},{n:'knoflook',q:2,u:'teentjes',c:'groenten'},{n:'platte peterselie',q:1,u:'bosje',c:'groenten'}]},
+
+{id:'garnalen',naam:'Rijstschotel met garnalen en groenten',tijd:25,eiwit:'hoog',bron:'garnaal',slots:['diner'],prep:false,opwarm:false,tip:'',ing:[
+ {n:'garnalen',q:500,u:'g',c:'vlees'},{n:'rijst',q:300,u:'g',c:'droog'},{n:'paprika',q:2,u:'st',c:'groenten'},
+ {n:'courgette',q:1,u:'st',c:'groenten'},{n:'knoflook',q:3,u:'teentjes',c:'groenten'},{n:'citroen',q:1,u:'st',c:'groenten'}]},
+
+{id:'steak',naam:'Steak met salade en aardappelen',tijd:30,eiwit:'hoog',bron:'rund',slots:['diner'],prep:false,opwarm:false,tip:'',ing:[
+ {n:'steak',q:600,u:'g',c:'vlees'},{n:'aardappelen',q:1,u:'kg',c:'groenten'},{n:'kropsla',q:1,u:'st',c:'groenten'},
+ {n:'tomaat',q:3,u:'st',c:'groenten'},{n:'boter',q:40,u:'g',c:'zuivel'},{n:'peper',q:1,u:'snuf',c:'droog'}]},
+
+{id:'bloemkoolcurry',naam:'Bloemkool-kikkererwtencurry',tijd:30,eiwit:'gemiddeld',bron:'peulvrucht',slots:['lunch','diner'],prep:true,opwarm:true,tip:'',ing:[
+ {n:'bloemkool',q:1,u:'st',c:'groenten'},{n:'kikkererwten (blik)',q:2,u:'blik',c:'droog'},{n:'kokosmelk',q:400,u:'ml',c:'droog'},
+ {n:'spinazie',q:200,u:'g',c:'groenten'},{n:'currypasta',q:2,u:'el',c:'droog'},{n:'rijst',q:300,u:'g',c:'droog'},
+ {n:'Griekse yoghurt',q:200,u:'g',c:'zuivel'}]},
+
+{id:'gyros',naam:'Pitabroodjes met kipgyros en salade',tijd:25,eiwit:'hoog',bron:'kip',slots:['lunch','diner'],prep:false,opwarm:false,tip:'Marineer de kip \'s ochtends.',ing:[
+ {n:'kipfilet',q:600,u:'g',c:'vlees'},{n:'pitabroodjes',q:8,u:'st',c:'brood'},{n:'Griekse yoghurt',q:250,u:'g',c:'zuivel'},
+ {n:'komkommer',q:1,u:'st',c:'groenten'},{n:'tomaat',q:3,u:'st',c:'groenten'},{n:'rode ui',q:1,u:'st',c:'groenten'},
+ {n:'oregano',q:2,u:'tl',c:'droog'}]},
+
+/* --- jullie vaste gerechten --- */
+{id:'kipappelmoes',naam:'Kip met appelmoes en puree',tijd:40,eiwit:'hoog',bron:'kip',slots:['diner'],prep:true,opwarm:true,tip:'Puree en kip warmen prima op; appelmoes koud erbij.',ing:[
+ {n:'kippenbillen',q:8,u:'st',c:'vlees'},{n:'aardappelen',q:1.2,u:'kg',c:'groenten'},{n:'appelmoes',q:700,u:'g',c:'droog'},
+ {n:'melk',q:200,u:'ml',c:'zuivel'},{n:'boter',q:50,u:'g',c:'zuivel'},{n:'nootmuskaat',q:1,u:'snuf',c:'droog'}]},
+
+{id:'kipwok',naam:'Kip met wokgroenten en noedels',tijd:25,eiwit:'hoog',bron:'kip',slots:['diner'],prep:false,opwarm:false,tip:'Vers uit de wok het lekkerst — groenten worden slap bij opwarmen.',ing:[
+ {n:'kipfilet',q:600,u:'g',c:'vlees'},{n:'wokgroenten',q:600,u:'g',c:'groenten'},{n:'eiernoedels',q:300,u:'g',c:'droog'},
+ {n:'sojasaus',q:4,u:'el',c:'droog'},{n:'gember',q:1,u:'st',c:'groenten'},{n:'knoflook',q:2,u:'teentjes',c:'groenten'}]},
+
+{id:'steakfriet',naam:'Steak met frieten, peper- en champignonsaus',tijd:40,eiwit:'hoog',bron:'rund',slots:['diner'],prep:false,opwarm:false,tip:'Frieten wachten niet — dit is een gerecht om samen aan tafel te gaan.',ing:[
+ {n:'steak',q:600,u:'g',c:'vlees'},{n:'frieten (diepvries)',q:1,u:'kg',c:'diepvries'},{n:'champignons',q:250,u:'g',c:'groenten'},
+ {n:'kookroom',q:400,u:'ml',c:'zuivel'},{n:'groene peperkorrels',q:2,u:'el',c:'droog'},{n:'sjalot',q:2,u:'st',c:'groenten'},
+ {n:'boter',q:40,u:'g',c:'zuivel'},{n:'kropsla',q:1,u:'st',c:'groenten'}]},
+
+{id:'pastagehakt',naam:'Pasta met gehakt, puntpaprika en courgette',tijd:35,eiwit:'hoog',bron:'rund',slots:['lunch','diner'],prep:true,opwarm:true,tip:'Onze standaard — saus kan gerust een dag vooraf.',ing:[
+ {n:'rundsgehakt',q:600,u:'g',c:'vlees'},{n:'puntpaprika',q:3,u:'st',c:'groenten'},{n:'courgette',q:2,u:'st',c:'groenten'},
+ {n:'passata',q:700,u:'g',c:'droog'},{n:'ui',q:1,u:'st',c:'groenten'},{n:'penne',q:400,u:'g',c:'droog'},
+ {n:'geraspte kaas',q:100,u:'g',c:'zuivel'},{n:'Italiaanse kruiden',q:2,u:'tl',c:'droog'}]},
+
+{id:'sausmaken',naam:'Spaghettisaus maken voor de diepvries',tijd:75,eiwit:'hoog',bron:'rund',slots:['diner'],prep:true,opwarm:true,tip:'Dubbele hoeveelheid: vanavond eten, de rest in porties invriezen voor drukke dagen.',ing:[
+ {n:'rundsgehakt',q:1,u:'kg',c:'vlees'},{n:'gepelde tomaten',q:1.6,u:'kg',c:'droog'},{n:'wortel',q:6,u:'st',c:'groenten'},
+ {n:'champignons',q:500,u:'g',c:'groenten'},{n:'courgette',q:2,u:'st',c:'groenten'},{n:'ui',q:2,u:'st',c:'groenten'},
+ {n:'spaghetti',q:400,u:'g',c:'droog'},{n:'geraspte kaas',q:150,u:'g',c:'zuivel'},{n:'diepvriesdozen',q:4,u:'st',c:'overig'}]},
+
+{id:'sausdiepvries',naam:'Spaghetti met saus uit de diepvries',tijd:15,eiwit:'hoog',bron:'rund',slots:['lunch','diner'],prep:false,opwarm:true,instant:true,tip:'Saus \'s ochtends uit de diepvries halen. Enkel spaghetti koken.',ing:[
+ {n:'spaghetti',q:400,u:'g',c:'droog'},{n:'geraspte kaas',q:100,u:'g',c:'zuivel'},
+ {n:'spaghettisaus uit eigen diepvries',q:1,u:'doos',c:'diepvries'}]},
+
+{id:'lasagnemaken',naam:'Lasagne maken (dubbel, helft invriezen)',tijd:70,eiwit:'hoog',bron:'rund',slots:['diner'],prep:true,opwarm:true,tip:'Twee schotels tegelijk: eentje vanavond, eentje de diepvries in.',ing:[
+ {n:'rundsgehakt',q:800,u:'g',c:'vlees'},{n:'lasagnebladen',q:2,u:'pak',c:'droog'},{n:'passata',q:1,u:'kg',c:'droog'},
+ {n:'melk',q:1,u:'l',c:'zuivel'},{n:'boter',q:80,u:'g',c:'zuivel'},{n:'bloem',q:80,u:'g',c:'droog'},
+ {n:'geraspte kaas',q:300,u:'g',c:'zuivel'},{n:'wortel',q:3,u:'st',c:'groenten'},{n:'ui',q:2,u:'st',c:'groenten'}]},
+
+{id:'lasagnediepvries',naam:'Lasagne uit de diepvries',tijd:10,eiwit:'hoog',bron:'rund',slots:['diner'],prep:false,opwarm:true,instant:true,tip:'\'s Ochtends uit de diepvries, 40 minuten in de oven. Geen werk.',ing:[
+ {n:'lasagne uit eigen diepvries',q:1,u:'schotel',c:'diepvries'},{n:'kropsla',q:1,u:'st',c:'groenten'}]},
+
+{id:'fishsticks',naam:'Fishsticks met spinazie',tijd:25,eiwit:'hoog',bron:'vis',slots:['diner'],prep:false,opwarm:false,tip:'',ing:[
+ {n:'fishsticks',q:16,u:'st',c:'diepvries'},{n:'spinazie',q:800,u:'g',c:'groenten'},{n:'aardappelen',q:1,u:'kg',c:'groenten'},
+ {n:'melk',q:150,u:'ml',c:'zuivel'},{n:'boter',q:40,u:'g',c:'zuivel'},{n:'nootmuskaat',q:1,u:'snuf',c:'droog'}]},
+
+{id:'zalmspinazie',naam:'Zalmfilet met spinazie',tijd:25,eiwit:'hoog',bron:'vis',slots:['diner'],prep:false,opwarm:false,tip:'',ing:[
+ {n:'zalmfilet',q:600,u:'g',c:'vlees'},{n:'spinazie',q:800,u:'g',c:'groenten'},{n:'aardappelen',q:1,u:'kg',c:'groenten'},
+ {n:'kookroom',q:150,u:'ml',c:'zuivel'},{n:'citroen',q:1,u:'st',c:'groenten'}]},
+
+{id:'zalmkrieltjes',naam:'Zalmfilet met krieltjes en sla',tijd:30,eiwit:'hoog',bron:'vis',slots:['diner'],prep:false,opwarm:false,tip:'',ing:[
+ {n:'zalmfilet',q:600,u:'g',c:'vlees'},{n:'krieltjes',q:1,u:'kg',c:'groenten'},{n:'kropsla',q:1,u:'st',c:'groenten'},
+ {n:'tomaat',q:3,u:'st',c:'groenten'},{n:'citroen',q:1,u:'st',c:'groenten'},{n:'olijfolie',q:3,u:'el',c:'droog'}]},
+
+{id:'boontjesburger',naam:'Boontjes met hamburger en aardappelen',tijd:30,eiwit:'hoog',bron:'rund',slots:['diner'],prep:true,opwarm:true,tip:'',ing:[
+ {n:'hamburgers',q:4,u:'st',c:'vlees'},{n:'prinsessenboontjes',q:800,u:'g',c:'groenten'},{n:'aardappelen',q:1,u:'kg',c:'groenten'},
+ {n:'ui',q:1,u:'st',c:'groenten'},{n:'boter',q:40,u:'g',c:'zuivel'}]},
+
+{id:'boontjesworst',naam:'Boontjes met worst en aardappelen',tijd:30,eiwit:'hoog',bron:'varken',slots:['diner'],prep:true,opwarm:true,tip:'',ing:[
+ {n:'braadworst',q:4,u:'st',c:'vlees'},{n:'prinsessenboontjes',q:800,u:'g',c:'groenten'},{n:'aardappelen',q:1,u:'kg',c:'groenten'},
+ {n:'ui',q:1,u:'st',c:'groenten'},{n:'boter',q:40,u:'g',c:'zuivel'}]},
+
+{id:'kipcurrysaus',naam:'Kip met rijst en currysaus',tijd:30,eiwit:'hoog',bron:'kip',slots:['diner'],prep:true,opwarm:true,tip:'',ing:[
+ {n:'kipfilet',q:600,u:'g',c:'vlees'},{n:'rijst',q:300,u:'g',c:'droog'},{n:'kookroom',q:250,u:'ml',c:'zuivel'},
+ {n:'currypoeder',q:2,u:'el',c:'droog'},{n:'ui',q:1,u:'st',c:'groenten'},{n:'appel',q:1,u:'st',c:'groenten'},
+ {n:'erwten (diepvries)',q:200,u:'g',c:'diepvries'}]},
+
+{id:'wrapfamilie',naam:'Wrap met kip of zalm en groenten',tijd:20,eiwit:'hoog',bron:'kip',slots:['lunch','diner'],prep:false,opwarm:false,tip:'Kip of zalm, naargelang wat er in huis is.',ing:[
+ {n:'kipfilet of zalmfilet',q:600,u:'g',c:'vlees'},{n:'wraps',q:8,u:'st',c:'brood'},{n:'Philadelphia',q:200,u:'g',c:'zuivel'},
+ {n:'kropsla',q:1,u:'st',c:'groenten'},{n:'tomaat',q:3,u:'st',c:'groenten'},{n:'komkommer',q:1,u:'st',c:'groenten'},
+ {n:'wortel',q:2,u:'st',c:'groenten'}]},
+
+{id:'bicky',naam:'Bicky burger / hamburger',tijd:25,eiwit:'hoog',bron:'rund',slots:['diner'],prep:false,opwarm:false,tip:'',ing:[
+ {n:'hamburgers',q:4,u:'st',c:'vlees'},{n:'hamburgerbroodjes',q:4,u:'st',c:'brood'},{n:'ijsbergsla',q:1,u:'st',c:'groenten'},
+ {n:'ui',q:1,u:'st',c:'groenten'},{n:'bickysaus',q:1,u:'pot',c:'droog'},{n:'augurken',q:1,u:'pot',c:'droog'},
+ {n:'frieten (diepvries)',q:1,u:'kg',c:'diepvries'}]},
+
+/* --- afhaal en uit eten --- */
+{id:'kebab',naam:'Kebab afhalen',tijd:0,eiwit:'hoog',bron:'gemengd',slots:['diner'],prep:false,opwarm:false,afhaal:true,instant:true,tip:'Geen boodschappen nodig.',ing:[]},
+
+{id:'afhaal',naam:'Afhaal (pizza, sushi of frituur)',tijd:0,eiwit:'gemiddeld',bron:'gemengd',slots:['lunch','diner'],prep:false,opwarm:false,afhaal:true,instant:true,tip:'Geen boodschappen nodig.',ing:[]},
+
+{id:'uiteten',naam:'Wij gaan samen uit eten',tijd:0,eiwit:'gemiddeld',bron:'gemengd',slots:['diner'],prep:false,opwarm:false,afhaal:true,instant:true,handmatig:true,tip:'De jongens eten iets uit de diepvries of restjes. Kies dit zelf — het voorstel stelt het nooit vanzelf voor.',ing:[]}
+];
+
+/* ============================================================
+   2. Opslag
+   Drie mogelijke bronnen, in deze volgorde:
+   - server  : eigen Cloudflare Worker met D1 (echte synchronisatie)
+   - gedeeld : gedeelde opslag van de chatomgeving
+   - lokaal  : enkel dit toestel
+   ============================================================ */
+const KEY_GEZIN='weekmenu:gezin:v1';
+const KEY_EIGEN='weekmenu:v1';
+let state={start:null,personen:4,plan:{},checked:{},custom:[],disabled:{},shopView:'alles'};
+let modus='lokaal', serverRev=0, saveTimer=null, bezigMetOpslaan=false, wachtwoord=null;
+
+function lees(k){ try{return localStorage.getItem(k);}catch(e){return null;} }
+function schrijf(k,v){ try{localStorage.setItem(k,v);}catch(e){} }
+
+function apiHeaders(){
+  const h={'content-type':'application/json'};
+  if(wachtwoord) h['x-menu-key']=wachtwoord;
+  return h;
+}
+async function vraagWachtwoord(){
+  const w=prompt('Wachtwoord voor het gezinsmenu:');
+  if(w===null) return false;
+  wachtwoord=w; schrijf('weekmenu:pw',w); return true;
+}
+
+// Zoekt uit of deze pagina door een eigen Worker geserveerd wordt
+async function verbind(){
+  wachtwoord=lees('weekmenu:pw');
+  for(let poging=0;poging<3;poging++){
+    let r;
+    try{ r=await fetch('/api/state',{headers:apiHeaders(),cache:'no-store'}); }
+    catch(e){ return false; }
+    if(r.status===401){ if(!await vraagWachtwoord()) return false; continue; }
+    if(!r.ok) return false;
+    let j; try{ j=await r.json(); }catch(e){ return false; }
+    if(!j||typeof j.rev!=='number') return false;
+    serverRev=j.rev;
+    if(j.data) state=Object.assign(state,j.data);
+    modus='server';
+    return true;
+  }
+  return false;
+}
+
+async function load(){
+  if(!window.storage){ modus='geen'; return; }
+  let data=null, bron=null;
+  try{
+    const r=await window.storage.get(KEY_GEZIN,true);
+    if(r&&r.value){ data=JSON.parse(r.value); bron='gedeeld'; }
+  }catch(e){ /* sleutel bestaat nog niet — dat is geen probleem */ }
+  if(!data){
+    try{
+      const r=await window.storage.get(KEY_EIGEN,false);
+      if(r&&r.value){ data=JSON.parse(r.value); bron='eigen'; }
+    }catch(e){}
+  }
+  if(data) state=Object.assign(state,data);
+  // Gedeelde opslag is beschikbaar. Lukt het schrijven toch niet,
+  // dan zet bewaar() de modus zelf terug op 'lokaal'.
+  modus='gedeeld';
+  if(bron==='eigen') save();   // oude persoonlijke gegevens meteen naar de gedeelde kant
+}
+
+function save(){
+  clearTimeout(saveTimer);
+  setSync('bezig');
+  saveTimer=setTimeout(bewaar,500);
+}
+async function bewaar(){
+  if(modus==='server') return duwNaarServer();
+  if(!window.storage){ modus='geen'; setSync(); return; }
+  const payload=JSON.stringify(state);
+  try{ await window.storage.set(KEY_GEZIN,payload,true); modus='gedeeld'; }
+  catch(e){
+    modus='lokaal';
+    try{ await window.storage.set(KEY_EIGEN,payload,false); }catch(e2){ modus='geen'; }
+  }
+  setSync();
+}
+async function duwNaarServer(){
+  bezigMetOpslaan=true;
+  try{
+    const r=await fetch('/api/state',{method:'PUT',headers:apiHeaders(),body:JSON.stringify({rev:serverRev,data:state})});
+    if(r.status===401){
+      bezigMetOpslaan=false;
+      if(await vraagWachtwoord()) return duwNaarServer();
+      setSync('fout'); return;
+    }
+    if(r.status===409){                       // iemand anders was sneller
+      const j=await r.json();
+      serverRev=j.rev;
+      if(j.data) state=Object.assign(state,j.data);
+      setSync(); render();
+      toast('Iemand anders bewaarde net — jouw laatste wijziging is niet doorgevoerd.');
+      return;
+    }
+    if(!r.ok) throw new Error('status '+r.status);
+    const j=await r.json(); serverRev=j.rev; setSync('bewaard');
+  }catch(e){ setSync('fout'); console.warn(e); }
+  finally{ bezigMetOpslaan=false; }
+}
+async function haalOp(){
+  try{
+    const r=await fetch('/api/state',{headers:apiHeaders(),cache:'no-store'});
+    if(!r.ok) return false;
+    const j=await r.json();
+    serverRev=j.rev;
+    if(j.data) state=Object.assign(state,j.data);
+    return true;
+  }catch(e){ return false; }
+}
+function startPolling(){
+  if(modus!=='server') return;
+  setInterval(async()=>{
+    if(bezigMetOpslaan) return;
+    const a=document.activeElement;
+    if(a&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)) return;   // niet verversen terwijl iemand typt
+    try{
+      const r=await fetch('/api/rev',{headers:apiHeaders(),cache:'no-store'});
+      if(!r.ok) return;
+      const j=await r.json();
+      if(j.rev!==serverRev && await haalOp()){ render(); toast('Bijgewerkt door iemand anders'); }
+    }catch(e){}
+  },15000);
+}
+function setSync(st){
+  const el=document.getElementById('sync');
+  if(!el) return;
+  el.textContent = st==='bezig' ? 'bewaren…'
+    : st==='fout' ? 'niet bewaard'
+    : modus==='server' ? 'gedeeld · live'
+    : modus==='gedeeld' ? 'gedeeld'
+    : modus==='lokaal' ? 'enkel dit toestel'
+    : 'niet bewaard';
+  el.title = modus==='server' ? 'Opgeslagen op jullie eigen Cloudflare-server, met automatische verversing.'
+    : modus==='gedeeld' ? 'Opgeslagen in de gedeelde opslag: iedereen die deze app opent, ziet hetzelfde.'
+    : modus==='lokaal' ? 'Gedeeld opslaan lukt niet — er wordt enkel op dit toestel bewaard.'
+    : 'Er is hier geen opslag. Gebruik "Back-up downloaden" op het tabblad Maaltijden.';
+  el.dataset.st = st==='fout'?'fout':(modus==='server'?'live':'ok');
+}
+
+/* ============================================================
+   3. Hulpjes
+   ============================================================ */
+const $=(s,r=document)=>r.querySelector(s);
+const mins=t=>{const[a,b]=t.split(':').map(Number);return a*60+b;};
+const hhmm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1900);}
+
+function nextMonday(){
+  const d=new Date(); d.setHours(12,0,0,0);
+  const diff=(8-(d.getDay()||7))%7 || 7;
+  d.setDate(d.getDate()+diff);
+  return d.toISOString().slice(0,10);
+}
+function addDays(iso,n){const d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+n);return d;}
+function fmtDate(d){return d.toLocaleDateString('nl-BE',{day:'numeric',month:'short'});}
+
+function allMeals(){return BASIS.concat(state.custom||[]);}
+function mealById(id){return allMeals().find(m=>m.id===id);}
+function activeMeals(){return allMeals().filter(m=>!state.disabled[m.id]);}
+
+function scaled(q){
+  if(q==null) return null;
+  const v=q*(state.personen/4);
+  return Math.round(v*100)/100;
+}
+// kg en liter worden intern altijd g en ml, zodat 800 g + 1,2 kg één regel wordt
+const OMREKEN={kg:['g',1000],l:['ml',1000]};
+const TELBAAR=new Set(['st','blik','pot','bosje','sneden','teentjes','rol','takje']);
+function normIng(q,u){
+  if(q!=null&&OMREKEN[u]) return {q:q*OMREKEN[u][1],u:OMREKEN[u][0]};
+  return {q,u};
+}
+function fmtQty(q,u){
+  if(q==null) return '';
+  let v=q,unit=u;
+  if(unit==='g'&&v>=1000){v=v/1000;unit='kg';}
+  else if(unit==='ml'&&v>=1000){v=v/1000;unit='l';}
+  if(TELBAAR.has(unit)) v=Math.ceil(v-0.001);          // geen halve uien op de lijst
+  else v=v>=10?Math.round(v):Math.round(v*10)/10;
+  return v+(unit?' '+unit:'');
+}
+function ingLine(it){
+  const n=normIng(scaled(it.q),it.u);
+  return esc(it.n)+(n.q!=null?' — '+fmtQty(n.q,n.u):'');
+}
+
+/* ============================================================
+   4. Dagen opbouwen
+   ============================================================ */
+const STRIP_VAN=mins('16:00'), STRIP_TOT=mins('21:30');
+const REIS=20;      // minuten heen/terug rond een training
+const ETEN_MIN=40;  // minimale duur van een eetvenster
+
+function eetvensters(wd){
+  const busy=(TRAINING[wd]||[]).map(t=>[mins(t.van)-REIS,mins(t.tot)+REIS]).sort((a,b)=>a[0]-b[0]);
+  let free=[[mins('17:00'),mins('21:00')]];
+  busy.forEach(([bs,be])=>{
+    const out=[];
+    free.forEach(([fs,fe])=>{
+      if(be<=fs||bs>=fe){out.push([fs,fe]);return;}
+      if(bs>fs) out.push([fs,Math.min(bs,fe)]);
+      if(be<fe) out.push([Math.max(be,fs),fe]);
+    });
+    free=out;
+  });
+  return free.filter(([s,e])=>e-s>=ETEN_MIN);
+}
+
+function isoVan(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function buildDays(){
+  const verg=state.vergaderingen||[];
+  const out=[];
+  for(let i=0;i<14;i++){
+    const date=addDays(state.start,i);
+    const wd=(date.getDay()+6)%7;
+    const r=DAGREGELS[wd];
+    const iso=isoVan(date);
+    out.push({i,date,iso,wd,naam:DAGEN[wd],regels:r,training:TRAINING[wd]||[],
+              vensters:eetvensters(wd),weekend:wd>=5,vergadering:verg.includes(iso)});
+  }
+  return out;
+}
+
+/* ============================================================
+   5. Voorstel genereren
+   ============================================================ */
+function past(meal,slot,dag){
+  if(!meal.slots.includes(slot)) return false;
+  if(meal.handmatig) return true;              // altijd zelf kiesbaar, nooit automatisch
+  // vergaderavond: enkel iets dat meteen op tafel kan
+  if(dag.vergadering&&slot==='diner')
+    return !!(meal.instant||meal.afhaal||(meal.opwarm&&meal.prep));
+  if(meal.afhaal) return false;                // afhaal enkel op vergaderavonden
+  // dinsdag en vrijdag: iedereen eet op een ander uur, dus het moet op te warmen zijn
+  if(dag.regels.opwarmen&&slot==='diner'&&!meal.opwarm) return false;
+  const max = slot==='lunch' ? (dag.regels.maxLunch||45) : dag.regels.max;
+  if(meal.tijd<=max) return true;
+  // langer mag op een weekdag, zolang het vooraf gemaakt kan worden
+  if(slot==='diner'&&dag.wd<5&&meal.prep) return true;
+  return false;
+}
+
+function genereer(force){
+  const dagen=buildDays();
+  const pool=activeMeals();
+  const gebruikt=new Set();
+  const bronTeller={};
+  const nieuw={};
+
+  // bewaar vastgezette keuzes
+  Object.entries(state.plan).forEach(([k,v])=>{
+    if(v&&v.locked&&!force){ nieuw[k]=v; gebruikt.add(v.mealId); bronTeller[(mealById(v.mealId)||{}).bron]=(bronTeller[(mealById(v.mealId)||{}).bron]||0)+1; }
+  });
+
+  const volgorde=[];
+  dagen.forEach(d=>d.regels.slots.forEach(s=>volgorde.push({key:'d'+d.i+'-'+s,slot:s,dag:d})));
+
+  let vorigeBron=null;
+  volgorde.forEach(({key,slot,dag})=>{
+    if(nieuw[key]){ vorigeBron=(mealById(nieuw[key].mealId)||{}).bron; return; }
+    const auto=pool.filter(m=>!m.handmatig);
+    let kand=auto.filter(m=>past(m,slot,dag)&&!gebruikt.has(m.id));
+    if(!kand.length) kand=auto.filter(m=>past(m,slot,dag));
+    if(!kand.length) kand=auto.filter(m=>m.slots.includes(slot));
+    if(!kand.length){ nieuw[key]=null; return; }
+
+    const scored=kand.map(m=>{
+      let s=Math.random()*2;
+      if(m.bron===vorigeBron) s-=6;
+      s-=(bronTeller[m.bron]||0)*1.6;
+      if(gebruikt.has(m.id)) s-=10;
+      if(dag.vergadering&&m.afhaal) s-=1.5;                 // eerst de diepvries, dan pas afhaal
+      if(dag.vergadering&&m.instant&&!m.afhaal) s+=2;
+      if(dag.regels.opwarmen&&m.opwarm) s+=1.2;             // liefst iets dat écht goed opwarmt
+      if(dag.regels.samen&&m.tijd<=40) s+=0.6;              // op een samen-avond hoeft het niet te slepen
+      if(dag.wd===6&&m.prep&&m.tijd>45) s+=1;               // zondag mag een project zijn
+      if(dag.wd===5&&slot==='diner'&&m.tijd>45) s+=1;       // zaterdagavond ook
+      if(slot==='lunch'&&m.tijd<=25) s+=1;
+      if(m.eiwit==='hoog') s+=1.4;
+      return {m,s};
+    }).sort((a,b)=>b.s-a.s);
+
+    const keuze=scored[0].m;
+    nieuw[key]={mealId:keuze.id,locked:false};
+    gebruikt.add(keuze.id);
+    bronTeller[keuze.bron]=(bronTeller[keuze.bron]||0)+1;
+    vorigeBron=keuze.bron;
+  });
+
+  state.plan=nieuw; save();
+}
+
+function reroll(key){
+  const dagen=buildDays();
+  const [,di,slot]=key.match(/^d(\d+)-(\w+)$/);
+  const dag=dagen[Number(di)];
+  const inGebruik=new Set(Object.entries(state.plan).filter(([k,v])=>k!==key&&v).map(([,v])=>v.mealId));
+  const huidig=state.plan[key]&&state.plan[key].mealId;
+  const auto=activeMeals().filter(m=>!m.handmatig);
+  let kand=auto.filter(m=>past(m,slot,dag)&&!inGebruik.has(m.id)&&m.id!==huidig);
+  if(!kand.length) kand=auto.filter(m=>past(m,slot,dag)&&m.id!==huidig);
+  if(!kand.length) return toast('Geen ander gerecht dat in deze dag past.');
+  const keuze=kand[Math.floor(Math.random()*kand.length)];
+  state.plan[key]={mealId:keuze.id,locked:state.plan[key]?state.plan[key].locked:false};
+  save(); render();
+}
+
+/* ============================================================
+   6. Boodschappen
+   ============================================================ */
+function planEntries(week){
+  const dagen=buildDays();
+  const out=[];
+  dagen.forEach(d=>{
+    if(week===1&&d.i>6) return;
+    if(week===2&&d.i<7) return;
+    d.regels.slots.forEach(s=>{
+      const key='d'+d.i+'-'+s;
+      const v=state.plan[key];
+      if(v&&v.mealId){const m=mealById(v.mealId); if(m) out.push({dag:d,slot:s,meal:m,key});}
+    });
+  });
+  return out;
+}
+
+function boodschappen(week){
+  const map=new Map();
+  planEntries(week).forEach(({meal})=>{
+    meal.ing.forEach(it=>{
+      const n=normIng(scaled(it.q),it.u);
+      const k=(it.n||'').toLowerCase().trim()+'|'+(n.u||'')+'|'+(it.c||'droog');
+      if(map.has(k)){const e=map.get(k); if(e.q!=null&&n.q!=null) e.q+=n.q; e.uit.push(meal.naam);}
+      else map.set(k,{n:it.n,u:n.u,c:it.c||'droog',q:n.q,uit:[meal.naam]});
+    });
+  });
+  const per={};
+  Object.keys(CATS).forEach(c=>per[c]=[]);
+  [...map.entries()].forEach(([k,v])=>{ (per[v.c]||per.droog).push(Object.assign({key:k},v)); });
+  Object.values(per).forEach(a=>a.sort((x,y)=>x.n.localeCompare(y.n,'nl')));
+  return per;
+}
+
+// Diepvriesgerechten en het gerecht waarmee je ze aanmaakt
+const VOORRAAD={ sausdiepvries:'sausmaken', lasagnediepvries:'lasagnemaken' };
+
+function voorraadCheck(){
+  const gepland=new Set(Object.values(state.plan).filter(v=>v&&v.mealId).map(v=>v.mealId));
+  const uit=[];
+  Object.entries(VOORRAAD).forEach(([verbruik,maken])=>{
+    if(!gepland.has(verbruik)) return;
+    uit.push({verbruik:mealById(verbruik),maken:mealById(maken),ingepland:gepland.has(maken)});
+  });
+  return uit;
+}
+
+function prepLijst(){
+  const dagen=buildDays();
+  const items=[];
+  dagen.forEach(d=>{
+    if(d.wd>=5) return;
+    const v=state.plan['d'+d.i+'-diner'];
+    if(!v||!v.mealId) return;
+    const m=mealById(v.mealId);
+    if(m&&m.prep&&!m.instant&&(m.tijd>d.regels.max||d.vergadering)) items.push({dag:d,meal:m});
+  });
+  return items;
+}
+
+/* ============================================================
+   7. Rendering — Planning
+   ============================================================ */
+function stripHTML(dag){
+  const span=STRIP_TOT-STRIP_VAN;
+  const pct=m=>((m-STRIP_VAN)/span*100);
+  let h='<div class="strip">';
+  for(let t=mins('17:00');t<=mins('21:00');t+=60) h+=`<div class="tick" style="left:${pct(t)}%"></div>`;
+  if(dag.regels.samen){
+    const s=mins(dag.regels.samen), e=Math.min(s+45,STRIP_TOT);
+    h+=`<div class="blk eat" style="left:${pct(s)}%;width:${pct(e)-pct(s)}%"><span>samen ${dag.regels.samen}</span></div>`;
+  }else{
+    dag.vensters.forEach(([s,e])=>{
+      h+=`<div class="blk eat" style="left:${pct(s)}%;width:${pct(e)-pct(s)}%"><span>${hhmm(s)}–${hhmm(e)}</span></div>`;
+    });
+  }
+  dag.training.forEach(t=>{
+    const s=mins(t.van),e=mins(t.tot);
+    h+=`<div class="blk tr" style="left:${pct(s)}%;width:${pct(e)-pct(s)}%"><span>${esc(t.wie)}</span></div>`;
+  });
+  h+='</div><div class="striplabels"><span>16:00</span><span>18:00</span><span>20:00</span><span>21:30</span></div>';
+  return h;
+}
+
+function slotHTML(dag,slot){
+  const key='d'+dag.i+'-'+slot;
+  const v=state.plan[key];
+  const gekozen=v&&v.mealId?mealById(v.mealId):null;
+  const opties=activeMeals().filter(m=>m.slots.includes(slot))
+    .sort((a,b)=>a.naam.localeCompare(b.naam,'nl'));
+
+  const optHTML=['<option value="">— nog niets —</option>'].concat(
+    opties.map(m=>{
+      const ok=past(m,slot,dag);
+      return `<option value="${m.id}" ${gekozen&&gekozen.id===m.id?'selected':''}>${esc(m.naam)}${ok?'':' ⚠︎ (past krap)'} · ${m.tijd}′</option>`;
+    })).join('');
+
+  let note='';
+  if(gekozen){
+    const badges=[`<span class="chip prot-${gekozen.eiwit}">eiwit ${gekozen.eiwit}</span>`,
+                  `<span class="chip prot-gemiddeld">${gekozen.tijd} min</span>`];
+    if(gekozen.instant) badges.push('<span class="chip verg">meteen klaar</span>');
+    else if(gekozen.opwarm) badges.push('<span class="chip prep">warmt goed op</span>');
+    if(dag.wd<5&&gekozen.prep&&gekozen.tijd>dag.regels.max)
+      badges.push('<span class="chip prep">vooraf maken in het weekend</span>');
+    note=`<div class="chips" style="margin-top:7px">${badges.join('')}</div>`;
+    if(gekozen.tip) note+=`<p class="slot-note">${esc(gekozen.tip)}</p>`;
+  }
+
+  return `<div class="slot">
+    <div class="slot-label">${slot==='lunch'?'Middag':'Avond'}</div>
+    <div class="slot-row">
+      <select data-slot="${key}" aria-label="${slot} ${dag.naam}">${optHTML}</select>
+      <button class="iconbtn" data-reroll="${key}" title="Ander gerecht">🎲</button>
+      <button class="iconbtn ${v&&v.locked?'on':''}" data-lock="${key}" title="${v&&v.locked?'Vastgezet — klik om vrij te geven':'Vastzetten'}">${v&&v.locked?'🔒':'🔓'}</button>
+    </div>${note}
+  </div>`;
+}
+
+function dayHTML(dag){
+  const chips=dag.training.map(t=>`<span class="chip train">🏀 ${esc(t.wie)} ${t.van}</span>`).join('');
+  const modus=(dag.regels.samen?`<span class="chip prep">samen ${dag.regels.samen}</span>`:'')
+            +(dag.regels.opwarmen?'<span class="chip rush">opwarmen</span>':'');
+  const verg=dag.vergadering?'<span class="chip verg">🗓 vergadering</span>':'';
+  const wknd=dag.weekend?'<span class="chip train">🏀 vaak wedstrijd</span>':'';
+  const trainTxt=dag.training.map(t=>`${esc(t.wie)} ${t.van}–${t.tot}, ${esc(t.waar)}`).join('<br>');
+  const dagnote=dag.vergadering
+    ? 'Vergadering — kies afhaal, of iets dat meteen de oven in kan.'
+    : (dag.wd===4 ? dag.regels.note+' Of kies "Wij gaan samen uit eten".' : dag.regels.note);
+  return `<article class="day wd${dag.wd} ${dag.weekend?'weekend':''} ${dag.vergadering?'vergaderdag':''}">
+    <div class="day-top">
+      <div><div class="day-name">${dag.naam}</div><div class="day-date">${fmtDate(dag.date)}</div></div>
+      <div class="chips">${verg}${modus}${chips}${wknd}</div>
+    </div>
+    ${dag.training.length?stripHTML(dag)+`<p class="trainlist">${trainTxt}</p>`:''}
+    ${dagnote?`<p class="trainlist">${esc(dagnote)}</p>`:''}
+    ${dag.regels.slots.map(s=>slotHTML(dag,s)).join('')}
+    <button class="vergtoggle ${dag.vergadering?'on':''}" data-verg="${dag.iso}">
+      ${dag.vergadering?'🗓 vergadering — klik om weg te halen':'+ vergadering op deze dag'}
+    </button>
+  </article>`;
+}
+
+function renderPlan(){
+  const dagen=buildDays();
+  const prep=prepLijst();
+  const voorraad=voorraadCheck();
+  const ingevuld=Object.values(state.plan).filter(v=>v&&v.mealId).length;
+
+  let h=`<div class="bar">
+    <div class="field"><label for="start">Startdatum (maandag)</label><input type="date" id="start" value="${state.start}"></div>
+    <div class="field"><label for="pers">Aantal personen</label><input type="number" id="pers" min="1" max="12" value="${state.personen}"></div>
+    <button class="btn pine" id="gen">Nieuw voorstel</button>
+    <button class="btn ghost" id="genall">Alles opnieuw, ook vastgezet</button>
+    <button class="btn ghost" id="clear">Leegmaken</button>
+    <span class="hint" style="margin-left:auto">${ingevuld} van de 18 maaltijden ingevuld</span>
+  </div>`;
+
+  if(prep.length){
+    h+=`<div class="panel" style="border-left:4px solid var(--pine)">
+      <h3>Voorbereiden in het weekend</h3>
+      <p class="hint">Deze gerechten staan op een drukke maandag of dinsdag. Maak ze zondag klaar.</p>
+      <ul class="ing" style="margin-top:8px">${prep.map(p=>`<li><b>${esc(p.meal.naam)}</b> — voor ${p.dag.naam} ${fmtDate(p.dag.date)}</li>`).join('')}</ul>
+    </div>`;
+  }
+
+  if(voorraad.length){
+    h+=`<div class="panel" style="border-left:4px solid #8B6BB1">
+      <h3>Uit de diepvries</h3>
+      <p class="hint">Deze planning rekent op voorraad. Staat er niets meer in, kies dan een ander gerecht.</p>
+      <ul class="ing" style="margin-top:8px">${voorraad.map(v=>
+        `<li><b>${esc(v.verbruik.naam)}</b> — ${v.ingepland
+          ? 'je maakt "'+esc(v.maken.naam)+'" deze twee weken, dus dat komt goed.'
+          : 'staat "'+esc(v.maken.naam)+'" nog in de diepvries? Zo niet, plan dat eerst in een weekend.'}</li>`
+      ).join('')}</ul>
+    </div>`;
+  }
+
+  [0,1].forEach(w=>{
+    const van=dagen[w*7].date, tot=dagen[w*7+6].date;
+    h+=`<div class="weekhead"><h2>Week ${w+1}</h2><span class="meta">${fmtDate(van)} – ${fmtDate(tot)}</span><span class="rule"></span></div>`;
+    h+='<div class="days">'+dagen.slice(w*7,w*7+7).map(dayHTML).join('')+'</div>';
+  });
+
+  $('#tab-plan').innerHTML=h;
+
+  $('#start').onchange=e=>{ state.start=e.target.value; save(); render(); };
+  $('#pers').onchange=e=>{ state.personen=Math.max(1,Number(e.target.value)||4); save(); render(); toast('Hoeveelheden aangepast'); };
+  $('#gen').onclick=()=>{ genereer(false); render(); toast('Voorstel klaar'); };
+  $('#genall').onclick=()=>{ genereer(true); render(); toast('Alles opnieuw ingevuld'); };
+  $('#clear').onclick=()=>{ state.plan={}; save(); render(); };
+
+  $('#tab-plan').querySelectorAll('select[data-slot]').forEach(sel=>{
+    sel.onchange=()=>{
+      const k=sel.dataset.slot;
+      const cur=state.plan[k]||{};
+      state.plan[k]=sel.value?{mealId:sel.value,locked:cur.locked||false}:null;
+      save(); render();
+    };
+  });
+  $('#tab-plan').querySelectorAll('[data-verg]').forEach(b=>b.onclick=()=>{
+    const iso=b.dataset.verg;
+    state.vergaderingen=state.vergaderingen||[];
+    const i=state.vergaderingen.indexOf(iso);
+    if(i>=0) state.vergaderingen.splice(i,1); else state.vergaderingen.push(iso);
+    save(); render();
+  });
+  $('#tab-plan').querySelectorAll('[data-reroll]').forEach(b=>b.onclick=()=>reroll(b.dataset.reroll));
+  $('#tab-plan').querySelectorAll('[data-lock]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.lock;
+    if(!state.plan[k]||!state.plan[k].mealId) return toast('Kies eerst een gerecht.');
+    state.plan[k].locked=!state.plan[k].locked; save(); render();
+  });
+}
+
+/* ============================================================
+   8. Rendering — Maaltijden
+   ============================================================ */
+let bewerkId=null;
+
+function mealCard(m,eigen){
+  const uit=state.disabled[m.id];
+  return `<article class="meal-card ${uit?'off':''}">
+    <h4>${esc(m.naam)}</h4>
+    <div class="chips">
+      <span class="chip prot-${m.eiwit}">eiwit ${m.eiwit}</span>
+      <span class="chip prot-gemiddeld">${m.tijd} min</span>
+      ${m.prep?'<span class="chip prep">vooraf te maken</span>':''}
+      ${m.instant?'<span class="chip verg">meteen klaar</span>':''}
+      ${m.opwarm?'<span class="chip prep">warmt goed op</span>':'<span class="chip rush">vers eten</span>'}
+      <span class="chip prot-gemiddeld">${m.slots.join(' & ')}</span>
+      ${eigen?'<span class="chip rush">eigen recept</span>':''}
+    </div>
+    <ul class="ing">${m.ing.map(i=>`<li>${ingLine(i)}</li>`).join('')}</ul>
+    <div class="meal-actions">
+      <label class="toggle"><input type="checkbox" data-use="${m.id}" ${uit?'':'checked'}> in voorstel</label>
+      ${eigen?`<button class="btn ghost small" data-edit="${m.id}">Bewerken</button>
+               <button class="btn ghost small" data-del="${m.id}">Verwijderen</button>`
+              :`<button class="btn ghost small" data-copy="${m.id}">Kopie maken</button>`}
+    </div>
+  </article>`;
+}
+
+function formHTML(){
+  const m=bewerkId?state.custom.find(x=>x.id===bewerkId):null;
+  const rows=(m?m.ing:[{n:'',q:'',u:'g',c:'groenten'}]);
+  const unitOpts=['g','kg','ml','l','st','el','tl','blik','pot','bosje','sneden','teentjes','rol','snuf',''];
+  return `<div class="panel" id="mealform">
+    <h3>${m?'Recept bewerken':'Eigen recept toevoegen'}</h3>
+    <p class="hint">Hoeveelheden voor 4 personen. De app rekent zelf om naar ${state.personen}.</p>
+    <div class="bar" style="margin:14px 0 10px;padding:0;border:0;background:transparent">
+      <div class="field" style="flex:1;min-width:220px"><label for="f-naam">Naam</label><input id="f-naam" value="${m?esc(m.naam):''}" placeholder="bv. Vispannetje van oma"></div>
+      <div class="field"><label for="f-tijd">Kooktijd (min)</label><input id="f-tijd" type="number" min="5" max="240" value="${m?m.tijd:30}"></div>
+      <div class="field"><label for="f-eiwit">Eiwit</label><select id="f-eiwit">
+        <option value="hoog" ${m&&m.eiwit==='hoog'?'selected':''}>hoog</option>
+        <option value="gemiddeld" ${m&&m.eiwit==='gemiddeld'?'selected':''}>gemiddeld</option></select></div>
+      <div class="field"><label for="f-bron">Hoofdingrediënt</label><select id="f-bron">
+        ${['kip','rund','varken','kalkoen','vis','garnaal','ei','peulvrucht','tofu','kaas','gemengd'].map(b=>`<option ${m&&m.bron===b?'selected':''}>${b}</option>`).join('')}</select></div>
+      <div class="field"><label for="f-slots">Geschikt voor</label><select id="f-slots">
+        <option value="diner" ${m&&m.slots.join()==='diner'?'selected':''}>avond</option>
+        <option value="lunch" ${m&&m.slots.join()==='lunch'?'selected':''}>middag</option>
+        <option value="lunch,diner" ${!m||m.slots.length===2?'selected':''}>middag &amp; avond</option></select></div>
+      <div class="field"><label for="f-prep">Vooraf te maken</label><select id="f-prep">
+        <option value="ja" ${m&&m.prep?'selected':''}>ja</option>
+        <option value="nee" ${!m||!m.prep?'selected':''}>nee</option></select></div>
+      <div class="field"><label for="f-opwarm">Op te warmen</label><select id="f-opwarm">
+        <option value="ja" ${!m||m.opwarm?'selected':''}>ja</option>
+        <option value="nee" ${m&&!m.opwarm?'selected':''}>nee</option></select></div>
+      <div class="field"><label for="f-instant">Meteen klaar</label><select id="f-instant">
+        <option value="nee" ${!m||!m.instant?'selected':''}>nee</option>
+        <option value="ja" ${m&&m.instant?'selected':''}>ja — diepvries of afhaal</option></select></div>
+    </div>
+    <div class="field" style="margin-bottom:12px"><label for="f-tip">Tip (optioneel)</label><input id="f-tip" value="${m&&m.tip?esc(m.tip):''}" placeholder="bv. saus kan twee dagen vooraf"></div>
+
+    <div class="slot-label">Ingrediënten</div>
+    <div id="ingrows">${rows.map(r=>ingRow(r,unitOpts)).join('')}</div>
+    <button class="btn ghost small" id="addrow">+ ingrediënt</button>
+    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn pine" id="saverecipe">${m?'Wijzigingen opslaan':'Recept opslaan'}</button>
+      ${m?'<button class="btn ghost" id="cancelrecipe">Annuleren</button>':''}
+    </div>
+  </div>`;
+}
+function ingRow(r,unitOpts){
+  return `<div class="ingrow">
+    <input class="i-n" placeholder="ingrediënt" value="${r.n?esc(r.n):''}">
+    <input class="i-q" type="number" step="0.1" placeholder="aantal" value="${r.q!=null&&r.q!==''?r.q:''}">
+    <select class="i-u">${unitOpts.map(u=>`<option value="${u}" ${r.u===u?'selected':''}>${u||'—'}</option>`).join('')}</select>
+    <select class="i-c">${Object.entries(CATS).map(([k,v])=>`<option value="${k}" ${r.c===k?'selected':''}>${v}</option>`).join('')}</select>
+    <button class="iconbtn del" title="Rij weg">✕</button>
+  </div>`;
+}
+
+function renderMeals(){
+  const eigen=state.custom||[];
+  const uitleg = modus==='server'
+    ? 'Alles staat op jullie eigen Cloudflare-server. Wijzigingen van de anderen verschijnen vanzelf, binnen een kwartier of meteen na "Vernieuwen".'
+    : modus==='gedeeld'
+    ? 'Recepten, planning en boodschappenlijst worden gedeeld opgeslagen: iedereen die deze app opent, ziet dezelfde inhoud. Er is geen live synchronisatie — klik "Vernieuwen" voor je begint.'
+    : modus==='lokaal'
+    ? 'Er wordt nu enkel op dit toestel bewaard. Anderen zien jouw wijzigingen niet.'
+    : 'Deze kopie draait zonder opslag. Gebruik "Back-up downloaden", anders gaat alles verloren bij het sluiten.';
+  let h=`<div class="panel" style="border-left:4px solid var(--pine)">
+    <h3>Delen met het gezin</h3>
+    <p class="hint">${esc(uitleg)}</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn ghost" id="refresh">Vernieuwen</button>
+      <button class="btn ghost" id="export">Back-up downloaden</button>
+      <button class="btn ghost" id="importbtn">Back-up inladen</button>
+      <input type="file" id="importfile" accept="application/json,.json" hidden>
+    </div>
+  </div>`;
+  h+=formHTML();
+  h+=`<div class="weekhead"><h2>Eigen recepten</h2><span class="meta">${eigen.length}</span><span class="rule"></span></div>`;
+  h+= eigen.length?`<div class="meal-grid">${eigen.map(m=>mealCard(m,true)).join('')}</div>`
+    :`<div class="empty">Nog geen eigen recepten. Voeg hierboven jullie vaste klassiekers toe — ze komen dan meteen in de voorstellen.</div>`;
+  h+=`<div class="weekhead"><h2>Basisrecepten</h2><span class="meta">${BASIS.length}</span><span class="rule"></span></div>`;
+  h+=`<div class="meal-grid">${BASIS.map(m=>mealCard(m,false)).join('')}</div>`;
+  $('#tab-meals').innerHTML=h;
+
+  $('#refresh').onclick=async()=>{
+    if(modus==='server'){ await haalOp(); } else { await load(); }
+    render(); toast('Laatste versie opgehaald');
+  };
+
+  $('#export').onclick=()=>{
+    const blob=new Blob([JSON.stringify({versie:1,recepten:state.custom,plan:state.plan,start:state.start,personen:state.personen},null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='whats4dinner-backup.json';
+    a.click(); URL.revokeObjectURL(a.href);
+  };
+
+  $('#importbtn').onclick=()=>$('#importfile').click();
+  $('#importfile').onchange=e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const fr=new FileReader();
+    fr.onload=()=>{
+      let d; try{ d=JSON.parse(fr.result); }catch(err){ return toast('Dit bestand kon niet gelezen worden.'); }
+      const inkomend=Array.isArray(d.recepten)?d.recepten:[];
+      const namen=new Set((state.custom||[]).map(m=>m.naam.toLowerCase()));
+      let toegevoegd=0;
+      inkomend.forEach(m=>{
+        if(!m||!m.naam||namen.has(m.naam.toLowerCase())) return;
+        m.id='eigen-'+Date.now()+'-'+(toegevoegd++);
+        state.custom.push(m); namen.add(m.naam.toLowerCase());
+      });
+      if(d.plan&&confirm('Ook de planning uit dit bestand overnemen? De huidige planning wordt vervangen.')){
+        state.plan=d.plan; if(d.start) state.start=d.start; if(d.personen) state.personen=d.personen;
+      }
+      save(); render(); toast(toegevoegd+' recept(en) toegevoegd');
+    };
+    fr.readAsText(f);
+  };
+
+  const unitOpts=['g','kg','ml','l','st','el','tl','blik','pot','bosje','sneden','teentjes','rol','snuf',''];
+  const rowsEl=$('#ingrows');
+  $('#addrow').onclick=()=>{ rowsEl.insertAdjacentHTML('beforeend',ingRow({n:'',q:'',u:'g',c:'groenten'},unitOpts)); bindDel(); };
+  function bindDel(){ rowsEl.querySelectorAll('.del').forEach(b=>b.onclick=()=>{ if(rowsEl.children.length>1) b.parentElement.remove(); }); }
+  bindDel();
+
+  $('#saverecipe').onclick=()=>{
+    const naam=$('#f-naam').value.trim();
+    if(!naam) return toast('Geef het recept een naam.');
+    const ing=[...rowsEl.querySelectorAll('.ingrow')].map(r=>({
+      n:r.querySelector('.i-n').value.trim(),
+      q:r.querySelector('.i-q').value===''?null:Number(r.querySelector('.i-q').value),
+      u:r.querySelector('.i-u').value,
+      c:r.querySelector('.i-c').value
+    })).filter(i=>i.n);
+    if(!ing.length) return toast('Voeg minstens één ingrediënt toe.');
+    const rec={
+      id:bewerkId||('eigen-'+Date.now()),
+      naam, tijd:Number($('#f-tijd').value)||30,
+      eiwit:$('#f-eiwit').value, bron:$('#f-bron').value,
+      slots:$('#f-slots').value.split(','), prep:$('#f-prep').value==='ja',
+      opwarm:$('#f-opwarm').value==='ja', instant:$('#f-instant').value==='ja',
+      tip:$('#f-tip').value.trim(), ing
+    };
+    if(bewerkId){ state.custom=state.custom.map(m=>m.id===bewerkId?rec:m); bewerkId=null; }
+    else state.custom.push(rec);
+    save(); render(); toast('Recept opgeslagen');
+  };
+  if($('#cancelrecipe')) $('#cancelrecipe').onclick=()=>{ bewerkId=null; render(); };
+
+  $('#tab-meals').querySelectorAll('[data-use]').forEach(cb=>cb.onchange=()=>{
+    if(cb.checked) delete state.disabled[cb.dataset.use]; else state.disabled[cb.dataset.use]=true;
+    save(); renderMeals();
+  });
+  $('#tab-meals').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{
+    bewerkId=b.dataset.edit; renderMeals(); $('#mealform').scrollIntoView({behavior:'smooth',block:'start'});
+  });
+  $('#tab-meals').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.del;
+    if(!confirm('Dit recept verwijderen?')) return;
+    state.custom=state.custom.filter(m=>m.id!==id);
+    Object.keys(state.plan).forEach(k=>{ if(state.plan[k]&&state.plan[k].mealId===id) state.plan[k]=null; });
+    save(); render(); toast('Recept verwijderd');
+  });
+  $('#tab-meals').querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>{
+    const src=mealById(b.dataset.copy);
+    const kopie=JSON.parse(JSON.stringify(src));
+    kopie.id='eigen-'+Date.now(); kopie.naam=src.naam+' (eigen versie)';
+    state.custom.push(kopie); bewerkId=kopie.id; save(); renderMeals();
+    $('#mealform').scrollIntoView({behavior:'smooth',block:'start'});
+  });
+}
+
+/* ============================================================
+   9. Rendering — Boodschappen
+   ============================================================ */
+function renderShop(){
+  const view=state.shopView||'alles';
+  const week= view==='w1'?1:view==='w2'?2:null;
+  const per=boodschappen(week);
+  const entries=planEntries(week);
+
+  const alle=Object.values(per).flat();
+  const af=alle.filter(i=>state.checked[i.key]).length;
+  const pct=alle.length?Math.round(af/alle.length*100):0;
+
+  let h=`<div class="bar">
+    <div class="seg">
+      <button data-view="alles" aria-pressed="${view==='alles'}">Alles (2 weken)</button>
+      <button data-view="w1" aria-pressed="${view==='w1'}">Week 1</button>
+      <button data-view="w2" aria-pressed="${view==='w2'}">Week 2</button>
+    </div>
+    <button class="btn ghost" id="uncheck">Vinkjes wissen</button>
+    <button class="btn ghost" id="print">Afdrukken</button>
+    <span class="hint" style="margin-left:auto">${af} van ${alle.length} in de kar</span>
+  </div>
+  <div class="progress"><i style="width:${pct}%"></i></div>`;
+
+  if(!alle.length){
+    h+=`<div class="empty" style="margin-top:18px">Nog geen boodschappen. Maak eerst een planning op het tabblad Planning.</div>`;
+  }else{
+    h+=`<div class="panel" style="margin-top:16px"><h3>Volledige lijst</h3>
+      <p class="hint">Voor ${state.personen} personen, samengeteld over alle geplande maaltijden.</p>
+      <div class="cats" style="margin-top:14px">`;
+    Object.entries(CATS).forEach(([k,label])=>{
+      const items=per[k]||[];
+      if(!items.length) return;
+      h+=`<div class="cat"><h4>${label}</h4>`;
+      items.forEach((i,n)=>{
+        const done=!!state.checked[i.key];
+        const domId='c_'+k+'_'+n;
+        h+=`<div class="gitem ${done?'done':''}">
+          <input type="checkbox" id="${domId}" data-check="${esc(i.key)}" ${done?'checked':''}>
+          <label for="${domId}">${esc(i.n)} ${i.q!=null?`<span class="qty">— ${fmtQty(i.q,i.u)}</span>`:''}</label>
+        </div>`;
+      });
+      h+='</div>';
+    });
+    h+='</div></div>';
+
+    h+=`<div class="panel"><h3>Per maaltijd</h3>
+      <p class="hint">Handig als je maar één gerecht wil inkopen of iets wil doorgeven.</p>`;
+    entries.forEach(({dag,slot,meal})=>{
+      h+=`<details class="permeal"><summary>${dag.naam} ${fmtDate(dag.date)} · ${slot==='lunch'?'middag':'avond'} — ${esc(meal.naam)}</summary>
+        <ul class="ing">${meal.ing.map(i=>`<li>${ingLine(i)}</li>`).join('')}</ul></details>`;
+    });
+    h+='</div>';
+  }
+
+  $('#tab-shop').innerHTML=h;
+  $('#tab-shop').querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{ state.shopView=b.dataset.view; save(); renderShop(); });
+  $('#uncheck').onclick=()=>{ state.checked={}; save(); renderShop(); };
+  $('#print').onclick=()=>window.print();
+  $('#tab-shop').querySelectorAll('[data-check]').forEach(cb=>cb.onchange=()=>{
+    const k=cb.dataset.check;
+    if(cb.checked) state.checked[k]=true; else delete state.checked[k];
+    save(); renderShop();
+  });
+}
+
+/* ============================================================
+   10. Tabs + start
+   ============================================================ */
+let actief='plan';
+function render(){
+  if(actief==='plan') renderPlan();
+  if(actief==='meals') renderMeals();
+  if(actief==='shop') renderShop();
+}
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick=()=>{
+    actief=t.dataset.tab;
+    document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',String(x===t)));
+    ['plan','meals','shop'].forEach(id=>$('#tab-'+id).hidden=(id!==actief));
+    render();
+  };
+});
+
+(async function init(){
+  const opServer=await verbind();
+  if(!opServer) await load();
+  if(!state.start) state.start=nextMonday();
+  if(!state.custom) state.custom=[];
+  if(!state.vergaderingen) state.vergaderingen=VERGADERINGEN.slice();
+  if(!state.plan||!Object.keys(state.plan).length) genereer(true);
+  render();
+  setSync();
+  startPolling();
+})();
+</script>
+</body>
+</html>
