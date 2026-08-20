@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "whats4dinner",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-20",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "whats4dinner",
+      "database_id": "VUL-HIER-JE-DATABASE-ID-IN"
+    }
+  ],
+  "observability": { "enabled": true }
+}
