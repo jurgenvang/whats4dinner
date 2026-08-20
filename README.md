@@ -37,7 +37,7 @@ straks apart in — maar het database-id en jullie recepten hoeven niet publiek.
 ### 2. Database aanmaken
 
 In het Cloudflare-dashboard: **Storage & Databases → D1 → Create database**,
-naam `whats4dinner`. Kopieer daarna het **Database ID** van de overzichtspagina.
+naam `weekmenu`. Kopieer daarna het **Database ID** van de overzichtspagina.
 
 ### 3. Id invullen en opnieuw pushen
 
@@ -87,9 +87,9 @@ Zonder GitHub, alles via de CLI:
 
 ```bash
 npx wrangler login
-npx wrangler d1 create whats4dinner          # kopieer het database_id
+npx wrangler d1 create weekmenu          # kopieer het database_id
 # vul dat id in wrangler.jsonc in
-npx wrangler d1 execute whats4dinner --remote --file=./schema.sql
+npx wrangler d1 execute weekmenu --remote --file=./schema.sql
 npx wrangler secret put MENU_KEY
 npx wrangler deploy
 ```
@@ -102,7 +102,7 @@ lokaal aan en krijg je na het publiceren een foutmelding.
 ```bash
 npm install
 echo 'MENU_KEY = "test"' > .dev.vars
-npx wrangler d1 execute whats4dinner --local --file=./schema.sql
+npx wrangler d1 execute weekmenu --local --file=./schema.sql
 npx wrangler dev
 ```
 

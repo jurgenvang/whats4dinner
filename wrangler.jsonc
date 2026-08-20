@@ -10,8 +10,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "whats4dinner",
-      "database_id": "VUL-HIER-JE-DATABASE-ID-IN"
+      "database_name": "weekmenu",
+      "database_id": "1f3a4b48-bef2-4223-862f-54b0b4346084"
     }
   ],
   "observability": { "enabled": true }
