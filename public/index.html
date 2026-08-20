@@ -174,6 +174,12 @@ header.top .wrap{padding-bottom:0}
 .gitem.done label{text-decoration:line-through;color:var(--muted)}
 .gitem .qty{color:var(--muted);font-size:13px}
 .gitem label{cursor:pointer}
+.gitem .zoek{margin-left:auto;text-decoration:none;opacity:.35;font-size:13px;flex:0 0 auto}
+.gitem .zoek:hover{opacity:1}
+.zoekinstel{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.zoekinstel label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:5px}
+.zoekinstel input{width:100%;border:1px solid var(--line);border-radius:9px;padding:8px 10px}
+.zoekinstel code{background:#EEF0EC;padding:1px 5px;border-radius:4px;font-size:12px}
 .permeal{border-top:1px solid var(--line);padding:12px 0}
 .permeal summary{cursor:pointer;font-family:var(--display);font-weight:600;font-size:15px}
 .permeal .ing{margin-top:8px}
@@ -425,7 +431,7 @@ const BASIS = [
  {n:'kipfilet',q:600,u:'g',c:'vlees'},{n:'wokgroenten',q:600,u:'g',c:'groenten'},{n:'eiernoedels',q:300,u:'g',c:'droog'},
  {n:'sojasaus',q:4,u:'el',c:'droog'},{n:'gember',q:1,u:'st',c:'groenten'},{n:'knoflook',q:2,u:'teentjes',c:'groenten'}]},
 
-{id:'steakfriet',naam:'Steak met frieten, peper- en champignonsaus',tijd:40,eiwit:'hoog',bron:'rund',slots:['diner'],prep:false,opwarm:false,tip:'Frieten wachten niet — dit is een gerecht om samen aan tafel te gaan.',ing:[
+{id:'steakfriet',naam:'Steak met frieten, peper- en champignonsaus',tijd:40,eiwit:'hoog',bron:'rund',slots:['diner'],prep:false,opwarm:false,alleen:'zondag',tip:'Frieten wachten niet — dit is een gerecht om samen aan tafel te gaan.',ing:[
  {n:'steak',q:600,u:'g',c:'vlees'},{n:'frieten (diepvries)',q:1,u:'kg',c:'diepvries'},{n:'champignons',q:250,u:'g',c:'groenten'},
  {n:'kookroom',q:400,u:'ml',c:'zuivel'},{n:'groene peperkorrels',q:2,u:'el',c:'droog'},{n:'sjalot',q:2,u:'st',c:'groenten'},
  {n:'boter',q:40,u:'g',c:'zuivel'},{n:'kropsla',q:1,u:'st',c:'groenten'}]},
@@ -504,7 +510,8 @@ const BASIS = [
    ============================================================ */
 const KEY_GEZIN='weekmenu:gezin:v1';
 const KEY_EIGEN='weekmenu:v1';
-let state={start:null,personen:4,plan:{},checked:{},custom:[],disabled:{},shopView:'alles'};
+const ZOEK_STANDAARD='https://www.collectandgo.be/nl/zoek?searchTerm={q}';
+let state={start:null,personen:4,plan:{},checked:{},custom:[],disabled:{},shopView:'alles',zoekUrl:ZOEK_STANDAARD};
 let modus='lokaal', serverRev=0, saveTimer=null, bezigMetOpslaan=false, wachtwoord=null;
 
 function lees(k){ try{return localStorage.getItem(k);}catch(e){return null;} }
@@ -731,6 +738,9 @@ function buildDays(){
    ============================================================ */
 function past(meal,slot,dag){
   if(!meal.slots.includes(slot)) return false;
+  // gerechten die aan een vaste dag hangen
+  if(meal.alleen==='zondag'&&dag.wd!==6) return false;
+  if(meal.alleen==='weekend'&&dag.wd<5) return false;
   if(meal.handmatig) return true;              // altijd zelf kiesbaar, nooit automatisch
   // vergaderavond: enkel iets dat meteen op tafel kan
   if(dag.vergadering&&slot==='diner')
@@ -1039,6 +1049,7 @@ function mealCard(m,eigen){
       <span class="chip prot-${m.eiwit}">eiwit ${m.eiwit}</span>
       <span class="chip prot-gemiddeld">${m.tijd} min</span>
       ${m.prep?'<span class="chip prep">vooraf te maken</span>':''}
+      ${m.alleen==='zondag'?'<span class="chip verg">enkel zondag</span>':m.alleen==='weekend'?'<span class="chip verg">enkel weekend</span>':''}
       ${m.instant?'<span class="chip verg">meteen klaar</span>':''}
       ${m.opwarm?'<span class="chip prep">warmt goed op</span>':'<span class="chip rush">vers eten</span>'}
       <span class="chip prot-gemiddeld">${m.slots.join(' & ')}</span>
@@ -1079,6 +1090,10 @@ function formHTML(){
       <div class="field"><label for="f-opwarm">Op te warmen</label><select id="f-opwarm">
         <option value="ja" ${!m||m.opwarm?'selected':''}>ja</option>
         <option value="nee" ${m&&!m.opwarm?'selected':''}>nee</option></select></div>
+      <div class="field"><label for="f-alleen">Wanneer</label><select id="f-alleen">
+        <option value="" ${!m||!m.alleen?'selected':''}>elke dag</option>
+        <option value="weekend" ${m&&m.alleen==='weekend'?'selected':''}>enkel in het weekend</option>
+        <option value="zondag" ${m&&m.alleen==='zondag'?'selected':''}>enkel op zondag</option></select></div>
       <div class="field"><label for="f-instant">Meteen klaar</label><select id="f-instant">
         <option value="nee" ${!m||!m.instant?'selected':''}>nee</option>
         <option value="ja" ${m&&m.instant?'selected':''}>ja — diepvries of afhaal</option></select></div>
@@ -1188,6 +1203,7 @@ function renderMeals(){
       eiwit:$('#f-eiwit').value, bron:$('#f-bron').value,
       slots:$('#f-slots').value.split(','), prep:$('#f-prep').value==='ja',
       opwarm:$('#f-opwarm').value==='ja', instant:$('#f-instant').value==='ja',
+      alleen:$('#f-alleen').value||undefined,
       tip:$('#f-tip').value.trim(), ing
     };
     if(bewerkId){ state.custom=state.custom.map(m=>m.id===bewerkId?rec:m); bewerkId=null; }
@@ -1222,6 +1238,45 @@ function renderMeals(){
 /* ============================================================
    9. Rendering — Boodschappen
    ============================================================ */
+function lijstAlsTekst(week){
+  const per=boodschappen(week);
+  const titel = week===1?'Week 1':week===2?'Week 2':'Twee weken';
+  const regels=[`Boodschappen — ${titel} (${state.personen} personen)`,''];
+  Object.entries(CATS).forEach(([k,label])=>{
+    const items=per[k]||[];
+    if(!items.length) return;
+    regels.push(label.toUpperCase());
+    items.forEach(i=>regels.push('- '+i.n+(i.q!=null?' '+fmtQty(i.q,i.u):'')));
+    regels.push('');
+  });
+  return regels.join('\n').trim();
+}
+
+async function kopieer(tekst){
+  try{
+    if(navigator.clipboard&&window.isSecureContext){
+      await navigator.clipboard.writeText(tekst);
+      return true;
+    }
+  }catch(e){}
+  try{
+    const ta=document.createElement('textarea');
+    ta.value=tekst;
+    ta.style.cssText='position:fixed;left:-9999px;top:0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok=document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  }catch(e){ return false; }
+}
+
+function zoekLink(naam){
+  const sjabloon=state.zoekUrl||'';
+  if(!sjabloon||sjabloon.indexOf('{q}')<0) return '';
+  return sjabloon.replace('{q}',encodeURIComponent(naam));
+}
+
 function renderShop(){
   const view=state.shopView||'alles';
   const week= view==='w1'?1:view==='w2'?2:null;
@@ -1238,6 +1293,7 @@ function renderShop(){
       <button data-view="w1" aria-pressed="${view==='w1'}">Week 1</button>
       <button data-view="w2" aria-pressed="${view==='w2'}">Week 2</button>
     </div>
+    <button class="btn ghost" id="kopieer">Lijst kopiëren</button>
     <button class="btn ghost" id="uncheck">Vinkjes wissen</button>
     <button class="btn ghost" id="print">Afdrukken</button>
     <span class="hint" style="margin-left:auto">${af} van ${alle.length} in de kar</span>
@@ -1257,14 +1313,27 @@ function renderShop(){
       items.forEach((i,n)=>{
         const done=!!state.checked[i.key];
         const domId='c_'+k+'_'+n;
+        const zl=zoekLink(i.n);
         h+=`<div class="gitem ${done?'done':''}">
           <input type="checkbox" id="${domId}" data-check="${esc(i.key)}" ${done?'checked':''}>
           <label for="${domId}">${esc(i.n)} ${i.q!=null?`<span class="qty">— ${fmtQty(i.q,i.u)}</span>`:''}</label>
+          ${zl?`<a class="zoek" href="${esc(zl)}" target="_blank" rel="noopener" title="Zoek ${esc(i.n)} in de winkel">🔍</a>`:''}
         </div>`;
       });
       h+='</div>';
     });
-    h+='</div></div>';
+    h+='</div>';
+    h+=`<details class="permeal" id="tekstblok"><summary>Lijst als tekst</summary>
+      <p class="hint" style="margin-top:8px">Om te plakken in de lijstfunctie van je winkel-app, of om door te sturen.</p>
+      <textarea id="lijsttekst" readonly rows="12" style="width:100%;margin-top:8px;border:1px solid var(--line);border-radius:9px;padding:10px;font-family:ui-monospace,monospace;font-size:13px">${esc(lijstAlsTekst(week))}</textarea>
+    </details>`;
+    h+=`<div class="zoekinstel">
+      <label for="zoekurl">Zoeklink per product</label>
+      <input id="zoekurl" value="${esc(state.zoekUrl||'')}" placeholder="https://www.collectandgo.be/nl/zoek?searchTerm={q}">
+      <p class="hint">Staat standaard op Collect&amp;Go. Voor een andere winkel: doe daar één zoekopdracht, kopieer de URL hierheen en vervang je zoekwoord door <code>{q}</code>. Leeg laten verbergt de 🔍-links.
+      <button class="btn ghost small" id="zoekreset" style="margin-left:6px">Terug naar Collect&amp;Go</button></p>
+    </div>`;
+    h+='</div>';
 
     h+=`<div class="panel"><h3>Per maaltijd</h3>
       <p class="hint">Handig als je maar één gerecht wil inkopen of iets wil doorgeven.</p>`;
@@ -1277,6 +1346,15 @@ function renderShop(){
 
   $('#tab-shop').innerHTML=h;
   $('#tab-shop').querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{ state.shopView=b.dataset.view; save(); renderShop(); });
+  if($('#kopieer')) $('#kopieer').onclick=async()=>{
+    const tekst=lijstAlsTekst(week);
+    if(await kopieer(tekst)) return toast('Lijst gekopieerd');
+    const d=$('#tekstblok');
+    if(d){ d.open=true; d.scrollIntoView({behavior:'smooth',block:'center'}); $('#lijsttekst').select(); }
+    toast('Kopiëren lukt hier niet — selecteer de tekst hieronder.');
+  };
+  if($('#zoekurl')) $('#zoekurl').onchange=e=>{ state.zoekUrl=e.target.value.trim(); save(); renderShop(); };
+  if($('#zoekreset')) $('#zoekreset').onclick=()=>{ state.zoekUrl=ZOEK_STANDAARD; save(); renderShop(); toast('Zoeklink hersteld'); };
   $('#uncheck').onclick=()=>{ state.checked={}; save(); renderShop(); };
   $('#print').onclick=()=>window.print();
   $('#tab-shop').querySelectorAll('[data-check]').forEach(cb=>cb.onchange=()=>{
@@ -1310,6 +1388,7 @@ document.querySelectorAll('.tab').forEach(t=>{
   if(!state.start) state.start=nextMonday();
   if(!state.custom) state.custom=[];
   if(!state.vergaderingen) state.vergaderingen=VERGADERINGEN.slice();
+  if(state.zoekUrl===undefined) state.zoekUrl=ZOEK_STANDAARD;
   if(!state.plan||!Object.keys(state.plan).length) genereer(true);
   render();
   setSync();
