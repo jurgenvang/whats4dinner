@@ -118,6 +118,27 @@ header.top .wrap{padding-bottom:0}
 .chip.verg{background:#EDE4F5;color:#5B3E7A}
 .chip.feest{background:#FDECEF;color:#9B2C43}
 .chip.wed{background:#F0E6F7;color:#6A3489}
+.wedregel{background:#F7F2FB;border:1px solid #DCC9EC;border-radius:9px;padding:7px 10px;font-size:12px;color:#4A2C63;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.wedregel b{font-weight:700;white-space:nowrap}
+.wedregel .vertrek{color:#7A5A96;font-weight:600;white-space:nowrap}
+.wedkaart{display:flex;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:10px}
+.wedkaart.voorbij{opacity:.5}
+.wk-datum{flex:0 0 52px;text-align:center;background:#F7F2FB;border:1px solid #DCC9EC;border-radius:10px;padding:6px 0;height:fit-content}
+.wk-dag{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#7A5A96;font-weight:700}
+.wk-nr{display:block;font-family:var(--display);font-size:22px;font-weight:800;color:#4A2C63;line-height:1.1}
+.wk-body{min-width:0;flex:1}
+.wk-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.wk-uur{font-weight:600;color:var(--ink-2)}
+.wk-tegen{font-family:var(--display);font-weight:600;font-size:16px;margin-top:3px}
+.wk-zaal{font-size:13px;margin-top:4px}
+.wk-zaal a{color:var(--ink-2);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:2px}
+.wk-zaal a:hover{color:var(--pine);text-decoration-color:var(--pine)}
+.wk-vertrek{font-size:13px;color:#7A5A96;font-weight:600;margin-top:4px}
+.wk-link{display:inline-block;margin-top:6px;font-size:12px;color:var(--muted);text-decoration:underline}
+.wk-link:hover{color:var(--ink)}
+@media(max-width:520px){.wk-tegen{font-size:15px}}
+.wedregel a{color:#4A2C63;text-decoration:underline;text-decoration-color:#C4AEDC;text-underline-offset:2px}
+.wedregel a:hover{text-decoration-color:#4A2C63}
 .day.vrijdag-af{background:#FDF7F8;border-color:#EBC9D1}
 .day.voorbij{opacity:.45}
 .day.voorbij:hover,.day.voorbij:focus-within{opacity:1}
@@ -285,6 +306,7 @@ header.top .wrap{padding-bottom:0}
       <button class="tab" role="tab" data-tab="week" aria-selected="false">Planning</button>
       <button class="tab" role="tab" data-tab="meals" aria-selected="false">Maaltijden</button>
       <button class="tab" role="tab" data-tab="shop" aria-selected="false">Boodschappen</button>
+      <button class="tab" role="tab" data-tab="wed" aria-selected="false">Wedstrijden</button>
       <button class="tab tab-config" role="tab" data-tab="config" aria-selected="false" title="Instellingen" aria-label="Instellingen">⋯</button>
     </div>
   </div>
@@ -295,6 +317,7 @@ header.top .wrap{padding-bottom:0}
   <section id="tab-plan" hidden></section>
   <section id="tab-meals" hidden></section>
   <section id="tab-shop" hidden></section>
+  <section id="tab-wed" hidden></section>
   <section id="tab-config" hidden></section>
 </div>
 
@@ -304,8 +327,11 @@ header.top .wrap{padding-bottom:0}
 /* ============================================================
    1. Vaste gegevens
    ============================================================ */
-const VERSIE='3.0.0';
+const VERSIE='3.3.0';
 const CHANGELOG=[
+ ['3.3.0','Aparte tab met alle wedstrijden: thuis of uit, tegenstander, zaal met route, vertrekuur en het wedstrijdblad.'],
+ ['3.2.0','Vertrekpunt Pellenberg: herijkte reistijden en een routelink per zaal.'],
+ ['3.1.0','Wedstrijden tonen zaal, aanwezigheidsuur en vertrekuur; instelbare reistijden; weekendbalk loopt van 8 tot 20 uur.'],
  ['3.0.0','Vinkjes per week, geschiedenis en duimpjes in het voorstel, restjes, eters per dag, afdrukken, installeerbaar op de gsm, en wedstrijden die zichzelf ophalen.'],
  ['2.5.0','Per week plannen in plaats van per twee weken, en een voorraadkast die apart staat op de boodschappenlijst.'],
  ['2.4.0','Planning per datum, dus meerdere periodes na elkaar; boodschappen tellen enkel vastgezette maaltijden.'],
@@ -783,7 +809,8 @@ function parseICS(tekst,wie){
   plat.forEach(r=>{
     if(r.startsWith('BEGIN:VEVENT')){ ev={}; return; }
     if(r.startsWith('END:VEVENT')){
-      if(ev&&ev.iso) uit.push({wie,iso:ev.iso,van:ev.van,tot:ev.tot||ev.van,waar:ev.waar||'',titel:ev.titel||'Wedstrijd',wedstrijd:true});
+      if(ev&&ev.iso) uit.push({wie,iso:ev.iso,van:ev.van,tot:ev.tot||ev.van,waar:ev.waar||'',
+                               titel:ev.titel||'Wedstrijd',link:ev.link||'',wedstrijd:true});
       ev=null; return;
     }
     if(!ev) return;
@@ -796,6 +823,7 @@ function parseICS(tekst,wie){
     else if(naam==='DTEND'&&stamp){ ev.tot=stamp[4]+':'+stamp[5]; }
     else if(naam==='LOCATION') ev.waar=waarde.replace(/\\,/g,',').replace(/\\n/g,' ');
     else if(naam==='SUMMARY') ev.titel=waarde.replace(/\\,/g,',').replace(/\\n/g,' ');
+    else if(naam==='URL'&&/^https?:/.test(waarde)) ev.link=waarde;
   });
   return uit;
 }
@@ -854,6 +882,46 @@ async function autoWedstrijden(){
     const r=await haalWedstrijden();
     if(r.ok) render();
   }catch(e){ /* stil: de knop bij ⋯ blijft beschikbaar */ }
+}
+
+const VOOR_WEDSTRIJD=45;   // minuten aanwezig zijn voor de aanvang
+
+const THUIS_STANDAARD='Lostraat 32, 3212 Pellenberg';
+function thuisadres(){ return state.thuisadres||THUIS_STANDAARD; }
+
+// Ruwe schattingen vanuit Pellenberg, op basis van de naam van de zaal.
+// Aanpasbaar per zaal bij ⋯; gebruik de routelink om het echte cijfer te vinden.
+function reistijdGok(waar){
+  const w=String(waar||'').toLowerCase();
+  if(/pellenberg|lubbeek|kessel/.test(w)) return 8;
+  if(/wilsele|leuven|heverlee|korbeek|bierbeek|holsbeek/.test(w)) return 15;
+  if(/herent|rotselaar|tienen|boutersem|glabbeek|tildonk/.test(w)) return 20;
+  if(/bertem|haacht|aarschot|diest|hoegaarden|landen/.test(w)) return 25;
+  if(/tervuren|boortmeerbeek|overijse|kortenberg|zaventem|mechelen/.test(w)) return 30;
+  if(/brussel|schaarbeek|anderlecht|jette|ukkel|vilvoorde|hiel/.test(w)) return 40;
+  return 30;
+}
+function routeLink(waar){
+  return 'https://www.google.com/maps/dir/?api=1&origin='+encodeURIComponent(thuisadres())
+    +'&destination='+encodeURIComponent(String(waar||'')+', België');
+}
+function reistijd(waar){
+  const tab=state.reistijden||{};
+  const k=String(waar||'').trim();
+  return (typeof tab[k]==='number'&&tab[k]>=0)?tab[k]:reistijdGok(k);
+}
+function vertrekTijd(w){
+  const m=mins(w.van)-VOOR_WEDSTRIJD-reistijd(w.waar);
+  return hhmm(Math.max(0,m));
+}
+function aanwezigTijd(w){
+  return hhmm(Math.max(0,mins(w.van)-VOOR_WEDSTRIJD));
+}
+// zalen die nog geen eigen reistijd hebben, komen in de instellingen te staan
+function zalenUitWedstrijden(){
+  const uit=[];
+  (state.wedstrijden||[]).forEach(w=>{ if(w.waar&&!uit.includes(w.waar)) uit.push(w.waar); });
+  return uit.sort((a,b)=>a.localeCompare(b,'nl'));
 }
 
 function wedstrijdenOp(iso){
@@ -926,13 +994,21 @@ function ingLine(it,iso){
    4. Dagen opbouwen
    ============================================================ */
 const STRIP_VAN=mins('16:00'), STRIP_TOT=mins('21:30');
+function stripBereik(dag){
+  return dag.weekend ? [mins('08:00'),mins('20:00')] : [STRIP_VAN,STRIP_TOT];
+}
 const REIS=20;      // minuten heen/terug rond een training
 const ETEN_MIN=40;  // minimale duur van een eetvenster
 
 function eetvensters(wd,iso){
-  const bezet=trainingenOp(wd).concat(iso?wedstrijdenOp(iso):[]);
-  const busy=bezet.map(t=>[mins(t.van)-REIS,mins(t.tot)+REIS]).sort((a,b)=>a[0]-b[0]);
-  let free=[[mins('17:00'),mins('21:00')]];
+  const busy=trainingenOp(wd).map(t=>[mins(t.van)-REIS,mins(t.tot)+REIS]);
+  (iso?wedstrijdenOp(iso):[]).forEach(w=>{
+    const r=reistijd(w.waar);
+    busy.push([mins(w.van)-VOOR_WEDSTRIJD-r, mins(w.tot)+r]);   // vertrek tot thuiskomst
+  });
+  busy.sort((a,b)=>a[0]-b[0]);
+  const weekend=wd>=5;
+  let free=[[mins(weekend?'11:00':'17:00'),mins('21:00')]];
   busy.forEach(([bs,be])=>{
     const out=[];
     free.forEach(([fs,fe])=>{
@@ -1439,10 +1515,12 @@ function raadIngredienten(naam){
    7. Rendering — Planning
    ============================================================ */
 function stripHTML(dag){
-  const span=STRIP_TOT-STRIP_VAN;
-  const pct=m=>((m-STRIP_VAN)/span*100);
+  const [VAN,TOT]=stripBereik(dag);
+  const span=TOT-VAN;
+  const pct=m=>((m-VAN)/span*100);
+  const stap=dag.weekend?120:60;
   let h='<div class="strip">';
-  for(let t=mins('17:00');t<=mins('21:00');t+=60) h+=`<div class="tick" style="left:${pct(t)}%"></div>`;
+  for(let t=VAN+stap;t<TOT;t+=stap) h+=`<div class="tick" style="left:${pct(t)}%"></div>`;
   if(dag.regels.samen){
     const s=mins(dag.regels.samen), e=Math.min(s+45,STRIP_TOT);
     h+=`<div class="blk eat" style="left:${pct(s)}%;width:${pct(e)-pct(s)}%"><span>samen ${dag.regels.samen}</span></div>`;
@@ -1468,11 +1546,12 @@ function stripHTML(dag){
     const hoog=100/banen;
     const wieTekst=esc(x.t.wie||'')+(x.t.wedstrijd?' 🏆':'');
     const label=(breed>22&&banen<3)?`${wieTekst} ${x.t.van}–${x.t.tot}`:wieTekst;
-    if(x.e<=STRIP_VAN||x.s>=STRIP_TOT) return;      // valt buiten de balk, staat als label bovenaan
-    h+=`<div class="blk ${x.t.wedstrijd?'wed':'tr'}" style="left:${pct(Math.max(x.s,STRIP_VAN))}%;width:${breed}%;top:${x.baan*hoog}%;height:${hoog}%;bottom:auto"
+    if(x.e<=VAN||x.s>=TOT) return;                  // valt buiten de balk, staat als label bovenaan
+    h+=`<div class="blk ${x.t.wedstrijd?'wed':'tr'}" style="left:${pct(Math.max(x.s,VAN))}%;width:${breed}%;top:${x.baan*hoog}%;height:${hoog}%;bottom:auto"
           title="${esc(x.t.titel||x.t.wie)} — ${x.t.van}–${x.t.tot}, ${esc(x.t.waar||'')}"><span style="font-size:${banen>1?9:10}px">${label}</span></div>`;
   });
-  h+='</div><div class="striplabels"><span>16:00</span><span>18:00</span><span>20:00</span><span>21:30</span></div>';
+  const merken=dag.weekend?['08:00','12:00','16:00','20:00']:['16:00','18:00','20:00','21:30'];
+  h+='</div><div class="striplabels">'+merken.map(x=>`<span>${x}</span>`).join('')+'</div>';
   return h;
 }
 
@@ -1548,8 +1627,12 @@ function dayHTML(dag){
   const verg=dag.vergadering?'<span class="chip verg">🗓 vergadering</span>':'';
   const feest=dag.feest?`<span class="chip feest">${esc(dag.feest)}</span>`:'';
   const vak=dag.vakantie&&!dag.feest?`<span class="chip feest">${esc(dag.vakantie)}</span>`:'';
-  const buitenBalk=(dag.wedstrijden||[]).filter(w=>mins(w.tot)<=STRIP_VAN||mins(w.van)>=STRIP_TOT);
-  const wedChips=buitenBalk.map(w=>`<span class="chip wed" title="${esc(w.titel)} — ${esc(w.waar||'')}">🏆 ${esc(w.wie)} ${w.van}</span>`).join('');
+  const wedRegels=(dag.wedstrijden||[]).map(w=>`
+    <div class="wedregel" title="${esc(w.titel||'')}">
+      <b>🏆 ${esc(w.wie)} ${w.van}</b>
+      ${w.waar?`<a href="${esc(routeLink(w.waar))}" target="_blank" rel="noopener" title="Route vanuit ${esc(thuisadres())}">${esc(w.waar)} ↗</a>`:'<span>onbekende zaal</span>'}
+      <span class="vertrek">aanwezig ${aanwezigTijd(w)} · vertrek ${vertrekTijd(w)}</span>
+    </div>`).join('');
   const wknd=(dag.weekend&&!dag.vakantie&&!dag.feest&&!(dag.wedstrijden||[]).length)
     ? (state.wedstrijdenOpgehaald
         ? '<span class="chip train">geen wedstrijd</span>'
@@ -1560,8 +1643,9 @@ function dayHTML(dag){
   return `<article class="day wd${dag.wd} ${dag.weekend?'weekend':''} ${dag.vergadering?'vergaderdag':''} ${dag.feest||dag.vakantie?'vrijdag-af':''} ${voorbij?'voorbij':''}">
     <div class="day-top">
       <div><div class="day-name">${dag.naam}</div><div class="day-date">${fmtDate(dag.date)}</div></div>
-      <div class="chips">${feest}${vak}${verg}${modus}${wedChips}${wknd}</div>
+      <div class="chips">${feest}${vak}${verg}${modus}${wknd}</div>
     </div>
+    ${wedRegels}
     ${dag.regels.slots.map(s=>slotHTML(dag,s)).join('')}
     ${strip}
     <div class="dagvoet">
@@ -2296,6 +2380,22 @@ function renderConfig(){
   </div>
 
   <div class="panel">
+    <h3>Reistijden naar de zalen</h3>
+    <p class="hint">De app rekent ${VOOR_WEDSTRIJD} minuten aanwezigheid vóór de aanvang, plus de reistijd hieronder, en toont zo wanneer jullie moeten vertrekken. De beginwaarden zijn schattingen vanuit jullie adres — klik op ↗ om de echte reistijd op te zoeken en vul die hier in.</p>
+    <div class="field" style="margin:12px 0">
+      <label for="thuis">Vertrekpunt</label>
+      <input id="thuis" value="${esc(thuisadres())}" style="width:100%;max-width:420px;border:1px solid var(--line);border-radius:9px;padding:8px 10px">
+    </div>
+    <div class="cfgrow cfghead" style="grid-template-columns:3fr 90px 40px"><span>Zaal</span><span>Minuten</span><span></span></div>
+    ${zalenUitWedstrijden().map(z=>`
+      <div class="cfgrow" style="grid-template-columns:3fr 90px 40px">
+        <span style="font-size:13px;align-self:center">${esc(z)}</span>
+        <input type="number" min="0" max="180" value="${reistijd(z)}" data-reis="${esc(z)}">
+        <a class="iconbtn" href="${esc(routeLink(z))}" target="_blank" rel="noopener" title="Route opzoeken" style="text-decoration:none">↗</a>
+      </div>`).join('')||'<p class="hint">Nog geen zalen bekend. Haal eerst de wedstrijdkalenders op.</p>'}
+  </div>
+
+  <div class="panel">
     <h3>Vergaderingen</h3>
     <p class="hint">Op deze avonden stelt de app enkel afhaal voor, of iets dat meteen op tafel kan.</p>
     <div class="datumlijst">${verg.length?verg.map(d=>`
@@ -2422,6 +2522,14 @@ function renderConfig(){
     if(r.ok) toast('Wedstrijden bijgewerkt');
   };
 
+  // reistijden
+  $('#thuis').onchange=e=>{ state.thuisadres=e.target.value.trim()||THUIS_STANDAARD; save(); renderConfig(); toast('Vertrekpunt aangepast'); };
+  $('#tab-config').querySelectorAll('[data-reis]').forEach(el=>el.onchange=()=>{
+    state.reistijden=state.reistijden||{};
+    state.reistijden[el.dataset.reis]=Math.max(0,Math.min(180,Number(el.value)||0));
+    save(); renderConfig();
+  });
+
   // vergaderingen
   $('#tab-config').querySelectorAll('[data-vergweg]').forEach(b=>b.onclick=()=>{
     state.vergaderingen=state.vergaderingen.filter(d=>d!==b.dataset.vergweg);
@@ -2482,22 +2590,104 @@ function renderConfig(){
 }
 
 /* ============================================================
+   9c. Rendering — Wedstrijden
+   ============================================================ */
+function thuiszaal(wie){
+  // de zaal waar iemand het vaakst speelt, is vrijwel zeker de eigen zaal
+  const tel={};
+  (state.wedstrijden||[]).filter(w=>w.wie===wie&&w.waar).forEach(w=>{ tel[w.waar]=(tel[w.waar]||0)+1; });
+  let beste=null,n=0;
+  Object.entries(tel).forEach(([z,c])=>{ if(c>n){n=c;beste=z;} });
+  return n>=2?beste:null;
+}
+
+function renderWedstrijden(){
+  const alles=(state.wedstrijden||[]).slice().sort((a,b)=>(a.iso+a.van).localeCompare(b.iso+b.van));
+  const vIso=vandaagIso();
+  const wie=state.wedFilter||'alle';
+  const toonVoorbij=!!state.wedVoorbij;
+  const spelers=[...new Set(alles.map(w=>w.wie).filter(Boolean))];
+  const lijst=alles.filter(w=>(wie==='alle'||w.wie===wie)&&(toonVoorbij||w.iso>=vIso));
+
+  let h=`<div class="bar">
+    <div class="seg">
+      <button data-wf="alle" aria-pressed="${wie==='alle'}">Allebei</button>
+      ${spelers.map(p=>`<button data-wf="${esc(p)}" aria-pressed="${wie===p}">${esc(p)}</button>`).join('')}
+    </div>
+    <label class="toggle"><input type="checkbox" id="wedvoorbij" ${toonVoorbij?'checked':''}> ook gespeelde</label>
+    <button class="btn ghost" id="wedvernieuw">Vernieuwen</button>
+    <span class="hint" style="margin-left:auto">${lijst.length} wedstrijd${lijst.length===1?'':'en'}${
+      state.wedstrijdenOpgehaald?' · opgehaald '+new Date(state.wedstrijdenOpgehaald).toLocaleString('nl-BE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</span>
+  </div>`;
+
+  if(!alles.length){
+    h+=`<div class="empty">Nog geen wedstrijden opgehaald. De kalenderlinks staan bij ⋯; klik daar of hierboven op Vernieuwen.</div>`;
+  }else if(!lijst.length){
+    h+=`<div class="empty">Geen wedstrijden die aan deze selectie voldoen.</div>`;
+  }else{
+    let maand='';
+    lijst.forEach(w=>{
+      const d=new Date(w.iso+'T12:00:00');
+      const m=d.toLocaleDateString('nl-BE',{month:'long',year:'numeric'});
+      if(m!==maand){
+        maand=m;
+        h+=`<div class="weekhead"><h2 style="font-size:16px;text-transform:capitalize">${esc(m)}</h2><span class="rule"></span></div>`;
+      }
+      const thuis=thuiszaal(w.wie);
+      const isThuis=thuis&&w.waar===thuis;
+      const delen=(w.titel||'').split(' - ');
+      const tegen=delen.length===2 ? (isThuis?delen[1]:delen[0]) : (w.titel||'');
+      const voorbij=w.iso<vIso;
+      return h+=`<article class="wedkaart ${voorbij?'voorbij':''}">
+        <div class="wk-datum">
+          <span class="wk-dag">${d.toLocaleDateString('nl-BE',{weekday:'short'})}</span>
+          <span class="wk-nr">${d.getDate()}</span>
+        </div>
+        <div class="wk-body">
+          <div class="wk-top">
+            <span class="chip ${isThuis?'prot-hoog':'verg'}">${isThuis?'thuis':'uit'}</span>
+            <b>${esc(w.wie)}</b>
+            <span class="wk-uur">${w.van}–${w.tot}</span>
+          </div>
+          <div class="wk-tegen">tegen ${esc(tegen)}</div>
+          <div class="wk-zaal">${w.waar?`<a href="${esc(routeLink(w.waar))}" target="_blank" rel="noopener">${esc(w.waar)} ↗</a>`:'zaal onbekend'}
+            ${w.waar?`<span class="hint">· ${reistijd(w.waar)} min rijden</span>`:''}</div>
+          <div class="wk-vertrek">aanwezig ${aanwezigTijd(w)} · vertrek ${vertrekTijd(w)}</div>
+          ${w.link?`<a class="wk-link" href="${esc(w.link)}" target="_blank" rel="noopener">Wedstrijdblad ↗</a>`:''}
+        </div>
+      </article>`;
+    });
+  }
+
+  $('#tab-wed').innerHTML=h;
+  $('#tab-wed').querySelectorAll('[data-wf]').forEach(b=>b.onclick=()=>{ state.wedFilter=b.dataset.wf; save(); renderWedstrijden(); });
+  if($('#wedvoorbij')) $('#wedvoorbij').onchange=e=>{ state.wedVoorbij=e.target.checked; save(); renderWedstrijden(); };
+  if($('#wedvernieuw')) $('#wedvernieuw').onclick=async()=>{
+    const b=$('#wedvernieuw'); b.disabled=true; b.textContent='Ophalen…';
+    const r=await haalWedstrijden();
+    toast(r.tekst);
+    renderWedstrijden();
+  };
+}
+
+/* ============================================================
    10. Tabs + start
    ============================================================ */
 let actief='vandaag';
-const TABSECTIE={vandaag:'vandaag',week:'plan',meals:'meals',shop:'shop',config:'config'};
+const TABSECTIE={vandaag:'vandaag',week:'plan',meals:'meals',shop:'shop',wed:'wed',config:'config'};
 function render(){
   if(actief==='vandaag') renderVandaag();
   else if(actief==='week') renderPlan();
   else if(actief==='meals') renderMeals();
   else if(actief==='shop') renderShop();
+  else if(actief==='wed') renderWedstrijden();
   else if(actief==='config') renderConfig();
 }
 function toonTab(sleutel){
   actief=sleutel;
   document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.tab===sleutel)));
   const zichtbaar=TABSECTIE[sleutel];
-  ['vandaag','plan','meals','shop','config'].forEach(id=>$('#tab-'+id).hidden=(id!==zichtbaar));
+  ['vandaag','plan','meals','shop','wed','config'].forEach(id=>$('#tab-'+id).hidden=(id!==zichtbaar));
   render();
 }
 document.querySelectorAll('.tab').forEach(t=>{ t.onclick=()=>toonTab(t.dataset.tab); });
