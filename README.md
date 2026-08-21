@@ -108,14 +108,26 @@ npx wrangler dev
 
 `.dev.vars` staat in `.gitignore` en komt dus niet in de repo terecht.
 
+## Installeren op de gsm
+
+De app is een PWA: open het adres in Chrome of Safari en kies *Toevoegen aan
+beginscherm*. Ze staat dan als icoon op je startscherm en de boodschappenlijst
+blijft leesbaar zonder bereik in de winkel. Werkt alleen via https, dus op je
+workers.dev-adres of je eigen domein — niet bij een lokaal geopend bestand.
+
+De bestanden daarvoor (`manifest.webmanifest`, `sw.js`, `icoon.svg`) staan in
+`public/` en worden mee gepubliceerd.
+
 ## Wedstrijdkalenders
 
 De app haalt de wedstrijden op uit de kalenderfeeds van de basketbalbond. De browser
 mag die zelf niet ophalen, dus de Worker doet dat via `/api/kalender`. Enkel adressen
 op `wisseq.eu` worden doorgelaten, zodat je Worker geen open doorgeefluik wordt.
 
-De links beheer je in de app bij ⋯ → Wedstrijdkalenders. Klik daar op *Wedstrijden
-ophalen*; het resultaat wordt bewaard, dus dat hoeft maar af en toe opnieuw.
+De links beheer je in de app bij ⋯ → Wedstrijdkalenders. Het ophalen gebeurt
+vanzelf zodra de gegevens ouder zijn dan twaalf uur, en de knop *Wedstrijden
+ophalen* forceert het. Het resultaat gaat mee in de database, dus wie de app
+daarna opent, ziet dezelfde wedstrijden.
 
 ## Optioneel: ingrediënten laten voorstellen door Claude
 
