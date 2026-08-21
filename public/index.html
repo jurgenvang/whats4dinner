@@ -111,6 +111,8 @@ header.top .wrap{padding-bottom:0}
 .chip.verg{background:#EDE4F5;color:#5B3E7A}
 .chip.feest{background:#FDECEF;color:#9B2C43}
 .day.vrijdag-af{background:#FDF7F8;border-color:#EBC9D1}
+.day.voorbij{opacity:.45}
+.day.voorbij:hover,.day.voorbij:focus-within{opacity:1}
 .day.vergaderdag{border-color:#C4AEDC;box-shadow:inset 3px 0 0 #8B6BB1}
 .vergtoggle{
   margin-top:8px;border:1px dashed var(--line);background:transparent;border-radius:9px;
@@ -157,6 +159,12 @@ header.top .wrap{padding-bottom:0}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:14px}
 .panel h3{font-size:17px;margin-bottom:4px}
 .hint{color:var(--muted);font-size:13px}
+.vandaagkaart{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:12px}
+.vandaagkaart.groot{padding:22px;border-color:#C2CFC8;box-shadow:0 1px 3px rgba(23,38,34,.06)}
+.vk-top{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:6px}
+.vk-naam{font-family:var(--display);font-weight:600;font-size:19px;line-height:1.25}
+.vandaagkaart.groot .vk-naam{font-size:27px;font-weight:800;letter-spacing:-.02em}
+.vandaagkaart.groot .strip{margin-top:14px}
 .empty{border:1px dashed var(--line);border-radius:var(--radius);padding:26px;text-align:center;color:var(--muted)}
 
 /* meals */
@@ -229,7 +237,9 @@ header.top .wrap{padding-bottom:0}
       <span class="versiebadge" id="versie"></span>
     </div>
     <div class="tabs" role="tablist">
-      <button class="tab" role="tab" data-tab="plan" aria-selected="true">Planning</button>
+      <button class="tab" role="tab" data-tab="vandaag" aria-selected="true">Vandaag</button>
+      <button class="tab" role="tab" data-tab="w1" aria-selected="false">Week 1</button>
+      <button class="tab" role="tab" data-tab="w2" aria-selected="false">Week 2</button>
       <button class="tab" role="tab" data-tab="meals" aria-selected="false">Maaltijden</button>
       <button class="tab" role="tab" data-tab="shop" aria-selected="false">Boodschappen</button>
       <button class="tab tab-config" role="tab" data-tab="config" aria-selected="false" title="Instellingen" aria-label="Instellingen">⋯</button>
@@ -238,7 +248,8 @@ header.top .wrap{padding-bottom:0}
 </header>
 
 <div class="wrap">
-  <section id="tab-plan"></section>
+  <section id="tab-vandaag"></section>
+  <section id="tab-plan" hidden></section>
   <section id="tab-meals" hidden></section>
   <section id="tab-shop" hidden></section>
   <section id="tab-config" hidden></section>
@@ -250,8 +261,10 @@ header.top .wrap{padding-bottom:0}
 /* ============================================================
    1. Vaste gegevens
    ============================================================ */
-const VERSIE='1.9.0';
+const VERSIE='2.0.1';
 const CHANGELOG=[
+ ['2.0.1','Voorbije dagen tellen niet meer mee op Vandaag en vervagen op de weektabs.'],
+ ['2.0.0','Nieuwe tab Vandaag met het gerecht van vanavond en morgen; week 1 en week 2 als eigen tabs.'],
  ['1.9.0','Weektabs, recepttabel, feestdagen en schoolvakanties, opgeschoonde dagkaarten, eigen recepten bovenaan.'],
  ['1.8.0','Alle instellingen achter de ⋯ in de kopbalk. Trainingen en vergaderingen nu zelf te beheren.'],
  ['1.7.0','Knop naast het naamveld, alle velden worden ingevuld, en een daglimiet op de Claude-oproepen.'],
@@ -811,6 +824,10 @@ function vakantieNaam(iso){
   return v?v.naam:null;
 }
 
+function vandaagIso(){
+  const n=new Date(); n.setHours(12,0,0,0);
+  return isoVan(n);
+}
 function isoVan(d){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
@@ -925,12 +942,13 @@ function reroll(key){
 /* ============================================================
    6. Boodschappen
    ============================================================ */
-function planEntries(week){
+function planEntries(week,vanafI){
   const dagen=buildDays();
   const out=[];
   dagen.forEach(d=>{
     if(week===1&&d.i>6) return;
     if(week===2&&d.i<7) return;
+    if(vanafI!=null&&d.i<vanafI) return;
     d.regels.slots.forEach(s=>{
       const key='d'+d.i+'-'+s;
       const v=state.plan[key];
@@ -940,9 +958,9 @@ function planEntries(week){
   return out;
 }
 
-function boodschappen(week){
+function boodschappen(week,vanafI){
   const map=new Map();
-  planEntries(week).forEach(({meal})=>{
+  planEntries(week,vanafI).forEach(({meal})=>{
     meal.ing.forEach(it=>{
       const n=normIng(scaled(it.q),it.u);
       const k=(it.n||'').toLowerCase().trim()+'|'+(n.u||'')+'|'+(it.c||'droog');
@@ -960,8 +978,8 @@ function boodschappen(week){
 // Diepvriesgerechten en het gerecht waarmee je ze aanmaakt
 const VOORRAAD={ sausdiepvries:'sausmaken', lasagnediepvries:'lasagnemaken' };
 
-function voorraadCheck(){
-  const gepland=new Set(Object.values(state.plan).filter(v=>v&&v.mealId).map(v=>v.mealId));
+function voorraadCheck(vanafI){
+  const gepland=new Set(planEntries(null,vanafI).map(e=>e.meal.id));
   const uit=[];
   Object.entries(VOORRAAD).forEach(([verbruik,maken])=>{
     if(!gepland.has(verbruik)) return;
@@ -1244,7 +1262,8 @@ function dayHTML(dag){
   const vak=dag.vakantie&&!dag.feest?`<span class="chip feest">${esc(dag.vakantie)}</span>`:'';
   const wknd=dag.weekend&&!dag.vakantie&&!dag.feest?'<span class="chip train">🏀 wedstrijd?</span>':'';
   const strip=(dag.training.length||dag.regels.samen)?stripHTML(dag):'';
-  return `<article class="day wd${dag.wd} ${dag.weekend?'weekend':''} ${dag.vergadering?'vergaderdag':''} ${dag.feest||dag.vakantie?'vrijdag-af':''}">
+  const voorbij=dag.iso<vandaagIso();
+  return `<article class="day wd${dag.wd} ${dag.weekend?'weekend':''} ${dag.vergadering?'vergaderdag':''} ${dag.feest||dag.vakantie?'vrijdag-af':''} ${voorbij?'voorbij':''}">
     <div class="day-top">
       <div><div class="day-name">${dag.naam}</div><div class="day-date">${fmtDate(dag.date)}</div></div>
       <div class="chips">${feest}${vak}${verg}${modus}${wknd}</div>
@@ -1294,12 +1313,7 @@ function renderPlan(){
 
   const w=(state.weekView===2)?1:0;
   const van=dagen[w*7].date, tot=dagen[w*7+6].date;
-  h+=`<div class="weekhead">
-    <div class="seg">
-      <button data-week="1" aria-pressed="${w===0}">Week 1</button>
-      <button data-week="2" aria-pressed="${w===1}">Week 2</button>
-    </div>
-    <span class="meta">${fmtDate(van)} – ${fmtDate(tot)}</span><span class="rule"></span></div>`;
+  h+=`<div class="weekhead"><h2>Week ${w+1}</h2><span class="meta">${fmtDate(van)} – ${fmtDate(tot)}</span><span class="rule"></span></div>`;
   h+='<div class="days">'+dagen.slice(w*7,w*7+7).map(dayHTML).join('')+'</div>';
 
   $('#tab-plan').innerHTML=h;
@@ -1318,9 +1332,6 @@ function renderPlan(){
       save(); render();
     };
   });
-  $('#tab-plan').querySelectorAll('[data-week]').forEach(b=>b.onclick=()=>{
-    state.weekView=Number(b.dataset.week); save(); renderPlan();
-  });
   $('#tab-plan').querySelectorAll('[data-verg]').forEach(b=>b.onclick=()=>{
     const iso=b.dataset.verg;
     state.vergaderingen=state.vergaderingen||[];
@@ -1334,6 +1345,94 @@ function renderPlan(){
     if(!state.plan[k]||!state.plan[k].mealId) return toast('Kies eerst een gerecht.');
     state.plan[k].locked=!state.plan[k].locked; save(); render();
   });
+}
+
+/* ============================================================
+   7b. Rendering — Vandaag
+   ============================================================ */
+function dagKaartKort(dag,slot,groot){
+  const key='d'+dag.i+'-'+slot;
+  const v=state.plan[key];
+  const m=v&&v.mealId?mealById(v.mealId):null;
+  const chips=[];
+  if(dag.feest) chips.push(`<span class="chip feest">${esc(dag.feest)}</span>`);
+  else if(dag.vakantie) chips.push(`<span class="chip feest">${esc(dag.vakantie)}</span>`);
+  if(dag.vergadering) chips.push('<span class="chip verg">🗓 vergadering</span>');
+  if(dag.regels.samen) chips.push(`<span class="chip prep">samen ${dag.regels.samen}</span>`);
+  if(dag.regels.opwarmen) chips.push('<span class="chip rush">opwarmen</span>');
+  if(m){
+    chips.push(`<span class="chip prot-${m.eiwit}">eiwit ${m.eiwit}</span>`);
+    if(m.tijd) chips.push(`<span class="chip prot-gemiddeld">${m.tijd} min</span>`);
+    if(m.instant) chips.push('<span class="chip verg">meteen klaar</span>');
+  }
+  const titel=(slot==='lunch'?'Middag':'Avond')+' — '+dag.naam+' '+fmtDate(dag.date);
+  return `<div class="vandaagkaart ${groot?'groot':''}">
+    <div class="vk-top">${esc(titel)}</div>
+    <div class="vk-naam">${m?esc(m.naam):'nog niets gekozen'}</div>
+    <div class="chips" style="margin-top:8px">${chips.join('')}</div>
+    ${groot&&m&&m.tip?`<p class="slot-note">${esc(m.tip)}</p>`:''}
+    ${groot&&(dag.training.length||dag.regels.samen)?stripHTML(dag):''}
+  </div>`;
+}
+
+function renderVandaag(){
+  const dagen=buildDays();
+  const vIso=vandaagIso();
+  const idx=dagen.findIndex(d=>d.iso===vIso);
+  // alles wat al voorbij is, telt niet meer mee op dit scherm
+  const vanaf = idx>=0 ? idx : (vIso>dagen[13].iso ? 14 : 0);
+
+  let h='';
+  if(idx<0){
+    const eerste=dagen[0].date, laatste=dagen[13].date;
+    const voorbij=vIso>dagen[13].iso;
+    h+=`<div class="panel" style="border-left:4px solid var(--ball)">
+      <h3>${voorbij?'Deze planning is voorbij':'De planning begint later'}</h3>
+      <p class="hint">De huidige twee weken lopen van ${fmtDate(eerste)} tot ${fmtDate(laatste)}.
+        ${voorbij?'Zet de startdatum op de komende maandag en maak een nieuw voorstel.':'Tot dan is er nog niets ingepland voor vandaag.'}</p>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn pine" id="nieuweperiode">Start op de komende maandag</button>
+        <button class="btn ghost" id="naarweek1">Naar week 1</button>
+      </div>
+    </div>`;
+  }else{
+    const d=dagen[idx];
+    if(d.regels.slots.includes('lunch')) h+=dagKaartKort(d,'lunch',false);
+    h+=dagKaartKort(d,'diner',true);
+    if(idx<13){
+      const m=dagen[idx+1];
+      h+=`<div class="weekhead"><h2>Morgen</h2><span class="rule"></span></div>`;
+      if(m.regels.slots.includes('lunch')) h+=dagKaartKort(m,'lunch',false);
+      h+=dagKaartKort(m,'diner',false);
+    }
+  }
+
+  // Alleen wat actie vraagt
+  const prep=prepLijst().filter(p=>p.dag.i>=vanaf);
+  const voorraad=voorraadCheck(vanaf);
+  const bijzonder=dagen.filter(d=>d.i>=vanaf&&d.i<=vanaf+7&&(d.vergadering||d.feest));
+  const per=boodschappen(null,vanaf);
+  const alle=Object.values(per).flat();
+  const af=alle.filter(i=>state.checked[i.key]).length;
+
+  const punten=[];
+  prep.forEach(p=>punten.push(`<b>${esc(p.meal.naam)}</b> vooraf maken, voor ${p.dag.naam} ${fmtDate(p.dag.date)}`));
+  voorraad.filter(v=>!v.ingepland).forEach(v=>punten.push(`Staat er nog <b>${esc(v.maken.naam.toLowerCase())}</b> in de diepvries? Anders past ${esc(v.verbruik.naam)} niet.`));
+  bijzonder.forEach(d=>punten.push(`${d.naam} ${fmtDate(d.date)}: ${esc(d.feest||'vergadering')}`));
+  if(alle.length&&af<alle.length) punten.push(`Boodschappen: ${alle.length-af} van de ${alle.length} nog te halen`);
+
+  if(punten.length){
+    h+=`<div class="panel"><h3>Om aan te denken</h3>
+      <ul class="ing" style="margin-top:8px">${punten.map(p=>`<li>${p}</li>`).join('')}</ul></div>`;
+  }else if(idx>=0){
+    h+=`<div class="empty" style="margin-top:14px">Alles is geregeld. Niets om aan te denken.</div>`;
+  }
+
+  $('#tab-vandaag').innerHTML=h;
+  if($('#nieuweperiode')) $('#nieuweperiode').onclick=()=>{
+    state.start=nextMonday(); genereer(true); save(); toonTab('w1'); toast('Nieuwe periode ingepland');
+  };
+  if($('#naarweek1')) $('#naarweek1').onclick=()=>toonTab('w1');
 }
 
 /* ============================================================
@@ -1908,21 +2007,25 @@ function renderConfig(){
 /* ============================================================
    10. Tabs + start
    ============================================================ */
-let actief='plan';
+let actief='vandaag';
+const TABSECTIE={vandaag:'vandaag',w1:'plan',w2:'plan',meals:'meals',shop:'shop',config:'config'};
 function render(){
-  if(actief==='plan') renderPlan();
-  if(actief==='meals') renderMeals();
-  if(actief==='shop') renderShop();
-  if(actief==='config') renderConfig();
+  if(actief==='vandaag') renderVandaag();
+  else if(actief==='w1'||actief==='w2') renderPlan();
+  else if(actief==='meals') renderMeals();
+  else if(actief==='shop') renderShop();
+  else if(actief==='config') renderConfig();
 }
-document.querySelectorAll('.tab').forEach(t=>{
-  t.onclick=()=>{
-    actief=t.dataset.tab;
-    document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',String(x===t)));
-    ['plan','meals','shop','config'].forEach(id=>$('#tab-'+id).hidden=(id!==actief));
-    render();
-  };
-});
+function toonTab(sleutel){
+  actief=sleutel;
+  if(sleutel==='w1') state.weekView=1;
+  if(sleutel==='w2') state.weekView=2;
+  document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.tab===sleutel)));
+  const zichtbaar=TABSECTIE[sleutel];
+  ['vandaag','plan','meals','shop','config'].forEach(id=>$('#tab-'+id).hidden=(id!==zichtbaar));
+  render();
+}
+document.querySelectorAll('.tab').forEach(t=>{ t.onclick=()=>toonTab(t.dataset.tab); });
 
 (async function init(){
   const opServer=await verbind();
