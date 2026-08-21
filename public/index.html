@@ -261,8 +261,9 @@ header.top .wrap{padding-bottom:0}
 /* ============================================================
    1. Vaste gegevens
    ============================================================ */
-const VERSIE='2.0.1';
+const VERSIE='2.0.2';
 const CHANGELOG=[
+ ['2.0.2','Begint de planning later, dan toont Vandaag de eerste ingeplande dagen in plaats van een lege melding.'],
  ['2.0.1','Voorbije dagen tellen niet meer mee op Vandaag en vervagen op de weektabs.'],
  ['2.0.0','Nieuwe tab Vandaag met het gerecht van vanavond en morgen; week 1 en week 2 als eigen tabs.'],
  ['1.9.0','Weektabs, recepttabel, feestdagen en schoolvakanties, opgeschoonde dagkaarten, eigen recepten bovenaan.'],
@@ -1365,7 +1366,10 @@ function dagKaartKort(dag,slot,groot){
     if(m.tijd) chips.push(`<span class="chip prot-gemiddeld">${m.tijd} min</span>`);
     if(m.instant) chips.push('<span class="chip verg">meteen klaar</span>');
   }
-  const titel=(slot==='lunch'?'Middag':'Avond')+' — '+dag.naam+' '+fmtDate(dag.date);
+  const nuIso=vandaagIso();
+  const titel = dag.iso===nuIso
+    ? (slot==='lunch'?'Vanmiddag':'Vanavond')
+    : (slot==='lunch'?'Middag':'Avond')+' — '+dag.naam+' '+fmtDate(dag.date);
   return `<div class="vandaagkaart ${groot?'groot':''}">
     <div class="vk-top">${esc(titel)}</div>
     <div class="vk-naam">${m?esc(m.naam):'nog niets gekozen'}</div>
