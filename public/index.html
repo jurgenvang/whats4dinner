@@ -46,6 +46,7 @@ header.top .wrap{padding-bottom:0}
 }
 .syncbadge[data-st="live"]{color:#7FD1B9;border-color:#2E5B4F}
 .syncbadge[data-st="fout"]{color:#F0A58C;border-color:#6B3A2A}
+.versiebadge{font-size:11px;color:#6B7F79;letter-spacing:.02em}
 .tabs{display:flex;gap:4px;margin-top:18px;flex-wrap:wrap}
 .tab{
   background:transparent;border:0;border-radius:10px 10px 0 0;color:#9FB3AC;
@@ -207,6 +208,7 @@ header.top .wrap{padding-bottom:0}
       <h1>whats4dinner</h1>
       <span class="sub">Twee weken avondeten — met de basketkalender erbij</span>
       <span class="syncbadge" id="sync"></span>
+      <span class="versiebadge" id="versie"></span>
     </div>
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" data-tab="plan" aria-selected="true">Planning</button>
@@ -228,6 +230,16 @@ header.top .wrap{padding-bottom:0}
 /* ============================================================
    1. Vaste gegevens
    ============================================================ */
+const VERSIE='1.6.0';
+const CHANGELOG=[
+ ['1.6.0','Versienummer, testknop voor de Claude-koppeling, en Claude vult nu alle receptvelden in.'],
+ ['1.5.0','Knop die ingrediënten voorstelt op basis van de naam, met Claude via de Worker als die ingesteld is.'],
+ ['1.4.0','Lijst kopiëren, zoeklinks per product, en gerechten die enkel op zondag of in het weekend mogen.'],
+ ['1.3.0','Vergaderdagen, afhaal en uit eten, diepvriesgerechten met voorraadcontrole.'],
+ ['1.2.0','Vaste eeturen per dag en de eis dat een gerecht opwarmbaar is op dinsdag en vrijdag.'],
+ ['1.1.0','Eigen Cloudflare-server met D1, live synchronisatie en wachtwoord.'],
+ ['1.0.0','Planning, maaltijdenbibliotheek en boodschappenlijst.']
+];
 const DAGEN = ['maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag','zondag'];
 
 // weekdag-index 0 = maandag
@@ -989,8 +1001,51 @@ async function raadViaServer(naam){
       c:cats.includes(x&&x.c)?x.c:'droog'
     })).filter(x=>x.n);
     if(!ing.length) return null;
-    return {ing,bron:d.bron||null,opwarm:typeof d.opwarm==='boolean'?d.opwarm:null,via:'claude'};
+
+    // Alles wat binnenkomt eerst controleren: een model kan zich vergissen
+    const bronnen=['kip','rund','varken','kalkoen','vis','garnaal','ei','peulvrucht','tofu','kaas','gemengd'];
+    const tijd=(typeof d.tijd==='number'&&d.tijd>=5&&d.tijd<=240)?Math.round(d.tijd):null;
+    let slots=null;
+    if(Array.isArray(d.slots)){
+      const s=d.slots.filter(x=>x==='lunch'||x==='diner');
+      if(s.length) slots=(s.includes('lunch')?'lunch':'')+(s.includes('lunch')&&s.includes('diner')?',':'')+(s.includes('diner')?'diner':'');
+    }
+    return {
+      ing,
+      bron:bronnen.includes(d.bron)?d.bron:null,
+      opwarm:typeof d.opwarm==='boolean'?d.opwarm:null,
+      tijd,
+      eiwit:(d.eiwit==='hoog'||d.eiwit==='gemiddeld')?d.eiwit:null,
+      slots,
+      prep:typeof d.prep==='boolean'?d.prep:null,
+      instant:typeof d.instant==='boolean'?d.instant:null,
+      alleen:(d.alleen==='weekend'||d.alleen==='zondag')?d.alleen:(d.alleen===null?'':null),
+      tip:typeof d.tip==='string'?d.tip.trim().slice(0,120):null,
+      model:typeof d._model==='string'?d._model:null,
+      via:'claude'
+    };
   }catch(e){ return null; }
+}
+
+// Losse test, met duidelijke uitleg per foutgeval in plaats van stille terugval
+async function testClaude(){
+  if(modus!=='server')
+    return {ok:false,tekst:'Deze kopie draait niet op jullie eigen Worker, dus er is geen Claude-koppeling. De knop gebruikt de ingebouwde woordenlijst.'};
+  try{
+    const r=await fetch('/api/suggest',{method:'POST',headers:apiHeaders(),body:JSON.stringify({naam:'Waterzooi op Gentse wijze'})});
+    if(r.status===501) return {ok:false,tekst:'De Worker antwoordt, maar er staat geen ANTHROPIC_API_KEY ingesteld. Voeg die toe bij Settings → Variables and Secrets en publiceer opnieuw.'};
+    if(r.status===401) return {ok:false,tekst:'Het menuwachtwoord wordt geweigerd. Wis de sitegegevens en meld je opnieuw aan.'};
+    if(!r.ok){
+      let f=''; try{ f=(await r.json()).fout||''; }catch(e){}
+      return {ok:false,tekst:'De Worker antwoordde met '+r.status+(f?' — '+f:'')+'.'};
+    }
+    const d=await r.json();
+    const n=Array.isArray(d.ing)?d.ing.length:0;
+    if(!n) return {ok:false,tekst:'Claude antwoordde, maar zonder bruikbare ingrediënten.'};
+    return {ok:true,tekst:'Werkt. Model '+(d._model||'onbekend')+' stelde '+n+' ingrediënten voor: '+d.ing.slice(0,4).map(x=>x.n).join(', ')+'…'};
+  }catch(e){
+    return {ok:false,tekst:'Geen antwoord van de server: '+(e&&e.message?e.message:'onbekende fout')};
+  }
 }
 
 function raadIngredienten(naam){
@@ -1268,8 +1323,13 @@ function renderMeals(){
       <button class="btn ghost" id="refresh">Vernieuwen</button>
       <button class="btn ghost" id="export">Back-up downloaden</button>
       <button class="btn ghost" id="importbtn">Back-up inladen</button>
+      <button class="btn ghost" id="testclaude">Claude-koppeling testen</button>
       <input type="file" id="importfile" accept="application/json,.json" hidden>
     </div>
+    <p class="hint" id="testuit" style="margin-top:10px"></p>
+    <details style="margin-top:12px"><summary class="hint" style="cursor:pointer">Wat is er veranderd (v${VERSIE})</summary>
+      <ul class="ing" style="margin-top:8px">${CHANGELOG.map(([v,t])=>`<li><b>${v}</b> — ${esc(t)}</li>`).join('')}</ul>
+    </details>
   </div>`;
   h+=formHTML();
   h+=`<div class="weekhead"><h2>Eigen recepten</h2><span class="meta">${eigen.length}</span><span class="rule"></span></div>`;
@@ -1334,7 +1394,14 @@ function renderMeals(){
     rowsEl.innerHTML=r.ing.map(x=>ingRow(x,unitOpts)).join('');
     bindDel();
     if(r.bron) $('#f-bron').value=r.bron;
-    if(r.opwarm!==null) $('#f-opwarm').value=r.opwarm?'ja':'nee';
+    if(r.opwarm!==null&&r.opwarm!==undefined) $('#f-opwarm').value=r.opwarm?'ja':'nee';
+    if(r.tijd) $('#f-tijd').value=r.tijd;
+    if(r.eiwit) $('#f-eiwit').value=r.eiwit;
+    if(r.slots) $('#f-slots').value=r.slots;
+    if(r.prep!==null&&r.prep!==undefined) $('#f-prep').value=r.prep?'ja':'nee';
+    if(r.instant!==null&&r.instant!==undefined) $('#f-instant').value=r.instant?'ja':'nee';
+    if(r.alleen!==null&&r.alleen!==undefined) $('#f-alleen').value=r.alleen;
+    if(r.tip) $('#f-tip').value=r.tip;
     toast(r.ing.length+' ingrediënten voorgesteld'+(r.via==='claude'?' door Claude':'')+' — pas gerust aan');
   };
 
@@ -1361,6 +1428,15 @@ function renderMeals(){
     else state.custom.push(rec);
     save(); render(); toast('Recept opgeslagen');
   };
+  $('#testclaude').onclick=async()=>{
+    const uit=$('#testuit'), knop=$('#testclaude');
+    knop.disabled=true; uit.textContent='Bezig met testen…';
+    const r=await testClaude();
+    knop.disabled=false;
+    uit.textContent=(r.ok?'✓ ':'✗ ')+r.tekst;
+    uit.style.color=r.ok?'var(--pine)':'var(--ball)';
+  };
+
   if($('#cancelrecipe')) $('#cancelrecipe').onclick=()=>{ bewerkId=null; render(); };
 
   $('#tab-meals').querySelectorAll('[data-use]').forEach(cb=>cb.onchange=()=>{
@@ -1541,6 +1617,8 @@ document.querySelectorAll('.tab').forEach(t=>{
   if(!state.vergaderingen) state.vergaderingen=VERGADERINGEN.slice();
   if(state.zoekUrl===undefined) state.zoekUrl=ZOEK_STANDAARD;
   if(!state.plan||!Object.keys(state.plan).length) genereer(true);
+  const vb=document.getElementById('versie');
+  if(vb) vb.textContent='v'+VERSIE;
   render();
   setSync();
   startPolling();

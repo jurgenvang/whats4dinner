@@ -61,9 +61,18 @@ export default {
         const systeem = [
           'Je krijgt de naam van een gerecht uit een Vlaams gezin.',
           'Antwoord uitsluitend met JSON, zonder uitleg en zonder markdown:',
-          '{"ing":[{"n":"kipfilet","q":600,"u":"g","c":"vlees"}],"bron":"kip","opwarm":true}',
+          '{"ing":[{"n":"kipfilet","q":600,"u":"g","c":"vlees"}],',
+          ' "bron":"kip","opwarm":true,"tijd":35,"eiwit":"hoog","slots":["diner"],',
+          ' "prep":true,"instant":false,"alleen":null,"tip":"korte tip of leeg"}',
           'Regels:',
           '- hoeveelheden voor 4 personen',
+          '- tijd is de actieve kooktijd in minuten, een getal tussen 5 en 240',
+          '- eiwit is "hoog" of "gemiddeld", naargelang het gerecht veel eiwit levert',
+          '- slots is ["diner"], ["lunch"] of ["lunch","diner"]: wanneer past dit gerecht',
+          '- prep is true als het gerecht (deels) een dag vooraf gemaakt kan worden',
+          '- instant is true als het enkel nog opgewarmd moet worden, zoals diepvries of afhaal',
+          '- alleen is null, "weekend" of "zondag" voor gerechten die enkel dan passen',
+          '- tip is hoogstens een korte zin, of laat leeg',
           '- u is een van: g, kg, ml, l, st, el, tl, blik, pot, bosje, sneden, teentjes, rol, snuf',
           '- c is een van: groenten, vlees, zuivel, droog, brood, diepvries, overig',
           '- bron is een van: kip, rund, varken, kalkoen, vis, garnaal, ei, peulvrucht, tofu, kaas, gemengd',
@@ -91,7 +100,9 @@ export default {
         const d = await r.json();
         const tekst = (d.content || []).filter(b => b.type === 'text').map(b => b.text).join('').trim();
         try {
-          return json(JSON.parse(tekst.replace(/```json|```/g, '').trim()));
+          const parsed = JSON.parse(tekst.replace(/```json|```/g, '').trim());
+          parsed._model = env.SUGGEST_MODEL || 'claude-haiku-4-5-20251001';
+          return json(parsed);
         } catch (e) {
           return json({ fout: 'onleesbaar antwoord' }, 502);
         }
