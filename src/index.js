@@ -156,6 +156,28 @@ export default {
         }
       }
 
+      if (url.pathname === '/api/kalender' && request.method === 'GET') {
+        // Doorgeefluik voor de wedstrijdkalenders: de browser mag die zelf niet ophalen.
+        const doel = url.searchParams.get('url') || '';
+        let u;
+        try { u = new URL(doel); } catch (e) { return json({ fout: 'ongeldige url' }, 400); }
+        if (u.protocol !== 'https:' || !/(^|\.)wisseq\.eu$/.test(u.hostname)) {
+          return json({ fout: 'enkel kalenders van wisseq.eu' }, 403);
+        }
+        const r = await fetch(u.toString(), {
+          headers: {
+            'user-agent': 'Mozilla/5.0 (compatible; whats4dinner/1.0)',
+            'accept': 'text/calendar, text/plain, */*'
+          },
+          cf: { cacheTtl: 1800, cacheEverything: true }
+        });
+        if (!r.ok) return json({ fout: 'kalender antwoordde met ' + r.status }, 502);
+        const tekst = await r.text();
+        return new Response(tekst, {
+          headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' }
+        });
+      }
+
       if (url.pathname === '/api/state' && request.method === 'PUT') {
         const body = await request.json();
         if (!body || typeof body.data !== 'object' || body.data === null) {

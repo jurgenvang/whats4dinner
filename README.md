@@ -108,6 +108,15 @@ npx wrangler dev
 
 `.dev.vars` staat in `.gitignore` en komt dus niet in de repo terecht.
 
+## Wedstrijdkalenders
+
+De app haalt de wedstrijden op uit de kalenderfeeds van de basketbalbond. De browser
+mag die zelf niet ophalen, dus de Worker doet dat via `/api/kalender`. Enkel adressen
+op `wisseq.eu` worden doorgelaten, zodat je Worker geen open doorgeefluik wordt.
+
+De links beheer je in de app bij ⋯ → Wedstrijdkalenders. Klik daar op *Wedstrijden
+ophalen*; het resultaat wordt bewaard, dus dat hoeft maar af en toe opnieuw.
+
 ## Optioneel: ingrediënten laten voorstellen door Claude
 
 In het receptformulier staat een knop die ingrediënten afleidt uit de naam van het

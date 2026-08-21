@@ -112,6 +112,7 @@ header.top .wrap{padding-bottom:0}
 .chip.prep{background:var(--pine-soft);color:var(--pine)}
 .chip.verg{background:#EDE4F5;color:#5B3E7A}
 .chip.feest{background:#FDECEF;color:#9B2C43}
+.chip.wed{background:#F0E6F7;color:#6A3489}
 .day.vrijdag-af{background:#FDF7F8;border-color:#EBC9D1}
 .day.voorbij{opacity:.45}
 .day.voorbij:hover,.day.voorbij:focus-within{opacity:1}
@@ -131,6 +132,8 @@ header.top .wrap{padding-bottom:0}
 .strip .blk{position:absolute;top:0;bottom:0}
 .strip .eat{background:rgba(37,107,91,.16);border-left:2px solid var(--pine);border-right:2px solid var(--pine)}
 .strip .tr{background:var(--ball);opacity:.85}
+.strip .wed{background:#7A3E9D;opacity:.9}
+.strip .wed span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;overflow:hidden}
 .strip .tr span{
   position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   color:#fff;font-size:10px;font-weight:700;letter-spacing:.02em;overflow:hidden;
@@ -267,8 +270,10 @@ header.top .wrap{padding-bottom:0}
 /* ============================================================
    1. Vaste gegevens
    ============================================================ */
-const VERSIE='2.2.0';
+const VERSIE='2.4.0';
 const CHANGELOG=[
+ ['2.4.0','Planning per datum, dus meerdere periodes na elkaar; boodschappen tellen enkel vastgezette maaltijden.'],
+ ['2.3.0','Wedstrijden worden opgehaald uit de kalenders van de basketbalbond en verschijnen op de juiste dag.'],
  ['2.2.0','Elk recept bewerkbaar inclusief hoeveelheden, aparte categorie voor bestellen, gestapelde trainingen, slot werkt op de dobbelsteen, gerechtkeuze boven de agendalijn.'],
  ['2.1.1','Bevestiging dat een wijziging in de database staat, en geen verwarrende eetvensters meer tijdens vakanties.'],
  ['2.1.0','Duidelijker opslagstatus: bevestiging na bewaren, en onderscheid tussen geen opslag en een mislukte poging.'],
@@ -734,6 +739,88 @@ function badgeKlik(){
 }
 
 /* ============================================================
+   2b. Wedstrijdkalenders (ICS van de basketbalbond)
+   ============================================================ */
+const KALENDERS_STANDAARD=[
+  {wie:'Dries',url:'https://vblcal.wisseq.eu/vblcalsync/calsync.aspx?guid=BVBL1125J16002'},
+  {wie:'Bram', url:'https://vblcal.wisseq.eu/vblcalsync/calsync.aspx?guid=BVBL1125J18002'}
+];
+
+function parseICS(tekst,wie){
+  // regels die met een spatie beginnen horen bij de vorige regel
+  const regels=String(tekst||'').replace(/\r/g,'').split('\n');
+  const plat=[];
+  regels.forEach(r=>{
+    if(/^[ \t]/.test(r)&&plat.length) plat[plat.length-1]+=r.slice(1);
+    else plat.push(r);
+  });
+  const uit=[]; let ev=null;
+  plat.forEach(r=>{
+    if(r.startsWith('BEGIN:VEVENT')){ ev={}; return; }
+    if(r.startsWith('END:VEVENT')){
+      if(ev&&ev.iso) uit.push({wie,iso:ev.iso,van:ev.van,tot:ev.tot||ev.van,waar:ev.waar||'',titel:ev.titel||'Wedstrijd',wedstrijd:true});
+      ev=null; return;
+    }
+    if(!ev) return;
+    const dp=r.indexOf(':');
+    if(dp<0) return;
+    const sleutel=r.slice(0,dp), waarde=r.slice(dp+1).trim();
+    const naam=sleutel.split(';')[0];
+    const stamp=waarde.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})/);
+    if(naam==='DTSTART'&&stamp){ ev.iso=stamp[1]+'-'+stamp[2]+'-'+stamp[3]; ev.van=stamp[4]+':'+stamp[5]; }
+    else if(naam==='DTEND'&&stamp){ ev.tot=stamp[4]+':'+stamp[5]; }
+    else if(naam==='LOCATION') ev.waar=waarde.replace(/\\,/g,',').replace(/\\n/g,' ');
+    else if(naam==='SUMMARY') ev.titel=waarde.replace(/\\,/g,',').replace(/\\n/g,' ');
+  });
+  return uit;
+}
+
+async function haalKalenderTekst(u){
+  // via de eigen Worker als die er is, anders rechtstreeks proberen
+  if(modus==='server'){
+    const r=await fetch('/api/kalender?url='+encodeURIComponent(u),{headers:apiHeaders()});
+    if(!r.ok){
+      let f=''; try{ f=(await r.json()).fout||''; }catch(e){}
+      throw new Error(f||('status '+r.status));
+    }
+    return r.text();
+  }
+  const r=await fetch(u);
+  if(!r.ok) throw new Error('status '+r.status);
+  return r.text();
+}
+
+async function haalWedstrijden(){
+  const lijst=(state.kalenders||[]).filter(k=>k&&k.url);
+  if(!lijst.length) return {ok:false,tekst:'Er staan nog geen kalenders ingesteld.'};
+  const alles=[]; const fouten=[];
+  for(const k of lijst){
+    try{
+      const tekst=await haalKalenderTekst(k.url);
+      const ev=parseICS(tekst,k.wie||'');
+      if(!ev.length) fouten.push((k.wie||'kalender')+': geen wedstrijden gevonden');
+      alles.push(...ev);
+    }catch(e){ fouten.push((k.wie||'kalender')+': '+(e&&e.message?e.message:'mislukt')); }
+  }
+  if(alles.length){
+    alles.sort((a,b)=>(a.iso+a.van).localeCompare(b.iso+b.van));
+    state.wedstrijden=alles;
+    state.wedstrijdenOpgehaald=new Date().toISOString();
+    save();
+  }
+  return {
+    ok:alles.length>0,
+    tekst: alles.length
+      ? alles.length+' wedstrijden opgehaald'+(fouten.length?' — maar '+fouten.join('; '):'.')
+      : 'Niets opgehaald. '+fouten.join('; ')
+  };
+}
+
+function wedstrijdenOp(iso){
+  return (state.wedstrijden||[]).filter(w=>w.iso===iso);
+}
+
+/* ============================================================
    3. Hulpjes
    ============================================================ */
 const $=(s,r=document)=>r.querySelector(s);
@@ -799,8 +886,9 @@ const STRIP_VAN=mins('16:00'), STRIP_TOT=mins('21:30');
 const REIS=20;      // minuten heen/terug rond een training
 const ETEN_MIN=40;  // minimale duur van een eetvenster
 
-function eetvensters(wd){
-  const busy=trainingenOp(wd).map(t=>[mins(t.van)-REIS,mins(t.tot)+REIS]).sort((a,b)=>a[0]-b[0]);
+function eetvensters(wd,iso){
+  const bezet=trainingenOp(wd).concat(iso?wedstrijdenOp(iso):[]);
+  const busy=bezet.map(t=>[mins(t.van)-REIS,mins(t.tot)+REIS]).sort((a,b)=>a[0]-b[0]);
   let free=[[mins('17:00'),mins('21:00')]];
   busy.forEach(([bs,be])=>{
     const out=[];
@@ -870,6 +958,7 @@ function vandaagIso(){
   const n=new Date(); n.setHours(12,0,0,0);
   return isoVan(n);
 }
+function slotKey(dag,slot){ return dag.iso+'|'+slot; }
 function isoVan(d){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
@@ -887,8 +976,10 @@ function buildDays(){
       r=Object.assign({},r,{samen:null,opwarmen:false,max:999,note:''});
       if(state.vakantieLunch&&r.slots.length===1) r=Object.assign({},r,{slots:['lunch','diner']});
     }
-    out.push({i,date,iso,wd,naam:DAGEN[wd],regels:r,training:trainingenOp(wd),
-              vensters:eetvensters(wd),weekend:wd>=5,vergadering:verg.includes(iso),
+    const matches=wedstrijdenOp(iso);
+    out.push({i,date,iso,wd,naam:DAGEN[wd],regels:r,
+              training:trainingenOp(wd).concat(matches),wedstrijden:matches,
+              vensters:eetvensters(wd,iso),weekend:wd>=5,vergadering:verg.includes(iso),
               feest,vakantie:vak});
   }
   return out;
@@ -921,15 +1012,24 @@ function genereer(force){
   const pool=activeMeals();
   const gebruikt=new Set();
   const bronTeller={};
-  const nieuw={};
-
-  // bewaar vastgezette keuzes
-  Object.entries(state.plan).forEach(([k,v])=>{
-    if(v&&v.locked&&!force){ nieuw[k]=v; gebruikt.add(v.mealId); bronTeller[(mealById(v.mealId)||{}).bron]=(bronTeller[(mealById(v.mealId)||{}).bron]||0)+1; }
-  });
+  const nieuw=Object.assign({},state.plan);   // andere periodes blijven ongemoeid
 
   const volgorde=[];
-  dagen.forEach(d=>d.regels.slots.forEach(s=>volgorde.push({key:'d'+d.i+'-'+s,slot:s,dag:d})));
+  dagen.forEach(d=>d.regels.slots.forEach(s=>volgorde.push({key:slotKey(d,s),slot:s,dag:d})));
+
+  // dit venster leegmaken, behalve wat vastgezet is
+  volgorde.forEach(({key})=>{
+    const v=nieuw[key];
+    if(force||!(v&&v.locked)) delete nieuw[key];
+  });
+  volgorde.forEach(({key})=>{
+    const v=nieuw[key];
+    if(v&&v.mealId){
+      gebruikt.add(v.mealId);
+      const b=(mealById(v.mealId)||{}).bron;
+      bronTeller[b]=(bronTeller[b]||0)+1;
+    }
+  });
 
   let vorigeBron=null;
   volgorde.forEach(({key,slot,dag})=>{
@@ -970,9 +1070,13 @@ function reroll(key){
   if(state.plan[key]&&state.plan[key].locked)
     return toast('Deze maaltijd staat vast. Open eerst het slotje.');
   const dagen=buildDays();
-  const [,di,slot]=key.match(/^d(\d+)-(\w+)$/);
-  const dag=dagen[Number(di)];
-  const inGebruik=new Set(Object.entries(state.plan).filter(([k,v])=>k!==key&&v).map(([,v])=>v.mealId));
+  const [iso,slot]=key.split('|');
+  const dag=dagen.find(d=>d.iso===iso);
+  if(!dag) return;
+  const vensterKeys=new Set();
+  dagen.forEach(d=>d.regels.slots.forEach(sl=>vensterKeys.add(slotKey(d,sl))));
+  const inGebruik=new Set(Object.entries(state.plan)
+    .filter(([k,v])=>k!==key&&v&&v.mealId&&vensterKeys.has(k)).map(([,v])=>v.mealId));
   const huidig=state.plan[key]&&state.plan[key].mealId;
   const auto=activeMeals().filter(m=>!m.handmatig);
   let kand=auto.filter(m=>past(m,slot,dag)&&!inGebruik.has(m.id)&&m.id!==huidig);
@@ -994,9 +1098,9 @@ function planEntries(week,vanafI){
     if(week===2&&d.i<7) return;
     if(vanafI!=null&&d.i<vanafI) return;
     d.regels.slots.forEach(s=>{
-      const key='d'+d.i+'-'+s;
+      const key=slotKey(d,s);
       const v=state.plan[key];
-      if(v&&v.mealId){const m=mealById(v.mealId); if(m) out.push({dag:d,slot:s,meal:m,key});}
+      if(v&&v.mealId){const m=mealById(v.mealId); if(m) out.push({dag:d,slot:s,meal:m,key,locked:!!v.locked});}
     });
   });
   return out;
@@ -1004,7 +1108,8 @@ function planEntries(week,vanafI){
 
 function boodschappen(week,vanafI){
   const map=new Map();
-  planEntries(week,vanafI).forEach(({meal})=>{
+  const alleenVast=state.shopLocked!==false;
+  planEntries(week,vanafI).filter(e=>!alleenVast||e.locked).forEach(({meal})=>{
     meal.ing.forEach(it=>{
       const n=normIng(scaled(it.q),it.u);
       const k=(it.n||'').toLowerCase().trim()+'|'+(n.u||'')+'|'+(it.c||'droog');
@@ -1037,7 +1142,7 @@ function prepLijst(){
   const items=[];
   dagen.forEach(d=>{
     if(d.wd>=5) return;
-    const v=state.plan['d'+d.i+'-diner'];
+    const v=state.plan[slotKey(d,'diner')];
     if(!v||!v.mealId) return;
     const m=mealById(v.mealId);
     if(m&&m.prep&&!m.instant&&(m.tijd>d.regels.max||d.vergadering)) items.push({dag:d,meal:m});
@@ -1265,16 +1370,18 @@ function stripHTML(dag){
   tr.forEach(x=>{
     const breed=pct(x.e)-pct(x.s);
     const hoog=100/banen;
-    const label=(breed>22&&banen<3)?`${esc(x.t.wie)} ${x.t.van}–${x.t.tot}`:esc(x.t.wie);
-    h+=`<div class="blk tr" style="left:${pct(x.s)}%;width:${breed}%;top:${x.baan*hoog}%;height:${hoog}%;bottom:auto"
-          title="${esc(x.t.wie)} ${x.t.van}–${x.t.tot}, ${esc(x.t.waar||'')}"><span style="font-size:${banen>1?9:10}px">${label}</span></div>`;
+    const wieTekst=esc(x.t.wie||'')+(x.t.wedstrijd?' 🏆':'');
+    const label=(breed>22&&banen<3)?`${wieTekst} ${x.t.van}–${x.t.tot}`:wieTekst;
+    if(x.e<=STRIP_VAN||x.s>=STRIP_TOT) return;      // valt buiten de balk, staat als label bovenaan
+    h+=`<div class="blk ${x.t.wedstrijd?'wed':'tr'}" style="left:${pct(Math.max(x.s,STRIP_VAN))}%;width:${breed}%;top:${x.baan*hoog}%;height:${hoog}%;bottom:auto"
+          title="${esc(x.t.titel||x.t.wie)} — ${x.t.van}–${x.t.tot}, ${esc(x.t.waar||'')}"><span style="font-size:${banen>1?9:10}px">${label}</span></div>`;
   });
   h+='</div><div class="striplabels"><span>16:00</span><span>18:00</span><span>20:00</span><span>21:30</span></div>';
   return h;
 }
 
 function slotHTML(dag,slot){
-  const key='d'+dag.i+'-'+slot;
+  const key=slotKey(dag,slot);
   const v=state.plan[key];
   const gekozen=v&&v.mealId?mealById(v.mealId):null;
   const opties=activeMeals().filter(m=>m.slots.includes(slot))
@@ -1317,13 +1424,15 @@ function dayHTML(dag){
   const verg=dag.vergadering?'<span class="chip verg">🗓 vergadering</span>':'';
   const feest=dag.feest?`<span class="chip feest">${esc(dag.feest)}</span>`:'';
   const vak=dag.vakantie&&!dag.feest?`<span class="chip feest">${esc(dag.vakantie)}</span>`:'';
-  const wknd=dag.weekend&&!dag.vakantie&&!dag.feest?'<span class="chip train">🏀 wedstrijd?</span>':'';
+  const buitenBalk=(dag.wedstrijden||[]).filter(w=>mins(w.tot)<=STRIP_VAN||mins(w.van)>=STRIP_TOT);
+  const wedChips=buitenBalk.map(w=>`<span class="chip wed" title="${esc(w.titel)} — ${esc(w.waar||'')}">🏆 ${esc(w.wie)} ${w.van}</span>`).join('');
+  const wknd=(dag.weekend&&!dag.vakantie&&!dag.feest&&!(dag.wedstrijden||[]).length)?'<span class="chip train">geen wedstrijd bekend</span>':'';
   const strip=(dag.training.length||dag.regels.samen)?stripHTML(dag):'';
   const voorbij=dag.iso<vandaagIso();
   return `<article class="day wd${dag.wd} ${dag.weekend?'weekend':''} ${dag.vergadering?'vergaderdag':''} ${dag.feest||dag.vakantie?'vrijdag-af':''} ${voorbij?'voorbij':''}">
     <div class="day-top">
       <div><div class="day-name">${dag.naam}</div><div class="day-date">${fmtDate(dag.date)}</div></div>
-      <div class="chips">${feest}${vak}${verg}${modus}${wknd}</div>
+      <div class="chips">${feest}${vak}${verg}${modus}${wedChips}${wknd}</div>
     </div>
     ${dag.regels.slots.map(s=>slotHTML(dag,s)).join('')}
     ${strip}
@@ -1337,15 +1446,26 @@ function renderPlan(){
   const dagen=buildDays();
   const prep=prepLijst();
   const voorraad=voorraadCheck();
-  const ingevuld=Object.values(state.plan).filter(v=>v&&v.mealId).length;
+  const ingevuld=dagen.reduce((a,d)=>a+d.regels.slots.filter(sl=>{
+    const v=state.plan[slotKey(d,sl)]; return v&&v.mealId;
+  }).length,0);
 
+  const totaal=dagen.reduce((a,d)=>a+d.regels.slots.length,0);
   let h=`<div class="bar">
-    <div class="field"><label for="start">Startdatum (maandag)</label><input type="date" id="start" value="${state.start}"></div>
+    <div class="field"><label>Periode van twee weken</label>
+      <div style="display:flex;gap:4px;align-items:center">
+        <button class="iconbtn" id="vorige" title="Twee weken terug">‹</button>
+        <input type="date" id="start" value="${state.start}" style="min-width:150px">
+        <button class="iconbtn" id="volgende" title="Twee weken verder">›</button>
+        <button class="btn ghost small" id="nutoe" title="Naar de periode van vandaag">nu</button>
+      </div>
+    </div>
     <div class="field"><label for="pers">Aantal personen</label><input type="number" id="pers" min="1" max="12" value="${state.personen}"></div>
     <button class="btn pine" id="gen">Nieuw voorstel</button>
     <button class="btn ghost" id="genall">Alles opnieuw, ook vastgezet</button>
+    <button class="btn ghost" id="lockall">Alles vastzetten</button>
     <button class="btn ghost" id="clear">Leegmaken</button>
-    <span class="hint" style="margin-left:auto">${ingevuld} van de 18 maaltijden ingevuld</span>
+    <span class="hint" style="margin-left:auto">${ingevuld} van de ${totaal} maaltijden ingevuld</span>
   </div>`;
 
   if(prep.length){
@@ -1370,7 +1490,9 @@ function renderPlan(){
 
   const w=(state.weekView===2)?1:0;
   const van=dagen[w*7].date, tot=dagen[w*7+6].date;
-  h+=`<div class="weekhead"><h2>Week ${w+1}</h2><span class="meta">${fmtDate(van)} – ${fmtDate(tot)}</span><span class="rule"></span></div>`;
+  h+=`<div class="weekhead"><h2>Week ${w+1}</h2>
+    <span class="meta">${van.toLocaleDateString('nl-BE',{weekday:'short',day:'numeric',month:'short'})} – ${tot.toLocaleDateString('nl-BE',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}</span>
+    <span class="rule"></span></div>`;
   h+='<div class="days">'+dagen.slice(w*7,w*7+7).map(dayHTML).join('')+'</div>';
 
   $('#tab-plan').innerHTML=h;
@@ -1379,7 +1501,28 @@ function renderPlan(){
   $('#pers').onchange=e=>{ state.personen=Math.max(1,Number(e.target.value)||4); save(); render(); toast('Hoeveelheden aangepast'); };
   $('#gen').onclick=()=>{ genereer(false); render(); toast('Voorstel klaar'); };
   $('#genall').onclick=()=>{ genereer(true); render(); toast('Alles opnieuw ingevuld'); };
-  $('#clear').onclick=()=>{ state.plan={}; save(); render(); };
+  $('#clear').onclick=()=>{
+    if(!confirm('Alle maaltijden van deze twee weken wissen?')) return;
+    buildDays().forEach(d=>d.regels.slots.forEach(sl=>{ delete state.plan[slotKey(d,sl)]; }));
+    save(); render();
+  };
+  const schuif=n=>{ state.start=isoVan(addDays(state.start,n)); save(); render(); };
+  $('#vorige').onclick=()=>schuif(-14);
+  $('#volgende').onclick=()=>schuif(14);
+  $('#nutoe').onclick=()=>{
+    const n=new Date(); n.setHours(12,0,0,0);
+    const terug=(n.getDay()+6)%7;
+    n.setDate(n.getDate()-terug);
+    state.start=isoVan(n); save(); render(); toast('Naar de huidige week');
+  };
+  $('#lockall').onclick=()=>{
+    let n=0;
+    buildDays().forEach(d=>d.regels.slots.forEach(sl=>{
+      const v=state.plan[slotKey(d,sl)];
+      if(v&&v.mealId&&!v.locked){ v.locked=true; n++; }
+    }));
+    save(); render(); toast(n?n+' maaltijden vastgezet':'Alles stond al vast');
+  };
 
   $('#tab-plan').querySelectorAll('select[data-slot]').forEach(sel=>{
     sel.onchange=()=>{
@@ -1408,7 +1551,7 @@ function renderPlan(){
    7b. Rendering — Vandaag
    ============================================================ */
 function dagKaartKort(dag,slot,groot){
-  const key='d'+dag.i+'-'+slot;
+  const key=slotKey(dag,slot);
   const v=state.plan[key];
   const m=v&&v.mealId?mealById(v.mealId):null;
   const chips=[];
@@ -1737,8 +1880,11 @@ function zoekLink(naam){
 function renderShop(){
   const view=state.shopView||'alles';
   const week= view==='w1'?1:view==='w2'?2:null;
+  const alleenVast=state.shopLocked!==false;
   const per=boodschappen(week);
-  const entries=planEntries(week);
+  const alleEntries=planEntries(week);
+  const entries=alleEntries.filter(e=>!alleenVast||e.locked);
+  const nietVast=alleEntries.filter(e=>!e.locked).length;
 
   const alle=Object.values(per).flat();
   const af=alle.filter(i=>state.checked[i.key]).length;
@@ -1750,6 +1896,9 @@ function renderShop(){
       <button data-view="w1" aria-pressed="${view==='w1'}">Week 1</button>
       <button data-view="w2" aria-pressed="${view==='w2'}">Week 2</button>
     </div>
+    <label class="toggle" style="margin-right:4px">
+      <input type="checkbox" id="alleenvast" ${alleenVast?'checked':''}> enkel vastgezette maaltijden
+    </label>
     <button class="btn ghost" id="kopieer">Lijst kopiëren</button>
     <button class="btn ghost" id="uncheck">Vinkjes wissen</button>
     <button class="btn ghost" id="print">Afdrukken</button>
@@ -1757,8 +1906,14 @@ function renderShop(){
   </div>
   <div class="progress"><i style="width:${pct}%"></i></div>`;
 
+  if(alleenVast&&nietVast){
+    h+=`<p class="hint" style="margin-top:10px">${nietVast} maaltijd${nietVast>1?'en':''} in deze periode ${nietVast>1?'staan':'staat'} nog niet vast en tel${nietVast>1?'len':'t'} dus niet mee. Zet ze vast met het slotje, of gebruik "Alles vastzetten" op de weektabs.</p>`;
+  }
+
   if(!alle.length){
-    h+=`<div class="empty" style="margin-top:18px">Nog geen boodschappen. Maak eerst een planning op het tabblad Planning.</div>`;
+    h+=`<div class="empty" style="margin-top:18px">${alleenVast
+      ? 'Nog niets vastgezet. Zet de maaltijden vast die je zeker gaat maken, dan verschijnen de ingrediënten hier.'
+      : 'Nog geen boodschappen. Maak eerst een planning op een van de weektabs.'}</div>`;
   }else{
     h+=`<div class="panel" style="margin-top:16px"><h3>Volledige lijst</h3>
       <p class="hint">Voor ${state.personen} personen, samengeteld over alle geplande maaltijden.</p>
@@ -1804,6 +1959,7 @@ function renderShop(){
     if(d){ d.open=true; d.scrollIntoView({behavior:'smooth',block:'center'}); $('#lijsttekst').select(); }
     toast('Kopiëren lukt hier niet — selecteer de tekst hieronder.');
   };
+  $('#alleenvast').onchange=e=>{ state.shopLocked=e.target.checked; save(); renderShop(); };
   $('#uncheck').onclick=()=>{ state.checked={}; save(); renderShop(); };
   $('#print').onclick=()=>window.print();
   $('#tab-shop').querySelectorAll('[data-check]').forEach(cb=>cb.onchange=()=>{
@@ -1953,6 +2109,26 @@ function renderConfig(){
   </div>
 
   <div class="panel">
+    <h3>Wedstrijdkalenders</h3>
+    <p class="hint">De kalenderlinks van de basketbalbond. Wedstrijden verschijnen dan vanzelf op de juiste dag, met tegenstander en sporthal.</p>
+    <div class="cfgrow cfghead" style="grid-template-columns:1fr 3fr 36px"><span>Wie</span><span>Kalender-URL</span><span></span></div>
+    <div>${(state.kalenders||[]).map((k,n)=>`
+      <div class="cfgrow" style="grid-template-columns:1fr 3fr 36px">
+        <input data-kal="${n}" data-veld="wie" value="${esc(k.wie||'')}" placeholder="naam">
+        <input data-kal="${n}" data-veld="url" value="${esc(k.url||'')}" placeholder="https://vblcal.wisseq.eu/...">
+        <button class="iconbtn weg" data-kalweg="${n}" title="Verwijderen">✕</button>
+      </div>`).join('')}</div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn pine" id="kalophalen">Wedstrijden ophalen</button>
+      <button class="btn ghost small" id="kaladd">+ kalender</button>
+    </div>
+    <p class="hint" id="kaluit" style="margin-top:10px">${
+      state.wedstrijden&&state.wedstrijden.length
+        ? esc(state.wedstrijden.length+' wedstrijden bekend'+(state.wedstrijdenOpgehaald?', opgehaald op '+new Date(state.wedstrijdenOpgehaald).toLocaleString('nl-BE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'')+'.')
+        : 'Nog niets opgehaald.'}</p>
+  </div>
+
+  <div class="panel">
     <h3>Vergaderingen</h3>
     <p class="hint">Op deze avonden stelt de app enkel afhaal voor, of iets dat meteen op tafel kan.</p>
     <div class="datumlijst">${verg.length?verg.map(d=>`
@@ -2047,6 +2223,25 @@ function renderConfig(){
     save(); renderConfig(); toast('Schema hersteld');
   };
 
+  // wedstrijdkalenders
+  $('#tab-config').querySelectorAll('[data-kal]').forEach(el=>el.onchange=()=>{
+    state.kalenders[Number(el.dataset.kal)][el.dataset.veld]=el.value.trim();
+    save(); renderConfig();
+  });
+  $('#tab-config').querySelectorAll('[data-kalweg]').forEach(b=>b.onclick=()=>{
+    state.kalenders.splice(Number(b.dataset.kalweg),1); save(); renderConfig();
+  });
+  $('#kaladd').onclick=()=>{ state.kalenders.push({wie:'',url:''}); save(); renderConfig(); };
+  $('#kalophalen').onclick=async()=>{
+    const knop=$('#kalophalen'), uit=$('#kaluit');
+    knop.disabled=true; uit.textContent='Bezig met ophalen…';
+    const r=await haalWedstrijden();
+    knop.disabled=false;
+    uit.textContent=(r.ok?'✓ ':'✗ ')+r.tekst;
+    uit.style.color=r.ok?'var(--pine)':'var(--ball)';
+    if(r.ok) toast('Wedstrijden bijgewerkt');
+  };
+
   // vergaderingen
   $('#tab-config').querySelectorAll('[data-vergweg]').forEach(b=>b.onclick=()=>{
     state.vergaderingen=state.vergaderingen.filter(d=>d!==b.dataset.vergweg);
@@ -2120,7 +2315,18 @@ document.querySelectorAll('.tab').forEach(t=>{ t.onclick=()=>toonTab(t.dataset.t
   if(!state.vergaderingen) state.vergaderingen=VERGADERINGEN.slice();
   if(!state.trainingen) state.trainingen=TRAINING_STANDAARD.map(t=>Object.assign({},t));
   if(!state.vakanties) state.vakanties=VAKANTIES_STANDAARD.map(v=>Object.assign({},v));
+  if(!state.kalenders) state.kalenders=KALENDERS_STANDAARD.map(k=>Object.assign({},k));
   if(!state.overrides) state.overrides={};
+  if(!state.planV2){
+    // oude planning stond op dagnummer; nu op datum, zodat periodes bewaard blijven
+    const oud=state.plan||{}, nieuw={};
+    Object.entries(oud).forEach(([k,v])=>{
+      const m=k.match(/^d(\d+)-(\w+)$/);
+      if(m&&state.start) nieuw[isoVan(addDays(state.start,Number(m[1])))+'|'+m[2]]=v;
+      else nieuw[k]=v;
+    });
+    state.plan=nieuw; state.planV2=true;
+  }
   if(state.zoekUrl===undefined) state.zoekUrl=ZOEK_STANDAARD;
   if(!state.plan||!Object.keys(state.plan).length) genereer(true);
   const vb=document.getElementById('versie');
