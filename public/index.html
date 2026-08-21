@@ -53,6 +53,15 @@ header.top .wrap{padding-bottom:0}
 }
 .tab:hover{color:#fff}
 .tab[aria-selected="true"]{background:var(--base);color:var(--ink)}
+.tab-config{margin-left:auto;font-size:18px;line-height:1;padding:8px 14px}
+.cfgrow{display:grid;grid-template-columns:1.2fr 1.3fr 90px 90px 1.6fr 36px;gap:6px;margin-bottom:6px;align-items:center}
+.cfgrow input,.cfgrow select{border:1px solid var(--line);border-radius:8px;padding:7px 8px;width:100%;min-width:0}
+.cfghead{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+@media(max-width:760px){.cfgrow{grid-template-columns:1fr 1fr;}.cfgrow .weg{grid-column:span 2}.cfghead{display:none}}
+.datumlijst{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.datumtag{display:inline-flex;align-items:center;gap:6px;background:#F7F2FB;border:1px solid #C4AEDC;color:#5B3E7A;border-radius:99px;padding:4px 6px 4px 11px;font-size:13px}
+.datumtag button{border:0;background:transparent;color:#8B6BB1;cursor:pointer;font-size:14px;line-height:1;padding:0 3px}
+.datumtag button:hover{color:#5B3E7A}
 
 /* ---------- controls ---------- */
 .bar{
@@ -100,6 +109,8 @@ header.top .wrap{padding-bottom:0}
 .chip.rush{background:#FFF3D6;color:#8A6400}
 .chip.prep{background:var(--pine-soft);color:var(--pine)}
 .chip.verg{background:#EDE4F5;color:#5B3E7A}
+.chip.feest{background:#FDECEF;color:#9B2C43}
+.day.vrijdag-af{background:#FDF7F8;border-color:#EBC9D1}
 .day.vergaderdag{border-color:#C4AEDC;box-shadow:inset 3px 0 0 #8B6BB1}
 .vergtoggle{
   margin-top:8px;border:1px dashed var(--line);background:transparent;border-radius:9px;
@@ -149,6 +160,15 @@ header.top .wrap{padding-bottom:0}
 .empty{border:1px dashed var(--line);border-radius:var(--radius);padding:26px;text-align:center;color:var(--muted)}
 
 /* meals */
+.tabelwrap{overflow-x:auto}
+.rtabel{border-collapse:collapse;width:100%;font-size:13px;min-width:820px}
+.rtabel th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;padding:6px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+.rtabel td{padding:4px 6px;border-bottom:1px solid #EEF0EC;vertical-align:middle}
+.rtabel td.naam{min-width:230px;font-weight:500}
+.rtabel input,.rtabel select{border:1px solid var(--line);border-radius:7px;padding:5px 6px;width:100%;font-size:13px;background:#fff}
+.rtabel input[type=number]{width:62px}
+.rtabel input[type=checkbox]{width:16px;height:16px;accent-color:var(--pine)}
+.rtabel tr:hover td{background:#FAFBF9}
 .meal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
 .meal-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:8px}
 .meal-card.off{opacity:.5}
@@ -212,6 +232,7 @@ header.top .wrap{padding-bottom:0}
       <button class="tab" role="tab" data-tab="plan" aria-selected="true">Planning</button>
       <button class="tab" role="tab" data-tab="meals" aria-selected="false">Maaltijden</button>
       <button class="tab" role="tab" data-tab="shop" aria-selected="false">Boodschappen</button>
+      <button class="tab tab-config" role="tab" data-tab="config" aria-selected="false" title="Instellingen" aria-label="Instellingen">⋯</button>
     </div>
   </div>
 </header>
@@ -220,6 +241,7 @@ header.top .wrap{padding-bottom:0}
   <section id="tab-plan"></section>
   <section id="tab-meals" hidden></section>
   <section id="tab-shop" hidden></section>
+  <section id="tab-config" hidden></section>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -228,8 +250,11 @@ header.top .wrap{padding-bottom:0}
 /* ============================================================
    1. Vaste gegevens
    ============================================================ */
-const VERSIE='1.6.1';
+const VERSIE='1.9.0';
 const CHANGELOG=[
+ ['1.9.0','Weektabs, recepttabel, feestdagen en schoolvakanties, opgeschoonde dagkaarten, eigen recepten bovenaan.'],
+ ['1.8.0','Alle instellingen achter de ⋯ in de kopbalk. Trainingen en vergaderingen nu zelf te beheren.'],
+ ['1.7.0','Knop naast het naamveld, alle velden worden ingevuld, en een daglimiet op de Claude-oproepen.'],
  ['1.6.1','Ondertitel uit de kopbalk gehaald.'],
  ['1.6.0','Versienummer, testknop voor de Claude-koppeling, en Claude vult nu alle receptvelden in.'],
  ['1.5.0','Knop die ingrediënten voorstelt op basis van de naam, met Claude via de Worker als die ingesteld is.'],
@@ -241,16 +266,19 @@ const CHANGELOG=[
 ];
 const DAGEN = ['maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag','zondag'];
 
-// weekdag-index 0 = maandag
-const TRAINING = {
-  0:[{wie:'Dries',van:'18:00',tot:'19:30',waar:'Sportoase Wilsele'}],
-  1:[{wie:'Bram', van:'19:30',tot:'21:00',waar:'Sportoase Leuven'}],
-  2:[{wie:'Dries',van:'16:30',tot:'18:00',waar:'Sporthal Wilsele'}],
-  3:[{wie:'Bram', van:'18:00',tot:'19:30',waar:'Sportoase Leuven'}],
-  4:[{wie:'Bram', van:'19:30',tot:'21:00',waar:'Sportoase Leuven'},
-     {wie:'Dries',van:'19:30',tot:'21:00',waar:'Sporthal Wilsele'}],
-  5:[],6:[]
-};
+// weekdag-index 0 = maandag. Beheerbaar via het configuratiescherm.
+const TRAINING_STANDAARD = [
+  {wie:'Dries',dag:0,van:'18:00',tot:'19:30',waar:'Sportoase Wilsele'},
+  {wie:'Bram', dag:1,van:'19:30',tot:'21:00',waar:'Sportoase Leuven'},
+  {wie:'Dries',dag:2,van:'16:30',tot:'18:00',waar:'Sporthal Wilsele'},
+  {wie:'Bram', dag:3,van:'18:00',tot:'19:30',waar:'Sportoase Leuven'},
+  {wie:'Bram', dag:4,van:'19:30',tot:'21:00',waar:'Sportoase Leuven'},
+  {wie:'Dries',dag:4,van:'19:30',tot:'21:00',waar:'Sporthal Wilsele'}
+];
+function trainingenOp(wd){
+  return (state.trainingen||[]).filter(t=>t&&t.dag===wd&&t.van&&t.tot)
+    .sort((a,b)=>a.van.localeCompare(b.van));
+}
 
 // Per weekdag: welke maaltijden, wanneer er gegeten wordt, en of het gerecht op te warmen moet zijn
 const DAGREGELS = {
@@ -434,25 +462,25 @@ const BASIS = [
  {n:'oregano',q:2,u:'tl',c:'droog'}]},
 
 /* --- jullie vaste gerechten --- */
-{id:'kipappelmoes',naam:'Kip met appelmoes en puree',tijd:40,eiwit:'hoog',bron:'kip',slots:['diner'],prep:true,opwarm:true,tip:'Puree en kip warmen prima op; appelmoes koud erbij.',ing:[
+{id:'kipappelmoes',naam:'Kip met appelmoes en puree',tijd:40,eiwit:'hoog',bron:'kip',slots:['diner'],eigen:true,prep:true,opwarm:true,tip:'Puree en kip warmen prima op; appelmoes koud erbij.',ing:[
  {n:'kippenbillen',q:8,u:'st',c:'vlees'},{n:'aardappelen',q:1.2,u:'kg',c:'groenten'},{n:'appelmoes',q:700,u:'g',c:'droog'},
  {n:'melk',q:200,u:'ml',c:'zuivel'},{n:'boter',q:50,u:'g',c:'zuivel'},{n:'nootmuskaat',q:1,u:'snuf',c:'droog'}]},
 
-{id:'kipwok',naam:'Kip met wokgroenten en noedels',tijd:25,eiwit:'hoog',bron:'kip',slots:['diner'],prep:false,opwarm:false,tip:'Vers uit de wok het lekkerst — groenten worden slap bij opwarmen.',ing:[
+{id:'kipwok',naam:'Kip met wokgroenten en noedels',tijd:25,eiwit:'hoog',bron:'kip',slots:['diner'],eigen:true,prep:false,opwarm:false,tip:'Vers uit de wok het lekkerst — groenten worden slap bij opwarmen.',ing:[
  {n:'kipfilet',q:600,u:'g',c:'vlees'},{n:'wokgroenten',q:600,u:'g',c:'groenten'},{n:'eiernoedels',q:300,u:'g',c:'droog'},
  {n:'sojasaus',q:4,u:'el',c:'droog'},{n:'gember',q:1,u:'st',c:'groenten'},{n:'knoflook',q:2,u:'teentjes',c:'groenten'}]},
 
-{id:'steakfriet',naam:'Steak met frieten, peper- en champignonsaus',tijd:40,eiwit:'hoog',bron:'rund',slots:['diner'],prep:false,opwarm:false,alleen:'zondag',tip:'Frieten wachten niet — dit is een gerecht om samen aan tafel te gaan.',ing:[
+{id:'steakfriet',naam:'Steak met frieten, peper- en champignonsaus',tijd:40,eiwit:'hoog',bron:'rund',slots:['diner'],eigen:true,prep:false,opwarm:false,alleen:'zondag',tip:'Frieten wachten niet — dit is een gerecht om samen aan tafel te gaan.',ing:[
  {n:'steak',q:600,u:'g',c:'vlees'},{n:'frieten (diepvries)',q:1,u:'kg',c:'diepvries'},{n:'champignons',q:250,u:'g',c:'groenten'},
  {n:'kookroom',q:400,u:'ml',c:'zuivel'},{n:'groene peperkorrels',q:2,u:'el',c:'droog'},{n:'sjalot',q:2,u:'st',c:'groenten'},
  {n:'boter',q:40,u:'g',c:'zuivel'},{n:'kropsla',q:1,u:'st',c:'groenten'}]},
 
-{id:'pastagehakt',naam:'Pasta met gehakt, puntpaprika en courgette',tijd:35,eiwit:'hoog',bron:'rund',slots:['lunch','diner'],prep:true,opwarm:true,tip:'Onze standaard — saus kan gerust een dag vooraf.',ing:[
+{id:'pastagehakt',naam:'Pasta met gehakt, puntpaprika en courgette',tijd:35,eiwit:'hoog',bron:'rund',slots:['lunch','diner'],eigen:true,prep:true,opwarm:true,tip:'Onze standaard — saus kan gerust een dag vooraf.',ing:[
  {n:'rundsgehakt',q:600,u:'g',c:'vlees'},{n:'puntpaprika',q:3,u:'st',c:'groenten'},{n:'courgette',q:2,u:'st',c:'groenten'},
  {n:'passata',q:700,u:'g',c:'droog'},{n:'ui',q:1,u:'st',c:'groenten'},{n:'penne',q:400,u:'g',c:'droog'},
  {n:'geraspte kaas',q:100,u:'g',c:'zuivel'},{n:'Italiaanse kruiden',q:2,u:'tl',c:'droog'}]},
 
-{id:'sausmaken',naam:'Spaghettisaus maken voor de diepvries',tijd:75,eiwit:'hoog',bron:'rund',slots:['diner'],prep:true,opwarm:true,tip:'Dubbele hoeveelheid: vanavond eten, de rest in porties invriezen voor drukke dagen.',ing:[
+{id:'sausmaken',naam:'Spaghettisaus maken voor de diepvries',tijd:75,eiwit:'hoog',bron:'rund',slots:['diner'],eigen:true,prep:true,opwarm:true,tip:'Dubbele hoeveelheid: vanavond eten, de rest in porties invriezen voor drukke dagen.',ing:[
  {n:'rundsgehakt',q:1,u:'kg',c:'vlees'},{n:'gepelde tomaten',q:1.6,u:'kg',c:'droog'},{n:'wortel',q:6,u:'st',c:'groenten'},
  {n:'champignons',q:500,u:'g',c:'groenten'},{n:'courgette',q:2,u:'st',c:'groenten'},{n:'ui',q:2,u:'st',c:'groenten'},
  {n:'spaghetti',q:400,u:'g',c:'droog'},{n:'geraspte kaas',q:150,u:'g',c:'zuivel'},{n:'diepvriesdozen',q:4,u:'st',c:'overig'}]},
@@ -469,7 +497,7 @@ const BASIS = [
 {id:'lasagnediepvries',naam:'Lasagne uit de diepvries',tijd:10,eiwit:'hoog',bron:'rund',slots:['diner'],prep:false,opwarm:true,instant:true,tip:'\'s Ochtends uit de diepvries, 40 minuten in de oven. Geen werk.',ing:[
  {n:'lasagne uit eigen diepvries',q:1,u:'schotel',c:'diepvries'},{n:'kropsla',q:1,u:'st',c:'groenten'}]},
 
-{id:'fishsticks',naam:'Fishsticks met spinazie',tijd:25,eiwit:'hoog',bron:'vis',slots:['diner'],prep:false,opwarm:false,tip:'',ing:[
+{id:'fishsticks',naam:'Fishsticks met spinazie',tijd:25,eiwit:'hoog',bron:'vis',slots:['diner'],eigen:true,prep:false,opwarm:false,tip:'',ing:[
  {n:'fishsticks',q:16,u:'st',c:'diepvries'},{n:'spinazie',q:800,u:'g',c:'groenten'},{n:'aardappelen',q:1,u:'kg',c:'groenten'},
  {n:'melk',q:150,u:'ml',c:'zuivel'},{n:'boter',q:40,u:'g',c:'zuivel'},{n:'nootmuskaat',q:1,u:'snuf',c:'droog'}]},
 
@@ -477,24 +505,24 @@ const BASIS = [
  {n:'zalmfilet',q:600,u:'g',c:'vlees'},{n:'spinazie',q:800,u:'g',c:'groenten'},{n:'aardappelen',q:1,u:'kg',c:'groenten'},
  {n:'kookroom',q:150,u:'ml',c:'zuivel'},{n:'citroen',q:1,u:'st',c:'groenten'}]},
 
-{id:'zalmkrieltjes',naam:'Zalmfilet met krieltjes en sla',tijd:30,eiwit:'hoog',bron:'vis',slots:['diner'],prep:false,opwarm:false,tip:'',ing:[
+{id:'zalmkrieltjes',naam:'Zalmfilet met krieltjes en sla',tijd:30,eiwit:'hoog',bron:'vis',slots:['diner'],eigen:true,prep:false,opwarm:false,tip:'',ing:[
  {n:'zalmfilet',q:600,u:'g',c:'vlees'},{n:'krieltjes',q:1,u:'kg',c:'groenten'},{n:'kropsla',q:1,u:'st',c:'groenten'},
  {n:'tomaat',q:3,u:'st',c:'groenten'},{n:'citroen',q:1,u:'st',c:'groenten'},{n:'olijfolie',q:3,u:'el',c:'droog'}]},
 
-{id:'boontjesburger',naam:'Boontjes met hamburger en aardappelen',tijd:30,eiwit:'hoog',bron:'rund',slots:['diner'],prep:true,opwarm:true,tip:'',ing:[
+{id:'boontjesburger',naam:'Boontjes met hamburger en aardappelen',tijd:30,eiwit:'hoog',bron:'rund',slots:['diner'],eigen:true,prep:true,opwarm:true,tip:'',ing:[
  {n:'hamburgers',q:4,u:'st',c:'vlees'},{n:'prinsessenboontjes',q:800,u:'g',c:'groenten'},{n:'aardappelen',q:1,u:'kg',c:'groenten'},
  {n:'ui',q:1,u:'st',c:'groenten'},{n:'boter',q:40,u:'g',c:'zuivel'}]},
 
-{id:'boontjesworst',naam:'Boontjes met worst en aardappelen',tijd:30,eiwit:'hoog',bron:'varken',slots:['diner'],prep:true,opwarm:true,tip:'',ing:[
+{id:'boontjesworst',naam:'Boontjes met worst en aardappelen',tijd:30,eiwit:'hoog',bron:'varken',slots:['diner'],eigen:true,prep:true,opwarm:true,tip:'',ing:[
  {n:'braadworst',q:4,u:'st',c:'vlees'},{n:'prinsessenboontjes',q:800,u:'g',c:'groenten'},{n:'aardappelen',q:1,u:'kg',c:'groenten'},
  {n:'ui',q:1,u:'st',c:'groenten'},{n:'boter',q:40,u:'g',c:'zuivel'}]},
 
-{id:'kipcurrysaus',naam:'Kip met rijst en currysaus',tijd:30,eiwit:'hoog',bron:'kip',slots:['diner'],prep:true,opwarm:true,tip:'',ing:[
+{id:'kipcurrysaus',naam:'Kip met rijst en currysaus',tijd:30,eiwit:'hoog',bron:'kip',slots:['diner'],eigen:true,prep:true,opwarm:true,tip:'',ing:[
  {n:'kipfilet',q:600,u:'g',c:'vlees'},{n:'rijst',q:300,u:'g',c:'droog'},{n:'kookroom',q:250,u:'ml',c:'zuivel'},
  {n:'currypoeder',q:2,u:'el',c:'droog'},{n:'ui',q:1,u:'st',c:'groenten'},{n:'appel',q:1,u:'st',c:'groenten'},
  {n:'erwten (diepvries)',q:200,u:'g',c:'diepvries'}]},
 
-{id:'wrapfamilie',naam:'Wrap met kip of zalm en groenten',tijd:20,eiwit:'hoog',bron:'kip',slots:['lunch','diner'],prep:false,opwarm:false,tip:'Kip of zalm, naargelang wat er in huis is.',ing:[
+{id:'wrapfamilie',naam:'Wrap met kip of zalm en groenten',tijd:20,eiwit:'hoog',bron:'kip',slots:['lunch','diner'],eigen:true,prep:false,opwarm:false,tip:'Kip of zalm, naargelang wat er in huis is.',ing:[
  {n:'kipfilet of zalmfilet',q:600,u:'g',c:'vlees'},{n:'wraps',q:8,u:'st',c:'brood'},{n:'Philadelphia',q:200,u:'g',c:'zuivel'},
  {n:'kropsla',q:1,u:'st',c:'groenten'},{n:'tomaat',q:3,u:'st',c:'groenten'},{n:'komkommer',q:1,u:'st',c:'groenten'},
  {n:'wortel',q:2,u:'st',c:'groenten'}]},
@@ -675,7 +703,11 @@ function nextMonday(){
 function addDays(iso,n){const d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+n);return d;}
 function fmtDate(d){return d.toLocaleDateString('nl-BE',{day:'numeric',month:'short'});}
 
-function allMeals(){return BASIS.concat(state.custom||[]);}
+function allMeals(){
+  const ov=state.overrides||{};
+  return BASIS.map(m=>ov[m.id]?Object.assign({},m,ov[m.id]):m).concat(state.custom||[]);
+}
+function eigenMeals(){return allMeals().filter(m=>m.eigen||String(m.id).startsWith('eigen-'));}
 function mealById(id){return allMeals().find(m=>m.id===id);}
 function activeMeals(){return allMeals().filter(m=>!state.disabled[m.id]);}
 
@@ -713,7 +745,7 @@ const REIS=20;      // minuten heen/terug rond een training
 const ETEN_MIN=40;  // minimale duur van een eetvenster
 
 function eetvensters(wd){
-  const busy=(TRAINING[wd]||[]).map(t=>[mins(t.van)-REIS,mins(t.tot)+REIS]).sort((a,b)=>a[0]-b[0]);
+  const busy=trainingenOp(wd).map(t=>[mins(t.van)-REIS,mins(t.tot)+REIS]).sort((a,b)=>a[0]-b[0]);
   let free=[[mins('17:00'),mins('21:00')]];
   busy.forEach(([bs,be])=>{
     const out=[];
@@ -727,6 +759,58 @@ function eetvensters(wd){
   return free.filter(([s,e])=>e-s>=ETEN_MIN);
 }
 
+/* Belgische wettelijke feestdagen. Pasen wordt berekend, de rest volgt daaruit
+   of ligt vast op een datum. */
+function pasen(jaar){
+  const a=jaar%19,b=Math.floor(jaar/100),c=jaar%100,d=Math.floor(b/4),e=b%4,
+        f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,
+        i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),
+        maand=Math.floor((h+l-7*m+114)/31),dag=((h+l-7*m+114)%31)+1;
+  return new Date(jaar,maand-1,dag,12,0,0);
+}
+function isoV(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function plusDagen(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+
+const _feestCache={};
+function feestdagen(jaar){
+  if(_feestCache[jaar]) return _feestCache[jaar];
+  const p=pasen(jaar), m={};
+  m[jaar+'-01-01']='Nieuwjaar';
+  m[isoV(plusDagen(p,1))]='Paasmaandag';
+  m[jaar+'-05-01']='Dag van de arbeid';
+  m[isoV(plusDagen(p,39))]='O.L.H. Hemelvaart';
+  m[isoV(plusDagen(p,50))]='Pinkstermaandag';
+  m[jaar+'-07-21']='Nationale feestdag';
+  m[jaar+'-08-15']='O.L.V. Hemelvaart';
+  m[jaar+'-11-01']='Allerheiligen';
+  m[jaar+'-11-11']='Wapenstilstand';
+  m[jaar+'-12-25']='Kerstmis';
+  _feestCache[jaar]=m;
+  return m;
+}
+function feestdagNaam(iso){
+  return feestdagen(Number(iso.slice(0,4)))[iso]||null;
+}
+
+/* Vlaamse schoolvakanties. De officiële rekenregels kennen uitzonderingen die
+   in de praktijk afwijken, dus dit zijn opgezochte datums. Aanpasbaar via ⋯. */
+const VAKANTIES_STANDAARD=[
+  {naam:'Herfstvakantie',   van:'2025-10-27',tot:'2025-11-02'},
+  {naam:'Kerstvakantie',    van:'2025-12-22',tot:'2026-01-04'},
+  {naam:'Krokusvakantie',   van:'2026-02-16',tot:'2026-02-22'},
+  {naam:'Paasvakantie',     van:'2026-04-06',tot:'2026-04-19'},
+  {naam:'Zomervakantie',    van:'2026-07-01',tot:'2026-08-31'},
+  {naam:'Herfstvakantie',   van:'2026-10-26',tot:'2026-11-01'},
+  {naam:'Kerstvakantie',    van:'2026-12-21',tot:'2027-01-03'},
+  {naam:'Krokusvakantie',   van:'2027-02-15',tot:'2027-02-21'},
+  {naam:'Paasvakantie',     van:'2027-03-29',tot:'2027-04-11'},
+  {naam:'Zomervakantie',    van:'2027-07-01',tot:'2027-08-31'}
+];
+function vakantieNaam(iso){
+  const v=(state.vakanties||[]).find(x=>x&&x.van&&x.tot&&iso>=x.van&&iso<=x.tot);
+  return v?v.naam:null;
+}
+
 function isoVan(d){
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 }
@@ -736,10 +820,17 @@ function buildDays(){
   for(let i=0;i<14;i++){
     const date=addDays(state.start,i);
     const wd=(date.getDay()+6)%7;
-    const r=DAGREGELS[wd];
+    let r=DAGREGELS[wd];
     const iso=isoVan(date);
-    out.push({i,date,iso,wd,naam:DAGEN[wd],regels:r,training:TRAINING[wd]||[],
-              vensters:eetvensters(wd),weekend:wd>=5,vergadering:verg.includes(iso)});
+    const feest=feestdagNaam(iso), vak=vakantieNaam(iso);
+    if(feest||vak){
+      // geen school, dus geen vast eetuur en geen opwarmplicht
+      r=Object.assign({},r,{samen:null,opwarmen:false,max:999,note:''});
+      if(state.vakantieLunch&&r.slots.length===1) r=Object.assign({},r,{slots:['lunch','diner']});
+    }
+    out.push({i,date,iso,wd,naam:DAGEN[wd],regels:r,training:trainingenOp(wd),
+              vensters:eetvensters(wd),weekend:wd>=5,vergadering:verg.includes(iso),
+              feest,vakantie:vak});
   }
   return out;
 }
@@ -989,6 +1080,10 @@ async function raadViaServer(naam){
   if(modus!=='server') return null;
   try{
     const r=await fetch('/api/suggest',{method:'POST',headers:apiHeaders(),body:JSON.stringify({naam})});
+    if(r.status===429){
+      let f='Limiet bereikt.'; try{ f=(await r.json()).fout||f; }catch(e){}
+      return {limiet:true,tekst:f};
+    }
     if(!r.ok) return null;
     const d=await r.json();
     if(!d||!Array.isArray(d.ing)) return null;
@@ -1021,6 +1116,7 @@ async function raadViaServer(naam){
       alleen:(d.alleen==='weekend'||d.alleen==='zondag')?d.alleen:(d.alleen===null?'':null),
       tip:typeof d.tip==='string'?d.tip.trim().slice(0,120):null,
       model:typeof d._model==='string'?d._model:null,
+      gebruik:d._gebruik&&typeof d._gebruik.vandaag==='number'?d._gebruik:null,
       via:'claude'
     };
   }catch(e){ return null; }
@@ -1062,7 +1158,18 @@ function raadIngredienten(naam){
   if(treffers&&!uit.some(x=>x.n==='ui')&&!geenUi)
     uit.push({n:'ui',q:1,u:'st',c:'groenten'});
 
-  return {ing:uit,bron,opwarm,treffers};
+  // ruwe schatting van de overige velden, zodat ook zonder Claude alles ingevuld raakt
+  let tijd=30;
+  if(['stoofvlees','stoverij','stoofpot'].some(w=>t.includes(w))) tijd=150;
+  else if(['ovenschotel','lasagne','quiche','gratin','ovenkip'].some(w=>t.includes(w))) tijd=50;
+  else if(['soep'].some(w=>t.includes(w))) tijd=40;
+  else if(['wok','roerbak','salade','wrap','pita','croque','pesto'].some(w=>t.includes(w))) tijd=20;
+  const hoogEiwit=['kip','rund','varken','kalkoen','vis','garnaal','ei','tofu'];
+  const eiwit=bron&&hoogEiwit.includes(bron)?'hoog':'gemiddeld';
+  const lunchOok=['soep','salade','wrap','pita','croque','quiche','brood','boterham'].some(w=>t.includes(w));
+  const slots=lunchOok?'lunch,diner':'diner';
+
+  return {ing:uit,bron,opwarm,treffers,tijd,eiwit,slots,prep:opwarm===true?true:null,instant:null,alleen:null,tip:null};
 }
 
 /* ============================================================
@@ -1083,7 +1190,9 @@ function stripHTML(dag){
   }
   dag.training.forEach(t=>{
     const s=mins(t.van),e=mins(t.tot);
-    h+=`<div class="blk tr" style="left:${pct(s)}%;width:${pct(e)-pct(s)}%"><span>${esc(t.wie)}</span></div>`;
+    const breed=pct(e)-pct(s);
+    const label=breed>22?`${esc(t.wie)} ${t.van}–${t.tot}`:esc(t.wie);
+    h+=`<div class="blk tr" style="left:${pct(s)}%;width:${breed}%" title="${esc(t.wie)} ${t.van}–${t.tot}, ${esc(t.waar||'')}"><span>${label}</span></div>`;
   });
   h+='</div><div class="striplabels"><span>16:00</span><span>18:00</span><span>20:00</span><span>21:30</span></div>';
   return h;
@@ -1095,12 +1204,15 @@ function slotHTML(dag,slot){
   const gekozen=v&&v.mealId?mealById(v.mealId):null;
   const opties=activeMeals().filter(m=>m.slots.includes(slot))
     .sort((a,b)=>a.naam.localeCompare(b.naam,'nl'));
-
-  const optHTML=['<option value="">— nog niets —</option>'].concat(
-    opties.map(m=>{
-      const ok=past(m,slot,dag);
-      return `<option value="${m.id}" ${gekozen&&gekozen.id===m.id?'selected':''}>${esc(m.naam)}${ok?'':' ⚠︎ (past krap)'} · ${m.tijd}′</option>`;
-    })).join('');
+  const isEigen=m=>!!(m.eigen||String(m.id).startsWith('eigen-'));
+  const optie=m=>{
+    const ok=past(m,slot,dag);
+    return `<option value="${m.id}" ${gekozen&&gekozen.id===m.id?'selected':''}>${esc(m.naam)}${ok?'':' ⚠︎ (past krap)'} · ${m.tijd}′</option>`;
+  };
+  const onze=opties.filter(isEigen), rest=opties.filter(m=>!isEigen(m));
+  const optHTML='<option value="">— nog niets —</option>'
+    +(onze.length?`<optgroup label="Onze recepten">${onze.map(optie).join('')}</optgroup>`:'')
+    +(rest.length?`<optgroup label="Andere">${rest.map(optie).join('')}</optgroup>`:'');
 
   let note='';
   if(gekozen){
@@ -1125,22 +1237,19 @@ function slotHTML(dag,slot){
 }
 
 function dayHTML(dag){
-  const chips=dag.training.map(t=>`<span class="chip train">🏀 ${esc(t.wie)} ${t.van}</span>`).join('');
   const modus=(dag.regels.samen?`<span class="chip prep">samen ${dag.regels.samen}</span>`:'')
             +(dag.regels.opwarmen?'<span class="chip rush">opwarmen</span>':'');
   const verg=dag.vergadering?'<span class="chip verg">🗓 vergadering</span>':'';
-  const wknd=dag.weekend?'<span class="chip train">🏀 vaak wedstrijd</span>':'';
-  const trainTxt=dag.training.map(t=>`${esc(t.wie)} ${t.van}–${t.tot}, ${esc(t.waar)}`).join('<br>');
-  const dagnote=dag.vergadering
-    ? 'Vergadering — kies afhaal, of iets dat meteen de oven in kan.'
-    : (dag.wd===4 ? dag.regels.note+' Of kies "Wij gaan samen uit eten".' : dag.regels.note);
-  return `<article class="day wd${dag.wd} ${dag.weekend?'weekend':''} ${dag.vergadering?'vergaderdag':''}">
+  const feest=dag.feest?`<span class="chip feest">${esc(dag.feest)}</span>`:'';
+  const vak=dag.vakantie&&!dag.feest?`<span class="chip feest">${esc(dag.vakantie)}</span>`:'';
+  const wknd=dag.weekend&&!dag.vakantie&&!dag.feest?'<span class="chip train">🏀 wedstrijd?</span>':'';
+  const strip=(dag.training.length||dag.regels.samen)?stripHTML(dag):'';
+  return `<article class="day wd${dag.wd} ${dag.weekend?'weekend':''} ${dag.vergadering?'vergaderdag':''} ${dag.feest||dag.vakantie?'vrijdag-af':''}">
     <div class="day-top">
       <div><div class="day-name">${dag.naam}</div><div class="day-date">${fmtDate(dag.date)}</div></div>
-      <div class="chips">${verg}${modus}${chips}${wknd}</div>
+      <div class="chips">${feest}${vak}${verg}${modus}${wknd}</div>
     </div>
-    ${dag.training.length?stripHTML(dag)+`<p class="trainlist">${trainTxt}</p>`:''}
-    ${dagnote?`<p class="trainlist">${esc(dagnote)}</p>`:''}
+    ${strip}
     ${dag.regels.slots.map(s=>slotHTML(dag,s)).join('')}
     <button class="vergtoggle ${dag.vergadering?'on':''}" data-verg="${dag.iso}">
       ${dag.vergadering?'🗓 vergadering — klik om weg te halen':'+ vergadering op deze dag'}
@@ -1183,11 +1292,15 @@ function renderPlan(){
     </div>`;
   }
 
-  [0,1].forEach(w=>{
-    const van=dagen[w*7].date, tot=dagen[w*7+6].date;
-    h+=`<div class="weekhead"><h2>Week ${w+1}</h2><span class="meta">${fmtDate(van)} – ${fmtDate(tot)}</span><span class="rule"></span></div>`;
-    h+='<div class="days">'+dagen.slice(w*7,w*7+7).map(dayHTML).join('')+'</div>';
-  });
+  const w=(state.weekView===2)?1:0;
+  const van=dagen[w*7].date, tot=dagen[w*7+6].date;
+  h+=`<div class="weekhead">
+    <div class="seg">
+      <button data-week="1" aria-pressed="${w===0}">Week 1</button>
+      <button data-week="2" aria-pressed="${w===1}">Week 2</button>
+    </div>
+    <span class="meta">${fmtDate(van)} – ${fmtDate(tot)}</span><span class="rule"></span></div>`;
+  h+='<div class="days">'+dagen.slice(w*7,w*7+7).map(dayHTML).join('')+'</div>';
 
   $('#tab-plan').innerHTML=h;
 
@@ -1204,6 +1317,9 @@ function renderPlan(){
       state.plan[k]=sel.value?{mealId:sel.value,locked:cur.locked||false}:null;
       save(); render();
     };
+  });
+  $('#tab-plan').querySelectorAll('[data-week]').forEach(b=>b.onclick=()=>{
+    state.weekView=Number(b.dataset.week); save(); renderPlan();
   });
   $('#tab-plan').querySelectorAll('[data-verg]').forEach(b=>b.onclick=()=>{
     const iso=b.dataset.verg;
@@ -1257,7 +1373,12 @@ function formHTML(){
     <h3>${m?'Recept bewerken':'Eigen recept toevoegen'}</h3>
     <p class="hint">Hoeveelheden voor 4 personen. De app rekent zelf om naar ${state.personen}.</p>
     <div class="bar" style="margin:14px 0 10px;padding:0;border:0;background:transparent">
-      <div class="field" style="flex:1;min-width:220px"><label for="f-naam">Naam</label><input id="f-naam" value="${m?esc(m.naam):''}" placeholder="bv. Vispannetje van oma"></div>
+      <div class="field" style="flex:1;min-width:280px"><label for="f-naam">Naam</label>
+        <div style="display:flex;gap:6px">
+          <input id="f-naam" style="flex:1;min-width:0" value="${m?esc(m.naam):''}" placeholder="bv. Vispannetje van oma">
+          <button class="btn ghost" id="raadknop" type="button" title="Vult alle velden in op basis van de naam">✨ Invullen</button>
+        </div>
+      </div>
       <div class="field"><label for="f-tijd">Kooktijd (min)</label><input id="f-tijd" type="number" min="5" max="240" value="${m?m.tijd:30}"></div>
       <div class="field"><label for="f-eiwit">Eiwit</label><select id="f-eiwit">
         <option value="hoog" ${m&&m.eiwit==='hoog'?'selected':''}>hoog</option>
@@ -1284,10 +1405,7 @@ function formHTML(){
     </div>
     <div class="field" style="margin-bottom:12px"><label for="f-tip">Tip (optioneel)</label><input id="f-tip" value="${m&&m.tip?esc(m.tip):''}" placeholder="bv. saus kan twee dagen vooraf"></div>
 
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
-      <div class="slot-label" style="margin:0">Ingrediënten</div>
-      <button class="btn ghost small" id="raadknop" type="button">✨ Voorstel op basis van de naam</button>
-    </div>
+    <div class="slot-label">Ingrediënten</div>
     <div id="ingrows">${rows.map(r=>ingRow(r,unitOpts)).join('')}</div>
     <button class="btn ghost small" id="addrow">+ ingrediënt</button>
     <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
@@ -1306,138 +1424,74 @@ function ingRow(r,unitOpts){
   </div>`;
 }
 
+function tabelRij(m){
+  const eigenR=!!(m.eigen||String(m.id).startsWith('eigen-'));
+  const ja=(v)=>`<option value="ja" ${v?'selected':''}>ja</option><option value="nee" ${v?'':'selected'}>nee</option>`;
+  return `<tr>
+    <td class="naam">${esc(m.naam)}${eigenR?' <span class="chip rush">onze</span>':''}</td>
+    <td><input type="number" min="0" max="240" value="${m.tijd}" data-mid="${m.id}" data-veld="tijd"></td>
+    <td><select data-mid="${m.id}" data-veld="eiwit"><option ${m.eiwit==='hoog'?'selected':''}>hoog</option><option ${m.eiwit==='gemiddeld'?'selected':''}>gemiddeld</option></select></td>
+    <td><select data-mid="${m.id}" data-veld="bron">${['kip','rund','varken','kalkoen','vis','garnaal','ei','peulvrucht','tofu','kaas','gemengd'].map(b=>`<option ${m.bron===b?'selected':''}>${b}</option>`).join('')}</select></td>
+    <td><select data-mid="${m.id}" data-veld="slots">
+      <option value="diner" ${m.slots.join()==='diner'?'selected':''}>avond</option>
+      <option value="lunch" ${m.slots.join()==='lunch'?'selected':''}>middag</option>
+      <option value="lunch,diner" ${m.slots.length===2?'selected':''}>beide</option></select></td>
+    <td><select data-mid="${m.id}" data-veld="prep">${ja(m.prep)}</select></td>
+    <td><select data-mid="${m.id}" data-veld="opwarm">${ja(m.opwarm)}</select></td>
+    <td><select data-mid="${m.id}" data-veld="instant">${ja(m.instant)}</select></td>
+    <td><select data-mid="${m.id}" data-veld="alleen">
+      <option value="" ${!m.alleen?'selected':''}>elke dag</option>
+      <option value="weekend" ${m.alleen==='weekend'?'selected':''}>weekend</option>
+      <option value="zondag" ${m.alleen==='zondag'?'selected':''}>zondag</option></select></td>
+    <td style="text-align:center"><input type="checkbox" data-use="${m.id}" ${state.disabled[m.id]?'':'checked'}></td>
+  </tr>`;
+}
+
 function renderMeals(){
-  const eigen=state.custom||[];
-  const uitleg = modus==='server'
-    ? 'Alles staat op jullie eigen Cloudflare-server. Wijzigingen van de anderen verschijnen vanzelf, binnen een kwartier of meteen na "Vernieuwen".'
-    : modus==='gedeeld'
-    ? 'Recepten, planning en boodschappenlijst worden gedeeld opgeslagen: iedereen die deze app opent, ziet dezelfde inhoud. Er is geen live synchronisatie — klik "Vernieuwen" voor je begint.'
-    : modus==='lokaal'
-    ? 'Er wordt nu enkel op dit toestel bewaard. Anderen zien jouw wijzigingen niet.'
-    : 'Deze kopie draait zonder opslag. Gebruik "Back-up downloaden", anders gaat alles verloren bij het sluiten.';
-  let h=`<div class="panel" style="border-left:4px solid var(--pine)">
-    <h3>Delen met het gezin</h3>
-    <p class="hint">${esc(uitleg)}</p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
-      <button class="btn ghost" id="refresh">Vernieuwen</button>
-      <button class="btn ghost" id="export">Back-up downloaden</button>
-      <button class="btn ghost" id="importbtn">Back-up inladen</button>
-      <button class="btn ghost" id="testclaude">Claude-koppeling testen</button>
-      <input type="file" id="importfile" accept="application/json,.json" hidden>
+  const alles=allMeals();
+  const onze=alles.filter(m=>m.eigen||String(m.id).startsWith('eigen-'));
+  const rest=alles.filter(m=>!(m.eigen||String(m.id).startsWith('eigen-')));
+  const tabel=state.mealView!=='kaarten';
+  let h=formHTML();
+  h+=`<div class="weekhead">
+    <div class="seg">
+      <button data-mv="tabel" aria-pressed="${tabel}">Tabel</button>
+      <button data-mv="kaarten" aria-pressed="${!tabel}">Kaarten</button>
     </div>
-    <p class="hint" id="testuit" style="margin-top:10px"></p>
-    <details style="margin-top:12px"><summary class="hint" style="cursor:pointer">Wat is er veranderd (v${VERSIE})</summary>
-      <ul class="ing" style="margin-top:8px">${CHANGELOG.map(([v,t])=>`<li><b>${v}</b> — ${esc(t)}</li>`).join('')}</ul>
-    </details>
-  </div>`;
-  h+=formHTML();
-  h+=`<div class="weekhead"><h2>Eigen recepten</h2><span class="meta">${eigen.length}</span><span class="rule"></span></div>`;
-  h+= eigen.length?`<div class="meal-grid">${eigen.map(m=>mealCard(m,true)).join('')}</div>`
-    :`<div class="empty">Nog geen eigen recepten. Voeg hierboven jullie vaste klassiekers toe — ze komen dan meteen in de voorstellen.</div>`;
-  h+=`<div class="weekhead"><h2>Basisrecepten</h2><span class="meta">${BASIS.length}</span><span class="rule"></span></div>`;
-  h+=`<div class="meal-grid">${BASIS.map(m=>mealCard(m,false)).join('')}</div>`;
+    <span class="meta">${onze.length} eigen · ${rest.length} andere</span><span class="rule"></span></div>`;
+
+  if(tabel){
+    h+=`<div class="panel" style="padding:12px">
+      <p class="hint" style="margin-bottom:10px">Alles is hier rechtstreeks aan te passen. Wijzigingen aan een basisrecept blijven bewaard en overschrijven het origineel niet.</p>
+      <div class="tabelwrap"><table class="rtabel">
+        <thead><tr><th>Gerecht</th><th>Min</th><th>Eiwit</th><th>Hoofd</th><th>Wanneer</th><th>Vooraf</th><th>Opwarmen</th><th>Meteen</th><th>Enkel</th><th>Aan</th></tr></thead>
+        <tbody>${onze.map(tabelRij).join('')}${rest.map(tabelRij).join('')}</tbody>
+      </table></div>
+    </div>`;
+  }else{
+    h+=`<div class="meal-grid">${onze.map(m=>mealCard(m,String(m.id).startsWith('eigen-'))).join('')}</div>`;
+    h+=`<div class="weekhead"><h2>Andere recepten</h2><span class="rule"></span></div>`;
+    h+=`<div class="meal-grid">${rest.map(m=>mealCard(m,false)).join('')}</div>`;
+  }
   $('#tab-meals').innerHTML=h;
-
-  $('#refresh').onclick=async()=>{
-    if(modus==='server'){ await haalOp(); } else { await load(); }
-    render(); toast('Laatste versie opgehaald');
-  };
-
-  $('#export').onclick=()=>{
-    const blob=new Blob([JSON.stringify({versie:1,recepten:state.custom,plan:state.plan,start:state.start,personen:state.personen},null,2)],{type:'application/json'});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);
-    a.download='whats4dinner-backup.json';
-    a.click(); URL.revokeObjectURL(a.href);
-  };
-
-  $('#importbtn').onclick=()=>$('#importfile').click();
-  $('#importfile').onchange=e=>{
-    const f=e.target.files[0]; if(!f) return;
-    const fr=new FileReader();
-    fr.onload=()=>{
-      let d; try{ d=JSON.parse(fr.result); }catch(err){ return toast('Dit bestand kon niet gelezen worden.'); }
-      const inkomend=Array.isArray(d.recepten)?d.recepten:[];
-      const namen=new Set((state.custom||[]).map(m=>m.naam.toLowerCase()));
-      let toegevoegd=0;
-      inkomend.forEach(m=>{
-        if(!m||!m.naam||namen.has(m.naam.toLowerCase())) return;
-        m.id='eigen-'+Date.now()+'-'+(toegevoegd++);
-        state.custom.push(m); namen.add(m.naam.toLowerCase());
-      });
-      if(d.plan&&confirm('Ook de planning uit dit bestand overnemen? De huidige planning wordt vervangen.')){
-        state.plan=d.plan; if(d.start) state.start=d.start; if(d.personen) state.personen=d.personen;
-      }
-      save(); render(); toast(toegevoegd+' recept(en) toegevoegd');
-    };
-    fr.readAsText(f);
-  };
-
-  const unitOpts=['g','kg','ml','l','st','el','tl','blik','pot','bosje','sneden','teentjes','rol','snuf',''];
-  const rowsEl=$('#ingrows');
-  $('#addrow').onclick=()=>{ rowsEl.insertAdjacentHTML('beforeend',ingRow({n:'',q:'',u:'g',c:'groenten'},unitOpts)); bindDel(); };
-  function bindDel(){ rowsEl.querySelectorAll('.del').forEach(b=>b.onclick=()=>{ if(rowsEl.children.length>1) b.parentElement.remove(); }); }
-  bindDel();
-
-  $('#raadknop').onclick=async()=>{
-    const naam=$('#f-naam').value.trim();
-    if(!naam) return toast('Vul eerst de naam van het gerecht in.');
-    const knop=$('#raadknop');
-    knop.disabled=true; const oud=knop.textContent; knop.textContent='Even denken…';
-    let r=await raadViaServer(naam);
-    knop.disabled=false; knop.textContent=oud;
-    if(!r) r=raadIngredienten(naam);
-    if(!r.ing.length) return toast('Geen bekende ingrediënten herkend in die naam.');
-    const gevuld=[...rowsEl.querySelectorAll('.i-n')].some(x=>x.value.trim());
-    if(gevuld&&!confirm('De ingrediëntenlijst wordt vervangen door het voorstel. Doorgaan?')) return;
-    rowsEl.innerHTML=r.ing.map(x=>ingRow(x,unitOpts)).join('');
-    bindDel();
-    if(r.bron) $('#f-bron').value=r.bron;
-    if(r.opwarm!==null&&r.opwarm!==undefined) $('#f-opwarm').value=r.opwarm?'ja':'nee';
-    if(r.tijd) $('#f-tijd').value=r.tijd;
-    if(r.eiwit) $('#f-eiwit').value=r.eiwit;
-    if(r.slots) $('#f-slots').value=r.slots;
-    if(r.prep!==null&&r.prep!==undefined) $('#f-prep').value=r.prep?'ja':'nee';
-    if(r.instant!==null&&r.instant!==undefined) $('#f-instant').value=r.instant?'ja':'nee';
-    if(r.alleen!==null&&r.alleen!==undefined) $('#f-alleen').value=r.alleen;
-    if(r.tip) $('#f-tip').value=r.tip;
-    toast(r.ing.length+' ingrediënten voorgesteld'+(r.via==='claude'?' door Claude':'')+' — pas gerust aan');
-  };
-
-  $('#saverecipe').onclick=()=>{
-    const naam=$('#f-naam').value.trim();
-    if(!naam) return toast('Geef het recept een naam.');
-    const ing=[...rowsEl.querySelectorAll('.ingrow')].map(r=>({
-      n:r.querySelector('.i-n').value.trim(),
-      q:r.querySelector('.i-q').value===''?null:Number(r.querySelector('.i-q').value),
-      u:r.querySelector('.i-u').value,
-      c:r.querySelector('.i-c').value
-    })).filter(i=>i.n);
-    if(!ing.length) return toast('Voeg minstens één ingrediënt toe.');
-    const rec={
-      id:bewerkId||('eigen-'+Date.now()),
-      naam, tijd:Number($('#f-tijd').value)||30,
-      eiwit:$('#f-eiwit').value, bron:$('#f-bron').value,
-      slots:$('#f-slots').value.split(','), prep:$('#f-prep').value==='ja',
-      opwarm:$('#f-opwarm').value==='ja', instant:$('#f-instant').value==='ja',
-      alleen:$('#f-alleen').value||undefined,
-      tip:$('#f-tip').value.trim(), ing
-    };
-    if(bewerkId){ state.custom=state.custom.map(m=>m.id===bewerkId?rec:m); bewerkId=null; }
-    else state.custom.push(rec);
-    save(); render(); toast('Recept opgeslagen');
-  };
-  $('#testclaude').onclick=async()=>{
-    const uit=$('#testuit'), knop=$('#testclaude');
-    knop.disabled=true; uit.textContent='Bezig met testen…';
-    const r=await testClaude();
-    knop.disabled=false;
-    uit.textContent=(r.ok?'✓ ':'✗ ')+r.tekst;
-    uit.style.color=r.ok?'var(--pine)':'var(--ball)';
-  };
 
   if($('#cancelrecipe')) $('#cancelrecipe').onclick=()=>{ bewerkId=null; render(); };
 
+  $('#tab-meals').querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>{
+    state.mealView=b.dataset.mv; save(); renderMeals();
+  });
+  $('#tab-meals').querySelectorAll('[data-mid]').forEach(el=>el.onchange=()=>{
+    const id=el.dataset.mid, veld=el.dataset.veld;
+    let waarde=el.value;
+    if(veld==='tijd') waarde=Math.max(0,Math.min(240,Number(el.value)||0));
+    else if(veld==='slots') waarde=el.value.split(',');
+    else if(veld==='prep'||veld==='opwarm'||veld==='instant') waarde=(el.value==='ja');
+    else if(veld==='alleen') waarde=el.value||undefined;
+    const eigenRec=state.custom.find(m=>m.id===id);
+    if(eigenRec){ eigenRec[veld]=waarde; }
+    else { state.overrides[id]=state.overrides[id]||{}; state.overrides[id][veld]=waarde; }
+    save(); renderMeals();
+  });
   $('#tab-meals').querySelectorAll('[data-use]').forEach(cb=>cb.onchange=()=>{
     if(cb.checked) delete state.disabled[cb.dataset.use]; else state.disabled[cb.dataset.use]=true;
     save(); renderMeals();
@@ -1553,12 +1607,6 @@ function renderShop(){
       <p class="hint" style="margin-top:8px">Om te plakken in de lijstfunctie van je winkel-app, of om door te sturen.</p>
       <textarea id="lijsttekst" readonly rows="12" style="width:100%;margin-top:8px;border:1px solid var(--line);border-radius:9px;padding:10px;font-family:ui-monospace,monospace;font-size:13px">${esc(lijstAlsTekst(week))}</textarea>
     </details>`;
-    h+=`<div class="zoekinstel">
-      <label for="zoekurl">Zoeklink per product</label>
-      <input id="zoekurl" value="${esc(state.zoekUrl||'')}" placeholder="https://www.collectandgo.be/nl/zoek?searchTerm={q}">
-      <p class="hint">Staat standaard op Collect&amp;Go. Voor een andere winkel: doe daar één zoekopdracht, kopieer de URL hierheen en vervang je zoekwoord door <code>{q}</code>. Leeg laten verbergt de 🔍-links.
-      <button class="btn ghost small" id="zoekreset" style="margin-left:6px">Terug naar Collect&amp;Go</button></p>
-    </div>`;
     h+='</div>';
 
     h+=`<div class="panel"><h3>Per maaltijd</h3>
@@ -1579,8 +1627,6 @@ function renderShop(){
     if(d){ d.open=true; d.scrollIntoView({behavior:'smooth',block:'center'}); $('#lijsttekst').select(); }
     toast('Kopiëren lukt hier niet — selecteer de tekst hieronder.');
   };
-  if($('#zoekurl')) $('#zoekurl').onchange=e=>{ state.zoekUrl=e.target.value.trim(); save(); renderShop(); };
-  if($('#zoekreset')) $('#zoekreset').onclick=()=>{ state.zoekUrl=ZOEK_STANDAARD; save(); renderShop(); toast('Zoeklink hersteld'); };
   $('#uncheck').onclick=()=>{ state.checked={}; save(); renderShop(); };
   $('#print').onclick=()=>window.print();
   $('#tab-shop').querySelectorAll('[data-check]').forEach(cb=>cb.onchange=()=>{
@@ -1588,6 +1634,275 @@ function renderShop(){
     if(cb.checked) state.checked[k]=true; else delete state.checked[k];
     save(); renderShop();
   });
+}
+
+/* Deel- en back-upknoppen; gebruikt door het configuratiescherm. */
+function bindDelenKnoppen(){
+  $('#refresh').onclick=async()=>{
+    if(modus==='server'){ await haalOp(); } else { await load(); }
+    render(); toast('Laatste versie opgehaald');
+  };
+
+  $('#export').onclick=()=>{
+    const blob=new Blob([JSON.stringify({versie:1,recepten:state.custom,plan:state.plan,start:state.start,personen:state.personen},null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='whats4dinner-backup.json';
+    a.click(); URL.revokeObjectURL(a.href);
+  };
+
+  $('#importbtn').onclick=()=>$('#importfile').click();
+  $('#importfile').onchange=e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const fr=new FileReader();
+    fr.onload=()=>{
+      let d; try{ d=JSON.parse(fr.result); }catch(err){ return toast('Dit bestand kon niet gelezen worden.'); }
+      const inkomend=Array.isArray(d.recepten)?d.recepten:[];
+      const namen=new Set((state.custom||[]).map(m=>m.naam.toLowerCase()));
+      let toegevoegd=0;
+      inkomend.forEach(m=>{
+        if(!m||!m.naam||namen.has(m.naam.toLowerCase())) return;
+        m.id='eigen-'+Date.now()+'-'+(toegevoegd++);
+        state.custom.push(m); namen.add(m.naam.toLowerCase());
+      });
+      if(d.plan&&confirm('Ook de planning uit dit bestand overnemen? De huidige planning wordt vervangen.')){
+        state.plan=d.plan; if(d.start) state.start=d.start; if(d.personen) state.personen=d.personen;
+      }
+      save(); render(); toast(toegevoegd+' recept(en) toegevoegd');
+    };
+    fr.readAsText(f);
+  };
+
+  const unitOpts=['g','kg','ml','l','st','el','tl','blik','pot','bosje','sneden','teentjes','rol','snuf',''];
+  const rowsEl=$('#ingrows');
+  $('#addrow').onclick=()=>{ rowsEl.insertAdjacentHTML('beforeend',ingRow({n:'',q:'',u:'g',c:'groenten'},unitOpts)); bindDel(); };
+  function bindDel(){ rowsEl.querySelectorAll('.del').forEach(b=>b.onclick=()=>{ if(rowsEl.children.length>1) b.parentElement.remove(); }); }
+  bindDel();
+
+  $('#raadknop').onclick=async()=>{
+    const naam=$('#f-naam').value.trim();
+    if(!naam) return toast('Vul eerst de naam van het gerecht in.');
+    const knop=$('#raadknop');
+    knop.disabled=true; const oud=knop.textContent; knop.textContent='Even denken…';
+    let r=await raadViaServer(naam);
+    knop.disabled=false; knop.textContent=oud;
+    if(r&&r.limiet){ toast(r.tekst+' Er wordt nu de ingebouwde lijst gebruikt.'); r=null; }
+    if(!r) r=raadIngredienten(naam);
+    if(!r.ing.length) return toast('Geen bekende ingrediënten herkend in die naam.');
+    const gevuld=[...rowsEl.querySelectorAll('.i-n')].some(x=>x.value.trim());
+    if(gevuld&&!confirm('De ingrediëntenlijst wordt vervangen door het voorstel. Doorgaan?')) return;
+    rowsEl.innerHTML=r.ing.map(x=>ingRow(x,unitOpts)).join('');
+    bindDel();
+    if(r.bron) $('#f-bron').value=r.bron;
+    if(r.opwarm!==null&&r.opwarm!==undefined) $('#f-opwarm').value=r.opwarm?'ja':'nee';
+    if(r.tijd) $('#f-tijd').value=r.tijd;
+    if(r.eiwit) $('#f-eiwit').value=r.eiwit;
+    if(r.slots) $('#f-slots').value=r.slots;
+    if(r.prep!==null&&r.prep!==undefined) $('#f-prep').value=r.prep?'ja':'nee';
+    if(r.instant!==null&&r.instant!==undefined) $('#f-instant').value=r.instant?'ja':'nee';
+    if(r.alleen!==null&&r.alleen!==undefined) $('#f-alleen').value=r.alleen;
+    if(r.tip) $('#f-tip').value=r.tip;
+    const rest=r.gebruik?' — nog '+Math.max(0,r.gebruik.limiet-r.gebruik.vandaag)+' vandaag':'';
+    toast(r.ing.length+' ingrediënten voorgesteld'+(r.via==='claude'?' door Claude':' uit de woordenlijst')+rest);
+  };
+
+  $('#saverecipe').onclick=()=>{
+    const naam=$('#f-naam').value.trim();
+    if(!naam) return toast('Geef het recept een naam.');
+    const ing=[...rowsEl.querySelectorAll('.ingrow')].map(r=>({
+      n:r.querySelector('.i-n').value.trim(),
+      q:r.querySelector('.i-q').value===''?null:Number(r.querySelector('.i-q').value),
+      u:r.querySelector('.i-u').value,
+      c:r.querySelector('.i-c').value
+    })).filter(i=>i.n);
+    if(!ing.length) return toast('Voeg minstens één ingrediënt toe.');
+    const rec={
+      id:bewerkId||('eigen-'+Date.now()),
+      naam, tijd:Number($('#f-tijd').value)||30,
+      eiwit:$('#f-eiwit').value, bron:$('#f-bron').value,
+      slots:$('#f-slots').value.split(','), prep:$('#f-prep').value==='ja',
+      opwarm:$('#f-opwarm').value==='ja', instant:$('#f-instant').value==='ja',
+      alleen:$('#f-alleen').value||undefined,
+      tip:$('#f-tip').value.trim(), ing
+    };
+    if(bewerkId){ state.custom=state.custom.map(m=>m.id===bewerkId?rec:m); bewerkId=null; }
+    else state.custom.push(rec);
+    save(); render(); toast('Recept opgeslagen');
+  };
+  $('#testclaude').onclick=async()=>{
+    const uit=$('#testuit'), knop=$('#testclaude');
+    knop.disabled=true; uit.textContent='Bezig met testen…';
+    const r=await testClaude();
+    knop.disabled=false;
+    uit.textContent=(r.ok?'✓ ':'✗ ')+r.tekst;
+    uit.style.color=r.ok?'var(--pine)':'var(--ball)';
+  };
+
+}
+
+/* ============================================================
+   9b. Rendering — Configuratie (achter de ⋯)
+   ============================================================ */
+function renderConfig(){
+  const tr=state.trainingen||[];
+  const verg=(state.vergaderingen||[]).slice().sort();
+
+  let h=`<div class="panel">
+    <h3>Trainingen</h3>
+    <p class="hint">Bepaalt de tijdbalk per dag en wanneer er gegeten kan worden. Bij een nieuw seizoen pas je het hier aan.</p>
+    <div class="cfgrow cfghead" style="margin-top:14px">
+      <span>Wie</span><span>Dag</span><span>Van</span><span>Tot</span><span>Waar</span><span></span>
+    </div>
+    <div id="trrows">${tr.map((t,n)=>`
+      <div class="cfgrow">
+        <input data-tr="${n}" data-veld="wie" value="${esc(t.wie||'')}" placeholder="naam">
+        <select data-tr="${n}" data-veld="dag">${DAGEN.map((d,i)=>`<option value="${i}" ${t.dag===i?'selected':''}>${d}</option>`).join('')}</select>
+        <input data-tr="${n}" data-veld="van" type="time" value="${esc(t.van||'')}">
+        <input data-tr="${n}" data-veld="tot" type="time" value="${esc(t.tot||'')}">
+        <input data-tr="${n}" data-veld="waar" value="${esc(t.waar||'')}" placeholder="sporthal">
+        <button class="iconbtn weg" data-trweg="${n}" title="Verwijderen">✕</button>
+      </div>`).join('')}</div>
+    ${tr.length?'':'<p class="hint">Nog geen trainingen ingesteld.</p>'}
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn ghost small" id="traddrow">+ training</button>
+      <button class="btn ghost small" id="trreset">Terug naar het huidige schema</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Vergaderingen</h3>
+    <p class="hint">Op deze avonden stelt de app enkel afhaal voor, of iets dat meteen op tafel kan.</p>
+    <div class="datumlijst">${verg.length?verg.map(d=>`
+      <span class="datumtag">${esc(new Date(d+'T12:00:00').toLocaleDateString('nl-BE',{day:'numeric',month:'short',year:'numeric'}))}
+        <button data-vergweg="${esc(d)}" title="Verwijderen">✕</button></span>`).join('')
+      :'<span class="hint">Nog geen data ingesteld.</span>'}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:6px">
+      <div class="field"><label for="vergnieuw">Datum toevoegen</label><input type="date" id="vergnieuw"></div>
+      <button class="btn ghost" id="vergadd">Toevoegen</button>
+    </div>
+    <div class="field" style="margin-top:14px">
+      <label for="vergplak">Of meerdere tegelijk plakken</label>
+      <textarea id="vergplak" rows="3" placeholder="2026-10-08&#10;2026-10-19" style="width:100%;border:1px solid var(--line);border-radius:9px;padding:9px;font-family:ui-monospace,monospace;font-size:13px"></textarea>
+      <button class="btn ghost small" id="vergplakknop" style="margin-top:8px;align-self:flex-start">Inlezen</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Schoolvakanties en feestdagen</h3>
+    <p class="hint">Op een feestdag of in een vakantie vervalt het vaste eetuur en de opwarmplicht — er is dan tijd om te koken. Wettelijke feestdagen worden berekend; de vakanties staan hieronder en zijn aanpasbaar, want scholen leggen zelf nog pedagogische studiedagen vast.</p>
+    <label class="toggle" style="margin:12px 0">
+      <input type="checkbox" id="vaklunch" ${state.vakantieLunch?'checked':''}>
+      Tijdens vakantie ook het middagmaal plannen
+    </label>
+    <div class="cfgrow cfghead" style="grid-template-columns:1.6fr 1fr 1fr 36px">
+      <span>Naam</span><span>Van</span><span>Tot</span><span></span>
+    </div>
+    <div id="vakrows">${(state.vakanties||[]).map((v,n)=>`
+      <div class="cfgrow" style="grid-template-columns:1.6fr 1fr 1fr 36px">
+        <input data-vak="${n}" data-veld="naam" value="${esc(v.naam||'')}" placeholder="naam">
+        <input data-vak="${n}" data-veld="van" type="date" value="${esc(v.van||'')}">
+        <input data-vak="${n}" data-veld="tot" type="date" value="${esc(v.tot||'')}">
+        <button class="iconbtn weg" data-vakweg="${n}" title="Verwijderen">✕</button>
+      </div>`).join('')}</div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn ghost small" id="vakadd">+ vakantie</button>
+      <button class="btn ghost small" id="vakreset">Terug naar de opgezochte datums</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Boodschappen</h3>
+    <label class="cfghead" for="zoekurl2" style="display:block;margin-bottom:5px">Zoeklink per product</label>
+    <input id="zoekurl2" value="${esc(state.zoekUrl||'')}" placeholder="${esc(ZOEK_STANDAARD)}" style="width:100%;border:1px solid var(--line);border-radius:9px;padding:8px 10px">
+    <p class="hint" style="margin-top:8px">Staat standaard op Collect&amp;Go. Voor een andere winkel: doe daar één zoekopdracht, kopieer de URL hierheen en vervang je zoekwoord door <code>{q}</code>. Leeg laten verbergt de 🔍-links.
+      <button class="btn ghost small" id="zoekreset2" style="margin-left:6px">Terug naar Collect&amp;Go</button></p>
+  </div>
+
+  <div class="panel">
+    <h3>Delen en back-up</h3>
+    <p class="hint" id="cfguitleg"></p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn ghost" id="refresh">Vernieuwen</button>
+      <button class="btn ghost" id="export">Back-up downloaden</button>
+      <button class="btn ghost" id="importbtn">Back-up inladen</button>
+      <button class="btn ghost" id="testclaude">Claude-koppeling testen</button>
+      <input type="file" id="importfile" accept="application/json,.json" hidden>
+    </div>
+    <p class="hint" id="testuit" style="margin-top:10px"></p>
+    <details style="margin-top:14px"><summary class="hint" style="cursor:pointer">Wat is er veranderd (v${VERSIE})</summary>
+      <ul class="ing" style="margin-top:8px">${CHANGELOG.map(([v,t])=>`<li><b>${v}</b> — ${esc(t)}</li>`).join('')}</ul>
+    </details>
+  </div>`;
+
+  $('#tab-config').innerHTML=h;
+
+  $('#cfguitleg').textContent = modus==='server'
+    ? 'Alles staat op jullie eigen Cloudflare-server. Wijzigingen van de anderen verschijnen vanzelf.'
+    : modus==='gedeeld' ? 'Gedeeld opgeslagen: iedereen die deze app opent, ziet dezelfde inhoud. Klik "Vernieuwen" voor je begint.'
+    : modus==='lokaal' ? 'Er wordt enkel op dit toestel bewaard. Anderen zien jouw wijzigingen niet.'
+    : 'Deze kopie draait zonder opslag. Gebruik "Back-up downloaden", anders gaat alles verloren.';
+
+  // trainingen
+  $('#tab-config').querySelectorAll('[data-tr]').forEach(el=>{
+    el.onchange=()=>{
+      const n=Number(el.dataset.tr), v=el.dataset.veld;
+      state.trainingen[n][v] = v==='dag' ? Number(el.value) : el.value;
+      save(); renderConfig();
+    };
+  });
+  $('#tab-config').querySelectorAll('[data-trweg]').forEach(b=>b.onclick=()=>{
+    state.trainingen.splice(Number(b.dataset.trweg),1); save(); renderConfig();
+  });
+  $('#traddrow').onclick=()=>{
+    state.trainingen.push({wie:'',dag:0,van:'18:00',tot:'19:30',waar:''});
+    save(); renderConfig();
+  };
+  $('#trreset').onclick=()=>{
+    if(!confirm('Het trainingsschema terugzetten zoals het nu is ingesteld?')) return;
+    state.trainingen=TRAINING_STANDAARD.map(t=>Object.assign({},t));
+    save(); renderConfig(); toast('Schema hersteld');
+  };
+
+  // vergaderingen
+  $('#tab-config').querySelectorAll('[data-vergweg]').forEach(b=>b.onclick=()=>{
+    state.vergaderingen=state.vergaderingen.filter(d=>d!==b.dataset.vergweg);
+    save(); renderConfig();
+  });
+  $('#vergadd').onclick=()=>{
+    const d=$('#vergnieuw').value;
+    if(!d) return toast('Kies eerst een datum.');
+    if(state.vergaderingen.includes(d)) return toast('Die datum staat er al in.');
+    state.vergaderingen.push(d); save(); renderConfig(); toast('Datum toegevoegd');
+  };
+  $('#vergplakknop').onclick=()=>{
+    const gevonden=($('#vergplak').value.match(/\d{4}-\d{2}-\d{2}/g)||[]);
+    let n=0;
+    gevonden.forEach(d=>{ if(!state.vergaderingen.includes(d)){ state.vergaderingen.push(d); n++; } });
+    if(!n) return toast('Geen nieuwe data gevonden. Gebruik de vorm 2026-10-08.');
+    save(); renderConfig(); toast(n+' datum(s) toegevoegd');
+  };
+
+  // vakanties
+  $('#vaklunch').onchange=e=>{ state.vakantieLunch=e.target.checked; save(); toast(e.target.checked?'Middagmalen worden mee gepland':'Enkel avondmalen'); };
+  $('#tab-config').querySelectorAll('[data-vak]').forEach(el=>el.onchange=()=>{
+    state.vakanties[Number(el.dataset.vak)][el.dataset.veld]=el.value;
+    save(); renderConfig();
+  });
+  $('#tab-config').querySelectorAll('[data-vakweg]').forEach(b=>b.onclick=()=>{
+    state.vakanties.splice(Number(b.dataset.vakweg),1); save(); renderConfig();
+  });
+  $('#vakadd').onclick=()=>{ state.vakanties.push({naam:'',van:'',tot:''}); save(); renderConfig(); };
+  $('#vakreset').onclick=()=>{
+    if(!confirm('De vakantielijst terugzetten?')) return;
+    state.vakanties=VAKANTIES_STANDAARD.map(v=>Object.assign({},v));
+    save(); renderConfig(); toast('Vakanties hersteld');
+  };
+
+  // boodschappen
+  $('#zoekurl2').onchange=e=>{ state.zoekUrl=e.target.value.trim(); save(); };
+  $('#zoekreset2').onclick=()=>{ state.zoekUrl=ZOEK_STANDAARD; save(); renderConfig(); toast('Zoeklink hersteld'); };
+
+  bindDelenKnoppen();
 }
 
 /* ============================================================
@@ -1598,12 +1913,13 @@ function render(){
   if(actief==='plan') renderPlan();
   if(actief==='meals') renderMeals();
   if(actief==='shop') renderShop();
+  if(actief==='config') renderConfig();
 }
 document.querySelectorAll('.tab').forEach(t=>{
   t.onclick=()=>{
     actief=t.dataset.tab;
     document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',String(x===t)));
-    ['plan','meals','shop'].forEach(id=>$('#tab-'+id).hidden=(id!==actief));
+    ['plan','meals','shop','config'].forEach(id=>$('#tab-'+id).hidden=(id!==actief));
     render();
   };
 });
@@ -1614,6 +1930,9 @@ document.querySelectorAll('.tab').forEach(t=>{
   if(!state.start) state.start=nextMonday();
   if(!state.custom) state.custom=[];
   if(!state.vergaderingen) state.vergaderingen=VERGADERINGEN.slice();
+  if(!state.trainingen) state.trainingen=TRAINING_STANDAARD.map(t=>Object.assign({},t));
+  if(!state.vakanties) state.vakanties=VAKANTIES_STANDAARD.map(v=>Object.assign({},v));
+  if(!state.overrides) state.overrides={};
   if(state.zoekUrl===undefined) state.zoekUrl=ZOEK_STANDAARD;
   if(!state.plan||!Object.keys(state.plan).length) genereer(true);
   const vb=document.getElementById('versie');

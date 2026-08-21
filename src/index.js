@@ -22,6 +22,32 @@ const json = (obj, status = 200) =>
     headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
   });
 
+// Verbruiksteller voor de Claude-oproepen. Twee vensters: per dag en per minuut.
+// De tabel wordt aangemaakt zodra ze voor het eerst nodig is.
+async function tel(env, sleutel) {
+  const zet = async () => {
+    await env.DB.prepare(
+      `INSERT INTO usage (k, n) VALUES (?1, 1)
+       ON CONFLICT(k) DO UPDATE SET n = n + 1`
+    ).bind(sleutel).run();
+    const r = await env.DB.prepare('SELECT n FROM usage WHERE k = ?').bind(sleutel).first();
+    return r ? r.n : 1;
+  };
+  try {
+    return await zet();
+  } catch (e) {
+    await env.DB.prepare('CREATE TABLE IF NOT EXISTS usage (k TEXT PRIMARY KEY, n INTEGER NOT NULL)').run();
+    return await zet();
+  }
+}
+
+async function verbruikVandaag(env, dagSleutel) {
+  try {
+    const r = await env.DB.prepare('SELECT n FROM usage WHERE k = ?').bind(dagSleutel).first();
+    return r ? r.n : 0;
+  } catch (e) { return 0; }
+}
+
 async function huidige(env) {
   const r = await env.DB.prepare('SELECT rev, data FROM state WHERE id = ?').bind(ROW).first();
   return r ? { rev: r.rev, data: JSON.parse(r.data) } : { rev: 0, data: null };
@@ -57,6 +83,27 @@ export default {
         const body = await request.json();
         const naam = body && typeof body.naam === 'string' ? body.naam.trim().slice(0, 120) : '';
         if (!naam) return json({ fout: 'geen naam' }, 400);
+
+        // Throttle: standaard 40 per dag en 6 per minuut, aanpasbaar met variabelen
+        const perDag = Number(env.SUGGEST_PER_DAG) || 40;
+        const perMinuut = Number(env.SUGGEST_PER_MINUUT) || 6;
+        const nu = new Date().toISOString();
+        const dagK = 'dag:' + nu.slice(0, 10);
+        const minK = 'min:' + nu.slice(0, 16);
+
+        const nDag = await tel(env, dagK);
+        if (nDag > perDag) {
+          return json({ fout: 'daglimiet bereikt (' + perDag + ' suggesties). Morgen weer.', limiet: true }, 429);
+        }
+        const nMin = await tel(env, minK);
+        if (nMin > perMinuut) {
+          return json({ fout: 'even te snel achter elkaar. Probeer over een minuut opnieuw.', limiet: true }, 429);
+        }
+
+        // Oude minuutrijen opruimen zodat de tabel niet aangroeit
+        try {
+          await env.DB.prepare("DELETE FROM usage WHERE k LIKE 'min:%' AND k < ?").bind('min:' + nu.slice(0, 10)).run();
+        } catch (e) {}
 
         const systeem = [
           'Je krijgt de naam van een gerecht uit een Vlaams gezin.',
@@ -102,6 +149,7 @@ export default {
         try {
           const parsed = JSON.parse(tekst.replace(/```json|```/g, '').trim());
           parsed._model = env.SUGGEST_MODEL || 'claude-haiku-4-5-20251001';
+          parsed._gebruik = { vandaag: nDag, limiet: perDag };
           return json(parsed);
         } catch (e) {
           return json({ fout: 'onleesbaar antwoord' }, 502);

@@ -121,6 +121,11 @@ dan Claude aan; je sleutel blijft op de server en komt nooit in de browser terec
 Zonder die sleutel blijft alles werken, alleen op de woordenlijst. Faalt de oproep om
 welke reden ook, dan valt de app automatisch terug.
 
+Er zit een rem op: standaard 40 suggesties per dag en 6 per minuut, geteld in de
+database zodat herladen niet helpt. Aanpassen kan met de variabelen
+`SUGGEST_PER_DAG` en `SUGGEST_PER_MINUUT`. Ook mislukte oproepen tellen mee — dat is
+bewust, anders kan een verkeerde sleutel eindeloos blijven proberen.
+
 Het model staat op Haiku 4.5, het goedkoopste van de huidige lijn: $1 per miljoen
 invoertokens en $5 per miljoen uitvoertokens. Eén suggestie kost ongeveer 500 tokens,
 dus je praat over fracties van een cent per recept. Nieuwe accounts krijgen $5 aan
