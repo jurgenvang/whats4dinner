@@ -50,6 +50,53 @@ export default {
         return json(await huidige(env));
       }
 
+      if (url.pathname === '/api/suggest' && request.method === 'POST') {
+        // Optioneel. Zonder ANTHROPIC_API_KEY valt de app terug op haar eigen woordenlijst.
+        if (!env.ANTHROPIC_API_KEY) return json({ fout: 'geen sleutel ingesteld' }, 501);
+
+        const body = await request.json();
+        const naam = body && typeof body.naam === 'string' ? body.naam.trim().slice(0, 120) : '';
+        if (!naam) return json({ fout: 'geen naam' }, 400);
+
+        const systeem = [
+          'Je krijgt de naam van een gerecht uit een Vlaams gezin.',
+          'Antwoord uitsluitend met JSON, zonder uitleg en zonder markdown:',
+          '{"ing":[{"n":"kipfilet","q":600,"u":"g","c":"vlees"}],"bron":"kip","opwarm":true}',
+          'Regels:',
+          '- hoeveelheden voor 4 personen',
+          '- u is een van: g, kg, ml, l, st, el, tl, blik, pot, bosje, sneden, teentjes, rol, snuf',
+          '- c is een van: groenten, vlees, zuivel, droog, brood, diepvries, overig',
+          '- bron is een van: kip, rund, varken, kalkoen, vis, garnaal, ei, peulvrucht, tofu, kaas, gemengd',
+          '- opwarm is true als het gerecht zonder kwaliteitsverlies opgewarmd kan worden',
+          '- 5 tot 10 ingredienten, Nederlandse namen zoals in een Belgische supermarkt',
+          '- laat basiszaken als peper en zout weg'
+        ].join('\n');
+
+        const r = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            'x-api-key': env.ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01'
+          },
+          body: JSON.stringify({
+            model: env.SUGGEST_MODEL || 'claude-haiku-4-5-20251001',
+            max_tokens: 800,
+            system: systeem,
+            messages: [{ role: 'user', content: naam }]
+          })
+        });
+
+        if (!r.ok) return json({ fout: 'Claude API gaf ' + r.status }, 502);
+        const d = await r.json();
+        const tekst = (d.content || []).filter(b => b.type === 'text').map(b => b.text).join('').trim();
+        try {
+          return json(JSON.parse(tekst.replace(/```json|```/g, '').trim()));
+        } catch (e) {
+          return json({ fout: 'onleesbaar antwoord' }, 502);
+        }
+      }
+
       if (url.pathname === '/api/state' && request.method === 'PUT') {
         const body = await request.json();
         if (!body || typeof body.data !== 'object' || body.data === null) {

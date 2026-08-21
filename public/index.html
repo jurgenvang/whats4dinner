@@ -882,6 +882,136 @@ function prepLijst(){
 }
 
 /* ============================================================
+   6b. Ingrediënten raden op basis van de naam
+   Een woordenlijst, geen AI: werkt overal en altijd, ook offline.
+   ============================================================ */
+const R_EIWIT=[
+ {w:['kippenbil','kippenbout'],i:[{n:'kippenbillen',q:8,u:'st',c:'vlees'}],bron:'kip'},
+ {w:['vol-au-vent','videe'],i:[{n:'kipfilet',q:600,u:'g',c:'vlees'},{n:'champignons',q:250,u:'g',c:'groenten'},{n:'bladerdeegkoekjes',q:4,u:'st',c:'diepvries'}],bron:'kip'},
+ {w:['kipfilet','kip','gyros'],i:[{n:'kipfilet',q:600,u:'g',c:'vlees'}],bron:'kip'},
+ {w:['kalkoen'],i:[{n:'kalkoenreepjes',q:600,u:'g',c:'vlees'}],bron:'kalkoen'},
+ {w:['gehakt','bolognese','balletjes','lasagne'],i:[{n:'rundsgehakt',q:600,u:'g',c:'vlees'}],bron:'rund'},
+ {w:['steak','biefstuk'],i:[{n:'steak',q:600,u:'g',c:'vlees'}],bron:'rund'},
+ {w:['hamburger','burger','bicky'],i:[{n:'hamburgers',q:4,u:'st',c:'vlees'}],bron:'rund'},
+ {w:['stoofvlees','stoverij','stoofpot'],i:[{n:'stoofvlees',q:800,u:'g',c:'vlees'}],bron:'rund'},
+ {w:['worst'],i:[{n:'braadworst',q:4,u:'st',c:'vlees'}],bron:'varken'},
+ {w:['spek'],i:[{n:'spek',q:200,u:'g',c:'vlees'}],bron:'varken'},
+ {w:['ham','croque'],i:[{n:'gekookte ham',q:8,u:'sneden',c:'vlees'}],bron:'varken'},
+ {w:['zalm'],i:[{n:'zalmfilet',q:600,u:'g',c:'vlees'}],bron:'vis'},
+ {w:['kabeljauw'],i:[{n:'kabeljauwfilet',q:600,u:'g',c:'vlees'}],bron:'vis'},
+ {w:['fishstick','visstick'],i:[{n:'fishsticks',q:16,u:'st',c:'diepvries'}],bron:'vis'},
+ {w:['tonijn'],i:[{n:'tonijn (blik)',q:3,u:'blik',c:'droog'}],bron:'vis'},
+ {w:['garnaal','garnalen','scampi'],i:[{n:'garnalen',q:500,u:'g',c:'vlees'}],bron:'garnaal'},
+ {w:['mossel'],i:[{n:'mosselen',q:2,u:'kg',c:'vlees'}],bron:'garnaal'},
+ {w:['vis'],i:[{n:'visfilet',q:600,u:'g',c:'vlees'}],bron:'vis'},
+ {w:['tofu'],i:[{n:'stevige tofu',q:500,u:'g',c:'zuivel'}],bron:'tofu'},
+ {w:['omelet','frittata','tortilla','eieren','shakshuka'],i:[{n:'eieren',q:8,u:'st',c:'zuivel'}],bron:'ei'},
+ {w:['linzen'],i:[{n:'rode linzen',q:300,u:'g',c:'droog'}],bron:'peulvrucht'},
+ {w:['kikkererwt'],i:[{n:'kikkererwten (blik)',q:2,u:'blik',c:'droog'}],bron:'peulvrucht'}
+];
+const R_KOOL=[
+ {w:['frieten','friet'],i:[{n:'frieten (diepvries)',q:1,u:'kg',c:'diepvries'}]},
+ {w:['puree','stoemp'],i:[{n:'aardappelen',q:1.2,u:'kg',c:'groenten'},{n:'melk',q:200,u:'ml',c:'zuivel'},{n:'boter',q:50,u:'g',c:'zuivel'}]},
+ {w:['krieltjes'],i:[{n:'krieltjes',q:1,u:'kg',c:'groenten'}]},
+ {w:['aardappel'],i:[{n:'aardappelen',q:1,u:'kg',c:'groenten'}]},
+ {w:['spaghetti'],i:[{n:'spaghetti',q:400,u:'g',c:'droog'}]},
+ {w:['lasagne'],i:[{n:'lasagnebladen',q:1,u:'pak',c:'droog'}]},
+ {w:['macaroni'],i:[{n:'macaroni',q:400,u:'g',c:'droog'}]},
+ {w:['penne','pasta'],i:[{n:'penne',q:400,u:'g',c:'droog'}]},
+ {w:['noedel','noodle'],i:[{n:'eiernoedels',q:300,u:'g',c:'droog'}]},
+ {w:['rijst','nasi'],i:[{n:'rijst',q:300,u:'g',c:'droog'}]},
+ {w:['couscous'],i:[{n:'couscous',q:300,u:'g',c:'droog'}]},
+ {w:['quinoa'],i:[{n:'quinoa',q:250,u:'g',c:'droog'}]},
+ {w:['wrap'],i:[{n:'wraps',q:8,u:'st',c:'brood'}]},
+ {w:['pita'],i:[{n:'pitabroodjes',q:8,u:'st',c:'brood'}]},
+ {w:['croque'],i:[{n:'boterhammen',q:12,u:'sneden',c:'brood'}]},
+ {w:['brood','boterham'],i:[{n:'volkorenbrood',q:1,u:'st',c:'brood'}]}
+];
+const R_GROENTE=[
+ ['spinazie',{n:'spinazie',q:800,u:'g',c:'groenten'}],
+ ['broccoli',{n:'broccoli',q:1,u:'st',c:'groenten'}],
+ ['bloemkool',{n:'bloemkool',q:1,u:'st',c:'groenten'}],
+ ['wortel',{n:'wortel',q:4,u:'st',c:'groenten'}],
+ ['prei',{n:'prei',q:3,u:'st',c:'groenten'}],
+ ['courgette',{n:'courgette',q:2,u:'st',c:'groenten'}],
+ ['puntpaprika',{n:'puntpaprika',q:3,u:'st',c:'groenten'}],
+ ['paprika',{n:'paprika',q:2,u:'st',c:'groenten'}],
+ ['boontjes',{n:'prinsessenboontjes',q:800,u:'g',c:'groenten'}],
+ ['witloof',{n:'witloof',q:6,u:'st',c:'groenten'}],
+ [' erwt',{n:'erwten (diepvries)',q:200,u:'g',c:'diepvries'}],
+ ['champignon',{n:'champignons',q:250,u:'g',c:'groenten'}],
+ ['spruit',{n:'spruitjes',q:800,u:'g',c:'groenten'}],
+ ['andijvie',{n:'andijvie',q:800,u:'g',c:'groenten'}],
+ ['pompoen',{n:'pompoen',q:1,u:'st',c:'groenten'}],
+ ['asperge',{n:'asperges',q:1,u:'kg',c:'groenten'}],
+ ['wokgroent',{n:'wokgroenten',q:600,u:'g',c:'groenten'}],
+ ['appelmoes',{n:'appelmoes',q:700,u:'g',c:'droog'}],
+ ['komkommer',{n:'komkommer',q:1,u:'st',c:'groenten'}],
+ ['tomaat',{n:'tomaat',q:4,u:'st',c:'groenten'}]
+];
+const R_STIJL=[
+ {w:['curry'],i:[{n:'kokosmelk',q:400,u:'ml',c:'droog'},{n:'currypasta',q:2,u:'el',c:'droog'}],opwarm:true},
+ {w:['chili'],i:[{n:'kidneybonen (blik)',q:2,u:'blik',c:'droog'},{n:'gepelde tomaten',q:800,u:'g',c:'droog'}],opwarm:true},
+ {w:['bolognese','tomatensaus','tomatensoep'],i:[{n:'gepelde tomaten',q:800,u:'g',c:'droog'}],opwarm:true},
+ {w:['stoofvlees','stoverij','stoofpot'],i:[{n:'bruin bier',q:330,u:'ml',c:'droog'},{n:'mosterd',q:2,u:'el',c:'droog'}],opwarm:true},
+ {w:['soep'],i:[{n:'groentebouillon',q:2,u:'l',c:'droog'}],opwarm:true},
+ {w:['ovenschotel','gratin','lasagne'],i:[{n:'geraspte kaas',q:150,u:'g',c:'zuivel'}],opwarm:true},
+ {w:['quiche'],i:[{n:'bladerdeeg',q:1,u:'rol',c:'diepvries'},{n:'eieren',q:4,u:'st',c:'zuivel'},{n:'kookroom',q:200,u:'ml',c:'zuivel'}],opwarm:true},
+ {w:['pepersaus'],i:[{n:'kookroom',q:250,u:'ml',c:'zuivel'},{n:'groene peperkorrels',q:2,u:'el',c:'droog'}],opwarm:false},
+ {w:['champignonsaus'],i:[{n:'kookroom',q:250,u:'ml',c:'zuivel'},{n:'champignons',q:250,u:'g',c:'groenten'}],opwarm:false},
+ {w:['roomsaus','room'],i:[{n:'kookroom',q:250,u:'ml',c:'zuivel'}],opwarm:true},
+ {w:['croque'],i:[{n:'kaas (plakken)',q:12,u:'sneden',c:'zuivel'}],opwarm:false},
+ {w:['pesto'],i:[{n:'groene pesto',q:1,u:'pot',c:'droog'}],opwarm:false},
+ {w:['teriyaki'],i:[{n:'sojasaus',q:4,u:'el',c:'droog'},{n:'honing',q:2,u:'el',c:'droog'}],opwarm:true},
+ {w:['wok','roerbak','nasi'],i:[{n:'sojasaus',q:4,u:'el',c:'droog'}],opwarm:false},
+ {w:['gyros'],i:[{n:'Griekse yoghurt',q:250,u:'g',c:'zuivel'},{n:'oregano',q:2,u:'tl',c:'droog'}],opwarm:false},
+ {w:['tajine'],i:[{n:'ras el hanout',q:2,u:'tl',c:'droog'}],opwarm:true},
+ {w:['salade','sla '],i:[{n:'kropsla',q:1,u:'st',c:'groenten'},{n:'olijfolie',q:3,u:'el',c:'droog'}],opwarm:false},
+ {w:['frieten','friet','wok','roerbak'],i:[],opwarm:false}
+];
+
+const R_UNITS=['g','kg','ml','l','st','el','tl','blik','pot','bosje','sneden','teentjes','rol','snuf',''];
+
+// Vraagt het aan Claude via de eigen Worker. Geen server of geen sleutel? Dan null,
+// en de aanroeper valt terug op de woordenlijst hieronder.
+async function raadViaServer(naam){
+  if(modus!=='server') return null;
+  try{
+    const r=await fetch('/api/suggest',{method:'POST',headers:apiHeaders(),body:JSON.stringify({naam})});
+    if(!r.ok) return null;
+    const d=await r.json();
+    if(!d||!Array.isArray(d.ing)) return null;
+    const cats=Object.keys(CATS);
+    const ing=d.ing.slice(0,15).map(x=>({
+      n:String(x&&x.n||'').trim().slice(0,60),
+      q:(typeof x.q==='number'&&isFinite(x.q)&&x.q>0)?x.q:null,
+      u:R_UNITS.includes(x&&x.u)?x.u:'',
+      c:cats.includes(x&&x.c)?x.c:'droog'
+    })).filter(x=>x.n);
+    if(!ing.length) return null;
+    return {ing,bron:d.bron||null,opwarm:typeof d.opwarm==='boolean'?d.opwarm:null,via:'claude'};
+  }catch(e){ return null; }
+}
+
+function raadIngredienten(naam){
+  const t=' '+(naam||'').toLowerCase()+' ';
+  const uit=[]; let bron=null, opwarm=null, treffers=0;
+  const voegToe=arr=>arr.forEach(x=>{ if(!uit.some(y=>y.n.toLowerCase()===x.n.toLowerCase())) uit.push(Object.assign({},x)); });
+
+  for(const g of R_EIWIT){ if(g.w.some(w=>t.includes(w))){ voegToe(g.i); bron=g.bron; treffers++; break; } }
+  for(const g of R_KOOL){  if(g.w.some(w=>t.includes(w))){ voegToe(g.i); treffers++; break; } }
+  R_GROENTE.forEach(([w,ing])=>{ if(t.includes(w)){ voegToe([ing]); treffers++; } });
+  R_STIJL.forEach(g=>{ if(g.w.some(w=>t.includes(w))){ voegToe(g.i); if(opwarm===null&&g.opwarm!==undefined) opwarm=g.opwarm; treffers++; } });
+
+  // ui erbij bij een warm gerecht, als er nog geen in de lijst staat
+  const geenUi=['salade','brood','boterham','croque','wrap','pita','poke'].some(w=>t.includes(w));
+  if(treffers&&!uit.some(x=>x.n==='ui')&&!geenUi)
+    uit.push({n:'ui',q:1,u:'st',c:'groenten'});
+
+  return {ing:uit,bron,opwarm,treffers};
+}
+
+/* ============================================================
    7. Rendering — Planning
    ============================================================ */
 function stripHTML(dag){
@@ -1100,7 +1230,10 @@ function formHTML(){
     </div>
     <div class="field" style="margin-bottom:12px"><label for="f-tip">Tip (optioneel)</label><input id="f-tip" value="${m&&m.tip?esc(m.tip):''}" placeholder="bv. saus kan twee dagen vooraf"></div>
 
-    <div class="slot-label">Ingrediënten</div>
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+      <div class="slot-label" style="margin:0">Ingrediënten</div>
+      <button class="btn ghost small" id="raadknop" type="button">✨ Voorstel op basis van de naam</button>
+    </div>
     <div id="ingrows">${rows.map(r=>ingRow(r,unitOpts)).join('')}</div>
     <button class="btn ghost small" id="addrow">+ ingrediënt</button>
     <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
@@ -1186,6 +1319,24 @@ function renderMeals(){
   $('#addrow').onclick=()=>{ rowsEl.insertAdjacentHTML('beforeend',ingRow({n:'',q:'',u:'g',c:'groenten'},unitOpts)); bindDel(); };
   function bindDel(){ rowsEl.querySelectorAll('.del').forEach(b=>b.onclick=()=>{ if(rowsEl.children.length>1) b.parentElement.remove(); }); }
   bindDel();
+
+  $('#raadknop').onclick=async()=>{
+    const naam=$('#f-naam').value.trim();
+    if(!naam) return toast('Vul eerst de naam van het gerecht in.');
+    const knop=$('#raadknop');
+    knop.disabled=true; const oud=knop.textContent; knop.textContent='Even denken…';
+    let r=await raadViaServer(naam);
+    knop.disabled=false; knop.textContent=oud;
+    if(!r) r=raadIngredienten(naam);
+    if(!r.ing.length) return toast('Geen bekende ingrediënten herkend in die naam.');
+    const gevuld=[...rowsEl.querySelectorAll('.i-n')].some(x=>x.value.trim());
+    if(gevuld&&!confirm('De ingrediëntenlijst wordt vervangen door het voorstel. Doorgaan?')) return;
+    rowsEl.innerHTML=r.ing.map(x=>ingRow(x,unitOpts)).join('');
+    bindDel();
+    if(r.bron) $('#f-bron').value=r.bron;
+    if(r.opwarm!==null) $('#f-opwarm').value=r.opwarm?'ja':'nee';
+    toast(r.ing.length+' ingrediënten voorgesteld'+(r.via==='claude'?' door Claude':'')+' — pas gerust aan');
+  };
 
   $('#saverecipe').onclick=()=>{
     const naam=$('#f-naam').value.trim();

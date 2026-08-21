@@ -108,6 +108,25 @@ npx wrangler dev
 
 `.dev.vars` staat in `.gitignore` en komt dus niet in de repo terecht.
 
+## Optioneel: ingrediënten laten voorstellen door Claude
+
+In het receptformulier staat een knop die ingrediënten afleidt uit de naam van het
+gerecht. Standaard gebruikt die een ingebouwde woordenlijst — gratis, meteen, maar
+beperkt tot wat erin zit.
+
+Wil je er echte suggesties van maken, voeg dan een tweede Secret toe bij je Worker:
+naam `ANTHROPIC_API_KEY`, waarde een sleutel van platform.claude.com. De Worker roept
+dan Claude aan; je sleutel blijft op de server en komt nooit in de browser terecht.
+
+Zonder die sleutel blijft alles werken, alleen op de woordenlijst. Faalt de oproep om
+welke reden ook, dan valt de app automatisch terug.
+
+Het model staat op Haiku 4.5, het goedkoopste van de huidige lijn: $1 per miljoen
+invoertokens en $5 per miljoen uitvoertokens. Eén suggestie kost ongeveer 500 tokens,
+dus je praat over fracties van een cent per recept. Nieuwe accounts krijgen $5 aan
+gratis krediet, wat voor dit gebruik jaren meegaat. Een ander model kies je met een
+variabele `SUGGEST_MODEL`.
+
 ## Eigen domeinnaam
 
 Heb je al een domein bij Cloudflare, dan kan je bij de Worker onder
