@@ -40,9 +40,11 @@ header.top .wrap{padding-bottom:0}
 .brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .brand h1{font-size:26px;font-weight:800;color:#fff}
 .syncbadge{
-  font-size:11px;font-weight:600;color:#9FB3AC;border:1px solid #33453F;
-  padding:2px 9px;border-radius:99px;white-space:nowrap;
+  font-size:11px;font-weight:600;color:#9FB3AC;border:1px solid #33453F;background:transparent;
+  padding:3px 10px;border-radius:99px;white-space:nowrap;cursor:pointer;font-family:inherit;
 }
+.syncbadge:hover{border-color:#5A736A;color:#CFE0DA}
+.syncbadge[data-st="bezig"]{color:#C9D6D1}
 .syncbadge[data-st="live"]{color:#7FD1B9;border-color:#2E5B4F}
 .syncbadge[data-st="fout"]{color:#F0A58C;border-color:#6B3A2A}
 .versiebadge{font-size:11px;color:#6B7F79;letter-spacing:.02em}
@@ -233,7 +235,7 @@ header.top .wrap{padding-bottom:0}
   <div class="wrap">
     <div class="brand">
       <h1>whats4dinner</h1>
-      <span class="syncbadge" id="sync"></span>
+      <button class="syncbadge" id="sync" type="button" aria-label="Opslagstatus"></button>
       <span class="versiebadge" id="versie"></span>
     </div>
     <div class="tabs" role="tablist">
@@ -261,8 +263,10 @@ header.top .wrap{padding-bottom:0}
 /* ============================================================
    1. Vaste gegevens
    ============================================================ */
-const VERSIE='2.0.3';
+const VERSIE='2.1.1';
 const CHANGELOG=[
+ ['2.1.1','Bevestiging dat een wijziging in de database staat, en geen verwarrende eetvensters meer tijdens vakanties.'],
+ ['2.1.0','Duidelijker opslagstatus: bevestiging na bewaren, en onderscheid tussen geen opslag en een mislukte poging.'],
  ['2.0.3','Herstel: de wijziging van 2.0.2 zat niet echt in de code.'],
  ['2.0.2','Begint de planning later, dan toont Vandaag de eerste ingeplande dagen in plaats van een lege melding.'],
  ['2.0.1','Voorbije dagen tellen niet meer mee op Vandaag en vervagen op de weektabs.'],
@@ -566,7 +570,7 @@ const KEY_GEZIN='weekmenu:gezin:v1';
 const KEY_EIGEN='weekmenu:v1';
 const ZOEK_STANDAARD='https://www.collectandgo.be/nl/zoek?searchTerm={q}';
 let state={start:null,personen:4,plan:{},checked:{},custom:[],disabled:{},shopView:'alles',zoekUrl:ZOEK_STANDAARD};
-let modus='lokaal', serverRev=0, saveTimer=null, bezigMetOpslaan=false, wachtwoord=null;
+let modus='lokaal', serverRev=0, saveTimer=null, bezigMetOpslaan=false, wachtwoord=null, laatstBewaard=null;
 
 function lees(k){ try{return localStorage.getItem(k);}catch(e){return null;} }
 function schrijf(k,v){ try{localStorage.setItem(k,v);}catch(e){} }
@@ -630,12 +634,15 @@ async function bewaar(){
   if(modus==='server') return duwNaarServer();
   if(!window.storage){ modus='geen'; setSync(); return; }
   const payload=JSON.stringify(state);
+  let gelukt=true;
   try{ await window.storage.set(KEY_GEZIN,payload,true); modus='gedeeld'; }
   catch(e){
     modus='lokaal';
-    try{ await window.storage.set(KEY_EIGEN,payload,false); }catch(e2){ modus='geen'; }
+    try{ await window.storage.set(KEY_EIGEN,payload,false); }
+    catch(e2){ modus='geen'; gelukt=false; }
   }
-  setSync();
+  if(gelukt) laatstBewaard=new Date();
+  setSync(gelukt?'bewaard':undefined);
 }
 async function duwNaarServer(){
   bezigMetOpslaan=true;
@@ -655,7 +662,7 @@ async function duwNaarServer(){
       return;
     }
     if(!r.ok) throw new Error('status '+r.status);
-    const j=await r.json(); serverRev=j.rev; setSync('bewaard');
+    const j=await r.json(); serverRev=j.rev; laatstBewaard=new Date(); setSync('bewaard');
   }catch(e){ setSync('fout'); console.warn(e); }
   finally{ bezigMetOpslaan=false; }
 }
@@ -683,20 +690,42 @@ function startPolling(){
     }catch(e){}
   },15000);
 }
+let syncTimer=null;
 function setSync(st){
   const el=document.getElementById('sync');
   if(!el) return;
-  el.textContent = st==='bezig' ? 'bewaren…'
-    : st==='fout' ? 'niet bewaard'
-    : modus==='server' ? 'gedeeld · live'
+  clearTimeout(syncTimer);
+
+  const rust = modus==='server' ? 'gedeeld · live'
     : modus==='gedeeld' ? 'gedeeld'
-    : modus==='lokaal' ? 'enkel dit toestel'
-    : 'niet bewaard';
-  el.title = modus==='server' ? 'Opgeslagen op jullie eigen Cloudflare-server, met automatische verversing.'
-    : modus==='gedeeld' ? 'Opgeslagen in de gedeelde opslag: iedereen die deze app opent, ziet hetzelfde.'
-    : modus==='lokaal' ? 'Gedeeld opslaan lukt niet — er wordt enkel op dit toestel bewaard.'
-    : 'Er is hier geen opslag. Gebruik "Back-up downloaden" op het tabblad Maaltijden.';
-  el.dataset.st = st==='fout'?'fout':(modus==='server'?'live':'ok');
+    : modus==='lokaal' ? 'op dit toestel'
+    : 'geen opslag';
+
+  if(st==='bezig'){ el.textContent='bewaren…'; el.dataset.st='bezig'; }
+  else if(st==='fout'){ el.textContent='bewaren mislukt'; el.dataset.st='fout'; }
+  else if(st==='bewaard'){
+    el.textContent = modus==='server' ? 'in database ✓' : 'bewaard ✓';
+    el.dataset.st = modus==='server' ? 'live' : 'ok';
+    syncTimer=setTimeout(()=>setSync(),2600);      // even bevestigen, dan terug naar rust
+  }
+  else { el.textContent=rust; el.dataset.st = modus==='geen'?'fout':(modus==='server'?'live':'ok'); }
+
+  const klok=laatstBewaard?laatstBewaard.toLocaleTimeString('nl-BE',{hour:'2-digit',minute:'2-digit'}):null;
+  const staart = klok ? ' Laatst bewaard om '+klok+(modus==='server'?' (versie '+serverRev+').':'.') : '';
+  el.title = (st==='fout' ? 'Het bewaren is mislukt. Klik om opnieuw te proberen.'
+    : modus==='server' ? 'Wijzigingen worden vanzelf bewaard op jullie Cloudflare-server.'
+    : modus==='gedeeld' ? 'Wijzigingen worden vanzelf bewaard en zijn zichtbaar voor iedereen die de app opent.'
+    : modus==='lokaal' ? 'Wijzigingen worden vanzelf bewaard, maar enkel op dit toestel.'
+    : 'Deze kopie kan niets bewaren. Klik voor uitleg.') + staart;
+}
+
+function badgeKlik(){
+  if(modus==='geen'){
+    toast('Deze kopie bewaart niets. Open de app via jullie eigen adres, of maak een back-up bij ⋯.');
+    return;
+  }
+  bewaar();
+  toast('Opnieuw geprobeerd te bewaren');
 }
 
 /* ============================================================
@@ -1203,9 +1232,11 @@ function stripHTML(dag){
   if(dag.regels.samen){
     const s=mins(dag.regels.samen), e=Math.min(s+45,STRIP_TOT);
     h+=`<div class="blk eat" style="left:${pct(s)}%;width:${pct(e)-pct(s)}%"><span>samen ${dag.regels.samen}</span></div>`;
-  }else{
+  }else if(dag.training.length&&!dag.feest&&!dag.vakantie){
+    // enkel zinvol als een training het eten écht inperkt
     dag.vensters.forEach(([s,e])=>{
-      h+=`<div class="blk eat" style="left:${pct(s)}%;width:${pct(e)-pct(s)}%"><span>${hhmm(s)}–${hhmm(e)}</span></div>`;
+      h+=`<div class="blk eat" style="left:${pct(s)}%;width:${pct(e)-pct(s)}%"
+            title="Ruimte om te eten, met 20 minuten verplaatsing gerekend"><span>eten ${hhmm(s)}–${hhmm(e)}</span></div>`;
     });
   }
   dag.training.forEach(t=>{
@@ -1929,7 +1960,8 @@ function renderConfig(){
 
   <div class="panel">
     <h3>Delen en back-up</h3>
-    <p class="hint" id="cfguitleg"></p>
+    <p class="hint">Er is geen bewaarknop: elke wijziging wordt vanzelf opgeslagen, een halve seconde nadat je ze maakt. Rechtsboven verschijnt dan kort <b>bewaard ✓</b>. Staat daar <b>geen opslag</b> of <b>bewaren mislukt</b>, dan klik je erop voor uitleg of een nieuwe poging.</p>
+    <p class="hint" id="cfguitleg" style="margin-top:8px"></p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
       <button class="btn ghost" id="refresh">Vernieuwen</button>
       <button class="btn ghost" id="export">Back-up downloaden</button>
@@ -2050,6 +2082,8 @@ document.querySelectorAll('.tab').forEach(t=>{ t.onclick=()=>toonTab(t.dataset.t
   if(!state.plan||!Object.keys(state.plan).length) genereer(true);
   const vb=document.getElementById('versie');
   if(vb) vb.textContent='v'+VERSIE;
+  const sb=document.getElementById('sync');
+  if(sb) sb.onclick=badgeKlik;
   render();
   setSync();
   startPolling();
