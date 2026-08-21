@@ -151,6 +151,21 @@ een oudere versie van de app over te zetten.
 
 ## Als er iets misloopt
 
+- **Je sleutels zijn na een deploy verdwenen** — vrijwel zeker zijn ze als **Text**
+  aangemaakt in plaats van als **Secret**. Wrangler wist bij elke deploy de gewone
+  variabelen en zet ze terug zoals ze in `wrangler.jsonc` staan; secrets blijft hij
+  af. Maak ze opnieuw aan via *Settings → Variables and Secrets → Add* en kies bij
+  Type uitdrukkelijk **Secret**. In `wrangler.jsonc` staat bovendien `keep_vars: true`
+  als vangnet, zodat ook gewone variabelen blijven staan.
+  Zekerder alternatief, vanaf je eigen computer:
+
+  ```bash
+  npx wrangler secret put MENU_KEY
+  npx wrangler secret put ANTHROPIC_API_KEY
+  ```
+
+  Die overleven elke git-deploy. Controleer daarna in de app met de knop
+  *Claude-koppeling testen* op het tabblad Maaltijden.
 - **De badge blijft "enkel dit toestel"** — de app bereikt `/api/state` niet.
   Kijk bij de Worker onder *Logs*, en controleer of stap 3 en 4 gelukt zijn.
 - **Foutmelding over de tabel** — stap 4 is niet uitgevoerd, of bij route B zonder

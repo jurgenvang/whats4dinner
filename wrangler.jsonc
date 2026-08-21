@@ -14,5 +14,10 @@
       "database_id": "1f3a4b48-bef2-4223-862f-54b0b4346084"
     }
   ],
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+
+  // Voorkomt dat een deploy variabelen wist die in het dashboard zijn ingesteld.
+  // Secrets worden sowieso nooit verwijderd, maar dit vangt het geval op waarin
+  // iets per ongeluk als Text in plaats van Secret is aangemaakt.
+  "keep_vars": true
 }

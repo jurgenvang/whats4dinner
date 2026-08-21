@@ -39,7 +39,6 @@ header.top{background:var(--ink);color:#fff;padding:22px 0 0}
 header.top .wrap{padding-bottom:0}
 .brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .brand h1{font-size:26px;font-weight:800;color:#fff}
-.brand .sub{color:#9FB3AC;font-size:13px}
 .syncbadge{
   font-size:11px;font-weight:600;color:#9FB3AC;border:1px solid #33453F;
   padding:2px 9px;border-radius:99px;white-space:nowrap;
@@ -206,7 +205,6 @@ header.top .wrap{padding-bottom:0}
   <div class="wrap">
     <div class="brand">
       <h1>whats4dinner</h1>
-      <span class="sub">Twee weken avondeten — met de basketkalender erbij</span>
       <span class="syncbadge" id="sync"></span>
       <span class="versiebadge" id="versie"></span>
     </div>
@@ -230,8 +228,9 @@ header.top .wrap{padding-bottom:0}
 /* ============================================================
    1. Vaste gegevens
    ============================================================ */
-const VERSIE='1.6.0';
+const VERSIE='1.6.1';
 const CHANGELOG=[
+ ['1.6.1','Ondertitel uit de kopbalk gehaald.'],
  ['1.6.0','Versienummer, testknop voor de Claude-koppeling, en Claude vult nu alle receptvelden in.'],
  ['1.5.0','Knop die ingrediënten voorstelt op basis van de naam, met Claude via de Worker als die ingesteld is.'],
  ['1.4.0','Lijst kopiëren, zoeklinks per product, en gerechten die enkel op zondag of in het weekend mogen.'],
