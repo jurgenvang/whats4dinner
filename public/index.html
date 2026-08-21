@@ -261,8 +261,9 @@ header.top .wrap{padding-bottom:0}
 /* ============================================================
    1. Vaste gegevens
    ============================================================ */
-const VERSIE='2.0.2';
+const VERSIE='2.0.3';
 const CHANGELOG=[
+ ['2.0.3','Herstel: de wijziging van 2.0.2 zat niet echt in de code.'],
  ['2.0.2','Begint de planning later, dan toont Vandaag de eerste ingeplande dagen in plaats van een lege melding.'],
  ['2.0.1','Voorbije dagen tellen niet meer mee op Vandaag en vervagen op de weektabs.'],
  ['2.0.0','Nieuwe tab Vandaag met het gerecht van vanavond en morgen; week 1 en week 2 als eigen tabs.'],
@@ -1387,25 +1388,30 @@ function renderVandaag(){
   const vanaf = idx>=0 ? idx : (vIso>dagen[13].iso ? 14 : 0);
 
   let h='';
-  if(idx<0){
-    const eerste=dagen[0].date, laatste=dagen[13].date;
-    const voorbij=vIso>dagen[13].iso;
+  const voorbij = vIso>dagen[13].iso;
+
+  if(voorbij){
     h+=`<div class="panel" style="border-left:4px solid var(--ball)">
-      <h3>${voorbij?'Deze planning is voorbij':'De planning begint later'}</h3>
-      <p class="hint">De huidige twee weken lopen van ${fmtDate(eerste)} tot ${fmtDate(laatste)}.
-        ${voorbij?'Zet de startdatum op de komende maandag en maak een nieuw voorstel.':'Tot dan is er nog niets ingepland voor vandaag.'}</p>
+      <h3>Deze planning is voorbij</h3>
+      <p class="hint">De laatste twee weken liepen tot ${fmtDate(dagen[13].date)}. Zet de startdatum op de komende maandag en maak een nieuw voorstel.</p>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
         <button class="btn pine" id="nieuweperiode">Start op de komende maandag</button>
-        <button class="btn ghost" id="naarweek1">Naar week 1</button>
+        <button class="btn ghost" id="naarweek1">Toch naar week 1</button>
       </div>
     </div>`;
   }else{
-    const d=dagen[idx];
+    // Loopt de planning nog niet? Toon dan gewoon de eerste ingeplande dagen.
+    const start = idx>=0 ? idx : 0;
+    if(idx<0){
+      const dagenTot=Math.round((dagen[0].date-new Date(vIso+'T12:00:00'))/86400000);
+      h+=`<p class="hint" style="margin:4px 0 14px">De planning start ${dagenTot===1?'morgen':'over '+dagenTot+' dagen'}, op ${dagen[0].naam} ${fmtDate(dagen[0].date)}. Dit staat er als eerste op het menu.</p>`;
+    }
+    const d=dagen[start];
     if(d.regels.slots.includes('lunch')) h+=dagKaartKort(d,'lunch',false);
     h+=dagKaartKort(d,'diner',true);
-    if(idx<13){
-      const m=dagen[idx+1];
-      h+=`<div class="weekhead"><h2>Morgen</h2><span class="rule"></span></div>`;
+    if(start<13){
+      const m=dagen[start+1];
+      h+=`<div class="weekhead"><h2>${idx>=0?'Morgen':'Daarna'}</h2><span class="rule"></span></div>`;
       if(m.regels.slots.includes('lunch')) h+=dagKaartKort(m,'lunch',false);
       h+=dagKaartKort(m,'diner',false);
     }
