@@ -175,10 +175,14 @@ header.top .wrap{padding-bottom:0}
 .rtabel th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;padding:6px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
 .rtabel td{padding:4px 6px;border-bottom:1px solid #EEF0EC;vertical-align:middle}
 .rtabel td.naam{min-width:230px;font-weight:500}
+.linkje{border:0;background:transparent;padding:0;font:inherit;color:var(--ink);text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.linkje:hover{color:var(--pine);text-decoration-color:var(--pine)}
 .rtabel input,.rtabel select{border:1px solid var(--line);border-radius:7px;padding:5px 6px;width:100%;font-size:13px;background:#fff}
 .rtabel input[type=number]{width:62px}
 .rtabel input[type=checkbox]{width:16px;height:16px;accent-color:var(--pine)}
 .rtabel tr:hover td{background:#FAFBF9}
+.rtabel tr.groeprij td{background:#EFF2ED;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--pine);font-weight:700;padding:8px 6px}
+.rtabel tr.groeprij:hover td{background:#EFF2ED}
 .meal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
 .meal-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:8px}
 .meal-card.off{opacity:.5}
@@ -263,8 +267,9 @@ header.top .wrap{padding-bottom:0}
 /* ============================================================
    1. Vaste gegevens
    ============================================================ */
-const VERSIE='2.1.1';
+const VERSIE='2.2.0';
 const CHANGELOG=[
+ ['2.2.0','Elk recept bewerkbaar inclusief hoeveelheden, aparte categorie voor bestellen, gestapelde trainingen, slot werkt op de dobbelsteen, gerechtkeuze boven de agendalijn.'],
  ['2.1.1','Bevestiging dat een wijziging in de database staat, en geen verwarrende eetvensters meer tijdens vakanties.'],
  ['2.1.0','Duidelijker opslagstatus: bevestiging na bewaren, en onderscheid tussen geen opslag en een mislukte poging.'],
  ['2.0.3','Herstel: de wijziging van 2.0.2 zat niet echt in de code.'],
@@ -751,7 +756,13 @@ function allMeals(){
   const ov=state.overrides||{};
   return BASIS.map(m=>ov[m.id]?Object.assign({},m,ov[m.id]):m).concat(state.custom||[]);
 }
-function eigenMeals(){return allMeals().filter(m=>m.eigen||String(m.id).startsWith('eigen-'));}
+function eigenMeals(){return allMeals().filter(m=>groepVan(m)==='onze');}
+function groepVan(m){
+  if(m.afhaal||m.instant) return 'bestel';
+  if(m.eigen||String(m.id).startsWith('eigen-')) return 'onze';
+  return 'ander';
+}
+const GROEPNAAM={onze:'Onze recepten',ander:'Andere recepten',bestel:'Bestellen of opwarmen'};
 function mealById(id){return allMeals().find(m=>m.id===id);}
 function activeMeals(){return allMeals().filter(m=>!state.disabled[m.id]);}
 
@@ -956,6 +967,8 @@ function genereer(force){
 }
 
 function reroll(key){
+  if(state.plan[key]&&state.plan[key].locked)
+    return toast('Deze maaltijd staat vast. Open eerst het slotje.');
   const dagen=buildDays();
   const [,di,slot]=key.match(/^d(\d+)-(\w+)$/);
   const dag=dagen[Number(di)];
@@ -1239,11 +1252,22 @@ function stripHTML(dag){
             title="Ruimte om te eten, met 20 minuten verplaatsing gerekend"><span>eten ${hhmm(s)}–${hhmm(e)}</span></div>`;
     });
   }
-  dag.training.forEach(t=>{
-    const s=mins(t.van),e=mins(t.tot);
-    const breed=pct(e)-pct(s);
-    const label=breed>22?`${esc(t.wie)} ${t.van}–${t.tot}`:esc(t.wie);
-    h+=`<div class="blk tr" style="left:${pct(s)}%;width:${breed}%" title="${esc(t.wie)} ${t.van}–${t.tot}, ${esc(t.waar||'')}"><span>${label}</span></div>`;
+  // overlappende trainingen onder elkaar, anders valt de ene achter de andere weg
+  const tr=dag.training.map(t=>({t,s:mins(t.van),e:mins(t.tot)})).sort((a,b)=>a.s-b.s);
+  const einden=[];
+  tr.forEach(x=>{
+    let baan=einden.findIndex(eind=>eind<=x.s);
+    if(baan<0){ baan=einden.length; }
+    einden[baan]=x.e;
+    x.baan=baan;
+  });
+  const banen=Math.max(1,einden.length);
+  tr.forEach(x=>{
+    const breed=pct(x.e)-pct(x.s);
+    const hoog=100/banen;
+    const label=(breed>22&&banen<3)?`${esc(x.t.wie)} ${x.t.van}–${x.t.tot}`:esc(x.t.wie);
+    h+=`<div class="blk tr" style="left:${pct(x.s)}%;width:${breed}%;top:${x.baan*hoog}%;height:${hoog}%;bottom:auto"
+          title="${esc(x.t.wie)} ${x.t.van}–${x.t.tot}, ${esc(x.t.waar||'')}"><span style="font-size:${banen>1?9:10}px">${label}</span></div>`;
   });
   h+='</div><div class="striplabels"><span>16:00</span><span>18:00</span><span>20:00</span><span>21:30</span></div>';
   return h;
@@ -1255,15 +1279,15 @@ function slotHTML(dag,slot){
   const gekozen=v&&v.mealId?mealById(v.mealId):null;
   const opties=activeMeals().filter(m=>m.slots.includes(slot))
     .sort((a,b)=>a.naam.localeCompare(b.naam,'nl'));
-  const isEigen=m=>!!(m.eigen||String(m.id).startsWith('eigen-'));
   const optie=m=>{
     const ok=past(m,slot,dag);
     return `<option value="${m.id}" ${gekozen&&gekozen.id===m.id?'selected':''}>${esc(m.naam)}${ok?'':' ⚠︎ (past krap)'} · ${m.tijd}′</option>`;
   };
-  const onze=opties.filter(isEigen), rest=opties.filter(m=>!isEigen(m));
-  const optHTML='<option value="">— nog niets —</option>'
-    +(onze.length?`<optgroup label="Onze recepten">${onze.map(optie).join('')}</optgroup>`:'')
-    +(rest.length?`<optgroup label="Andere">${rest.map(optie).join('')}</optgroup>`:'');
+  let optHTML='<option value="">— nog niets —</option>';
+  ['onze','ander','bestel'].forEach(g=>{
+    const lijst=opties.filter(m=>groepVan(m)===g);
+    if(lijst.length) optHTML+=`<optgroup label="${GROEPNAAM[g]}">${lijst.map(optie).join('')}</optgroup>`;
+  });
 
   let note='';
   if(gekozen){
@@ -1301,8 +1325,8 @@ function dayHTML(dag){
       <div><div class="day-name">${dag.naam}</div><div class="day-date">${fmtDate(dag.date)}</div></div>
       <div class="chips">${feest}${vak}${verg}${modus}${wknd}</div>
     </div>
-    ${strip}
     ${dag.regels.slots.map(s=>slotHTML(dag,s)).join('')}
+    ${strip}
     <button class="vergtoggle ${dag.vergadering?'on':''}" data-verg="${dag.iso}">
       ${dag.vergadering?'🗓 vergadering — klik om weg te halen':'+ vergadering op deze dag'}
     </button>
@@ -1498,20 +1522,23 @@ function mealCard(m,eigen){
     <ul class="ing">${m.ing.map(i=>`<li>${ingLine(i)}</li>`).join('')}</ul>
     <div class="meal-actions">
       <label class="toggle"><input type="checkbox" data-use="${m.id}" ${uit?'':'checked'}> in voorstel</label>
-      ${eigen?`<button class="btn ghost small" data-edit="${m.id}">Bewerken</button>
-               <button class="btn ghost small" data-del="${m.id}">Verwijderen</button>`
-              :`<button class="btn ghost small" data-copy="${m.id}">Kopie maken</button>`}
+      <button class="btn ghost small" data-edit="${m.id}">Bewerken</button>
+      ${eigen?`<button class="btn ghost small" data-del="${m.id}">Verwijderen</button>`
+             :`<button class="btn ghost small" data-copy="${m.id}">Kopie maken</button>`}
     </div>
   </article>`;
 }
 
 function formHTML(){
-  const m=bewerkId?state.custom.find(x=>x.id===bewerkId):null;
+  const m=bewerkId?mealById(bewerkId):null;
+  const isBasis=m&&!String(m.id).startsWith('eigen-');
+  const heeftOverride=m&&state.overrides&&state.overrides[m.id];
   const rows=(m?m.ing:[{n:'',q:'',u:'g',c:'groenten'}]);
   const unitOpts=['g','kg','ml','l','st','el','tl','blik','pot','bosje','sneden','teentjes','rol','snuf',''];
   return `<div class="panel" id="mealform">
-    <h3>${m?'Recept bewerken':'Eigen recept toevoegen'}</h3>
-    <p class="hint">Hoeveelheden voor 4 personen. De app rekent zelf om naar ${state.personen}.</p>
+    <h3>${m?'Recept bewerken: '+esc(m.naam):'Eigen recept toevoegen'}</h3>
+    <p class="hint">Hoeveelheden voor 4 personen. De app rekent zelf om naar ${state.personen}.${
+      isBasis?' Dit is een basisrecept — je wijzigingen komen er bovenop en het origineel blijft bewaard.':''}</p>
     <div class="bar" style="margin:14px 0 10px;padding:0;border:0;background:transparent">
       <div class="field" style="flex:1;min-width:280px"><label for="f-naam">Naam</label>
         <div style="display:flex;gap:6px">
@@ -1551,6 +1578,7 @@ function formHTML(){
     <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn pine" id="saverecipe">${m?'Wijzigingen opslaan':'Recept opslaan'}</button>
       ${m?'<button class="btn ghost" id="cancelrecipe">Annuleren</button>':''}
+      ${heeftOverride?'<button class="btn ghost" id="resetrecipe">Origineel herstellen</button>':''}
     </div>
   </div>`;
 }
@@ -1568,7 +1596,7 @@ function tabelRij(m){
   const eigenR=!!(m.eigen||String(m.id).startsWith('eigen-'));
   const ja=(v)=>`<option value="ja" ${v?'selected':''}>ja</option><option value="nee" ${v?'':'selected'}>nee</option>`;
   return `<tr>
-    <td class="naam">${esc(m.naam)}${eigenR?' <span class="chip rush">onze</span>':''}</td>
+    <td class="naam"><button class="linkje" data-edit="${m.id}" title="Recept en hoeveelheden bewerken">${esc(m.naam)}</button>${state.overrides&&state.overrides[m.id]?' <span class="chip prep">aangepast</span>':''}</td>
     <td><input type="number" min="0" max="240" value="${m.tijd}" data-mid="${m.id}" data-veld="tijd"></td>
     <td><select data-mid="${m.id}" data-veld="eiwit"><option ${m.eiwit==='hoog'?'selected':''}>hoog</option><option ${m.eiwit==='gemiddeld'?'selected':''}>gemiddeld</option></select></td>
     <td><select data-mid="${m.id}" data-veld="bron">${['kip','rund','varken','kalkoen','vis','garnaal','ei','peulvrucht','tofu','kaas','gemengd'].map(b=>`<option ${m.bron===b?'selected':''}>${b}</option>`).join('')}</select></td>
@@ -1589,8 +1617,8 @@ function tabelRij(m){
 
 function renderMeals(){
   const alles=allMeals();
-  const onze=alles.filter(m=>m.eigen||String(m.id).startsWith('eigen-'));
-  const rest=alles.filter(m=>!(m.eigen||String(m.id).startsWith('eigen-')));
+  const groepen={onze:[],ander:[],bestel:[]};
+  alles.forEach(m=>groepen[groepVan(m)].push(m));
   const tabel=state.mealView!=='kaarten';
   let h=formHTML();
   h+=`<div class="weekhead">
@@ -1598,24 +1626,32 @@ function renderMeals(){
       <button data-mv="tabel" aria-pressed="${tabel}">Tabel</button>
       <button data-mv="kaarten" aria-pressed="${!tabel}">Kaarten</button>
     </div>
-    <span class="meta">${onze.length} eigen · ${rest.length} andere</span><span class="rule"></span></div>`;
+    <span class="meta">${groepen.onze.length} eigen · ${groepen.ander.length} andere · ${groepen.bestel.length} bestellen</span><span class="rule"></span></div>`;
 
   if(tabel){
     h+=`<div class="panel" style="padding:12px">
       <p class="hint" style="margin-bottom:10px">Alles is hier rechtstreeks aan te passen. Wijzigingen aan een basisrecept blijven bewaard en overschrijven het origineel niet.</p>
       <div class="tabelwrap"><table class="rtabel">
         <thead><tr><th>Gerecht</th><th>Min</th><th>Eiwit</th><th>Hoofd</th><th>Wanneer</th><th>Vooraf</th><th>Opwarmen</th><th>Meteen</th><th>Enkel</th><th>Aan</th></tr></thead>
-        <tbody>${onze.map(tabelRij).join('')}${rest.map(tabelRij).join('')}</tbody>
+        <tbody>${['onze','ander','bestel'].map(g=>groepen[g].length
+          ? `<tr class="groeprij"><td colspan="11">${GROEPNAAM[g]}</td></tr>`+groepen[g].map(tabelRij).join('')
+          : '').join('')}</tbody>
       </table></div>
     </div>`;
   }else{
-    h+=`<div class="meal-grid">${onze.map(m=>mealCard(m,String(m.id).startsWith('eigen-'))).join('')}</div>`;
-    h+=`<div class="weekhead"><h2>Andere recepten</h2><span class="rule"></span></div>`;
-    h+=`<div class="meal-grid">${rest.map(m=>mealCard(m,false)).join('')}</div>`;
+    ['onze','ander','bestel'].forEach((g,n)=>{
+      if(!groepen[g].length) return;
+      if(n) h+=`<div class="weekhead"><h2>${GROEPNAAM[g]}</h2><span class="rule"></span></div>`;
+      h+=`<div class="meal-grid">${groepen[g].map(m=>mealCard(m,String(m.id).startsWith('eigen-'))).join('')}</div>`;
+    });
   }
   $('#tab-meals').innerHTML=h;
 
   if($('#cancelrecipe')) $('#cancelrecipe').onclick=()=>{ bewerkId=null; render(); };
+  if($('#resetrecipe')) $('#resetrecipe').onclick=()=>{
+    if(!confirm('Alle aanpassingen aan dit recept ongedaan maken?')) return;
+    delete state.overrides[bewerkId]; bewerkId=null; save(); render(); toast('Origineel hersteld');
+  };
 
   $('#tab-meals').querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>{
     state.mealView=b.dataset.mv; save(); renderMeals();
@@ -1637,7 +1673,8 @@ function renderMeals(){
     save(); renderMeals();
   });
   $('#tab-meals').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{
-    bewerkId=b.dataset.edit; renderMeals(); $('#mealform').scrollIntoView({behavior:'smooth',block:'start'});
+    bewerkId=b.dataset.edit; renderMeals();
+    if($('#mealform')) $('#mealform').scrollIntoView({behavior:'smooth',block:'start'});
   });
   $('#tab-meals').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
     const id=b.dataset.del;
@@ -1865,7 +1902,13 @@ function bindDelenKnoppen(){
       alleen:$('#f-alleen').value||undefined,
       tip:$('#f-tip').value.trim(), ing
     };
-    if(bewerkId){ state.custom=state.custom.map(m=>m.id===bewerkId?rec:m); bewerkId=null; }
+    if(bewerkId&&!String(bewerkId).startsWith('eigen-')){
+      // basisrecept: bewaar als aanpassing bovenop het origineel
+      const {id,...rest}=rec;
+      state.overrides[bewerkId]=rest;
+      bewerkId=null;
+    }
+    else if(bewerkId){ state.custom=state.custom.map(m=>m.id===bewerkId?rec:m); bewerkId=null; }
     else state.custom.push(rec);
     save(); render(); toast('Recept opgeslagen');
   };
