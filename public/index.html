@@ -338,8 +338,9 @@ header.top .wrap{padding-bottom:0}
 /* ============================================================
    1. Vaste gegevens
    ============================================================ */
-const VERSIE='3.4.1';
+const VERSIE='3.4.2';
 const CHANGELOG=[
+ ['3.4.2','Een half uur na de wedstrijd voor douche en drankje, met het verwachte thuisuur erbij.'],
  ['3.4.1','Lasagne wordt kant-en-klaar gekocht in plaats van uit de diepvries gehaald.'],
  ['3.4.0','De eerste tab heet nu Overzicht en toont de hele komende week in plaats van enkel vandaag en morgen.'],
  ['3.3.0','Aparte tab met alle wedstrijden: thuis of uit, tegenstander, zaal met route, vertrekuur en het wedstrijdblad.'],
@@ -899,6 +900,7 @@ async function autoWedstrijden(){
 }
 
 const VOOR_WEDSTRIJD=45;   // minuten aanwezig zijn voor de aanvang
+const NA_WEDSTRIJD=30;     // douchen en iets drinken achteraf
 
 const THUIS_STANDAARD='Lostraat 32, 3212 Pellenberg';
 function thuisadres(){ return state.thuisadres||THUIS_STANDAARD; }
@@ -930,6 +932,9 @@ function vertrekTijd(w){
 }
 function aanwezigTijd(w){
   return hhmm(Math.max(0,mins(w.van)-VOOR_WEDSTRIJD));
+}
+function thuisTijd(w){
+  return hhmm(Math.min(24*60-1,mins(w.tot)+NA_WEDSTRIJD+reistijd(w.waar)));
 }
 // zalen die nog geen eigen reistijd hebben, komen in de instellingen te staan
 function zalenUitWedstrijden(){
@@ -1018,7 +1023,7 @@ function eetvensters(wd,iso){
   const busy=trainingenOp(wd).map(t=>[mins(t.van)-REIS,mins(t.tot)+REIS]);
   (iso?wedstrijdenOp(iso):[]).forEach(w=>{
     const r=reistijd(w.waar);
-    busy.push([mins(w.van)-VOOR_WEDSTRIJD-r, mins(w.tot)+r]);   // vertrek tot thuiskomst
+    busy.push([mins(w.van)-VOOR_WEDSTRIJD-r, mins(w.tot)+NA_WEDSTRIJD+r]);   // vertrek tot thuiskomst
   });
   busy.sort((a,b)=>a[0]-b[0]);
   const weekend=wd>=5;
@@ -1653,7 +1658,7 @@ function dayHTML(dag){
     <div class="wedregel" title="${esc(w.titel||'')}">
       <b>🏆 ${esc(w.wie)} ${w.van}</b>
       ${w.waar?`<a href="${esc(routeLink(w.waar))}" target="_blank" rel="noopener" title="Route vanuit ${esc(thuisadres())}">${esc(w.waar)} ↗</a>`:'<span>onbekende zaal</span>'}
-      <span class="vertrek">aanwezig ${aanwezigTijd(w)} · vertrek ${vertrekTijd(w)}</span>
+      <span class="vertrek">vertrek ${vertrekTijd(w)} · aanwezig ${aanwezigTijd(w)} · thuis ± ${thuisTijd(w)}</span>
     </div>`).join('');
   const wknd=(dag.weekend&&!dag.vakantie&&!dag.feest&&!(dag.wedstrijden||[]).length)
     ? (state.wedstrijdenOpgehaald
@@ -2409,7 +2414,7 @@ function renderConfig(){
 
   <div class="panel">
     <h3>Reistijden naar de zalen</h3>
-    <p class="hint">De app rekent ${VOOR_WEDSTRIJD} minuten aanwezigheid vóór de aanvang, plus de reistijd hieronder, en toont zo wanneer jullie moeten vertrekken. De beginwaarden zijn schattingen vanuit jullie adres — klik op ↗ om de echte reistijd op te zoeken en vul die hier in.</p>
+    <p class="hint">De app rekent ${VOOR_WEDSTRIJD} minuten aanwezigheid vóór de aanvang en ${NA_WEDSTRIJD} minuten achteraf om te douchen en iets te drinken, plus de reistijd hieronder. Zo weet je wanneer jullie vertrekken en weer thuis zijn. De beginwaarden zijn schattingen vanuit jullie adres — klik op ↗ om de echte reistijd op te zoeken en vul die hier in.</p>
     <div class="field" style="margin:12px 0">
       <label for="thuis">Vertrekpunt</label>
       <input id="thuis" value="${esc(thuisadres())}" style="width:100%;max-width:420px;border:1px solid var(--line);border-radius:9px;padding:8px 10px">
@@ -2680,7 +2685,7 @@ function renderWedstrijden(){
           <div class="wk-tegen">tegen ${esc(tegen)}</div>
           <div class="wk-zaal">${w.waar?`<a href="${esc(routeLink(w.waar))}" target="_blank" rel="noopener">${esc(w.waar)} ↗</a>`:'zaal onbekend'}
             ${w.waar?`<span class="hint">· ${reistijd(w.waar)} min rijden</span>`:''}</div>
-          <div class="wk-vertrek">aanwezig ${aanwezigTijd(w)} · vertrek ${vertrekTijd(w)}</div>
+          <div class="wk-vertrek">vertrek ${vertrekTijd(w)} · aanwezig ${aanwezigTijd(w)} · einde ${w.tot} · thuis ± ${thuisTijd(w)}</div>
           ${w.link?`<a class="wk-link" href="${esc(w.link)}" target="_blank" rel="noopener">Wedstrijdblad ↗</a>`:''}
         </div>
       </article>`;
