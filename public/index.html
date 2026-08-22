@@ -7,7 +7,9 @@
 <meta name="theme-color" content="#172622">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icoon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icoon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="whats4dinner">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -211,6 +213,8 @@ header.top .wrap{padding-bottom:0}
 .agrij.afspraak .aguur{color:var(--pine)}
 .agrij.fluit .aguur{color:#8A6400}
 .agrij.fluit .agtekst{color:#6B4E00}
+.agrij.fluittotaal .agtekst{color:#8A6400;font-weight:600}
+.agrij.fluittotaal .aguur{color:#8A6400}
 .agicoon{font-size:12px}
 .ic{width:13px;height:13px;vertical-align:-2px;fill:currentColor}
 .ic-fluit{color:#1A1A1A}
@@ -359,8 +363,11 @@ header.top .wrap{padding-bottom:0}
 /* ============================================================
    1. Vaste gegevens
    ============================================================ */
-const VERSIE='3.7.3';
+const VERSIE='3.8.2';
 const CHANGELOG=[
+ ['3.8.2','Kilometervergoeding verdeeld per wedstrijd in plaats van per zaal.'],
+ ['3.8.1','Echt app-icoon op iPhone: een PNG als apple-touch-icon, met bestek rond de bal.'],
+ ['3.8.0','Kilometers en vergoeding aan € 0,40 per km bij elke fluitopdracht, met de kosten verdeeld over de zalen van dezelfde rit.'],
  ['3.7.3','Vandaag als één kaart in plaats van twee, met dezelfde letterhoogte voor middag en avond en meer ruimte onder de tabbalk.'],
  ['3.7.2','Vergaderknop van de dagkaart weg; het aantal eters staat nu klein onder de keuze en valt alleen op als het afwijkt.'],
  ['3.7.1','Het fluitje getekend naar de klassieke vorm, met mondstuk en ophangoog.'],
@@ -997,6 +1004,7 @@ async function haalReistijden(){
     const d=await r.json();
     if(!d||!d.minuten||!Object.keys(d.minuten).length) return false;
     state.reisCache=Object.assign({},state.reisCache||{},d.minuten);
+    if(d.km) state.kmCache=Object.assign({},state.kmCache||{},d.km);
     save();
     return true;
   }catch(e){ return false; }
@@ -1076,6 +1084,20 @@ const FLUIT_DUUR=105;      // 1u45
 const FLUIT_VOOR=30;
 const FLUIT_NA=30;
 const KETTING_VENSTER=180; // drie uur na de vorige starttijd
+const KM_TARIEF=0.40;      // euro per kilometer
+const KM_PER_MINUUT=0.9;   // ruwe omrekening als er nog niets berekend is
+
+function kmTussen(van,naar){
+  const a=String(van||'').trim(), b=String(naar||'').trim();
+  if(!a||!b||a===b) return {km:0,geschat:false};
+  const cache=state.kmCache||{};
+  const k=cache[a+'|'+b];
+  if(typeof k==='number') return {km:k,geschat:false};
+  return {km:Math.round(reistijdTussen(a,b)*KM_PER_MINUUT*10)/10,geschat:true};
+}
+function euro(bedrag){
+  return '€ '+bedrag.toFixed(2).replace('.',',');
+}
 
 function isFluiten(titel){
   return /\[\s*official\s*\d*\s*\]\s*$/i.test(String(titel||''));
@@ -1107,13 +1129,33 @@ function fluitKettingen(iso){
 function fluitBlokken(iso){
   return fluitKettingen(iso).map(k=>{
     const eerste=k[0], laatste=k[k.length-1];
-    const heen=reistijdTussen(thuisadres(),eerste.waar);
-    const terug=reistijdTussen(laatste.waar,thuisadres());
+    const thuis=thuisadres();
+    const heen=reistijdTussen(thuis,eerste.waar);
+    const terug=reistijdTussen(laatste.waar,thuis);
+
+    // het volledige traject: van huis, langs elke zaal, en terug
+    const stukken=[];
+    stukken.push(Object.assign({van:thuis,naar:eerste.waar},kmTussen(thuis,eerste.waar)));
+    for(let i=1;i<k.length;i++){
+      if(k[i].waar!==k[i-1].waar)
+        stukken.push(Object.assign({van:k[i-1].waar,naar:k[i].waar},kmTussen(k[i-1].waar,k[i].waar)));
+    }
+    stukken.push(Object.assign({van:laatste.waar,naar:thuis},kmTussen(laatste.waar,thuis)));
+
+    const totaalKm=Math.round(stukken.reduce((a,x)=>a+x.km,0)*10)/10;
+    const geschat=stukken.some(x=>x.geschat);
+    const zalen=[...new Set(k.map(w=>w.waar).filter(Boolean))];
+    const aantal=Math.max(1,k.length);   // per wedstrijd, ook als ze in dezelfde zaal zijn
+
     return {
       ketting:k,
       vertrek:mins(eerste.van)-FLUIT_VOOR-heen,
       terug:mins(laatste.van)+FLUIT_DUUR+FLUIT_NA+terug,
-      heen, terugtijd:terug
+      heen, terugtijd:terug,
+      stukken, totaalKm, geschat, zalen, aantal,
+      totaalKost:Math.round(totaalKm*KM_TARIEF*100)/100,
+      kmPerWedstrijd:Math.round(totaalKm/aantal*10)/10,
+      kostPerWedstrijd:Math.round(totaalKm/aantal*KM_TARIEF*100)/100
     };
   });
 }
@@ -2038,16 +2080,29 @@ function afspraakRegels(dag){
     extra:a.heledag?'hele dag':(a.tot?'tot '+a.tot:''), soort:'afspraak'
   }));
   fluitBlokken(dag.iso).forEach(b=>{
+    const bij=b.geschat?'≈ ':'';
     b.ketting.forEach((w,i)=>{
       const vorige=b.ketting[i-1];
       const rit=vorige&&vorige.waar!==w.waar?reistijdTussen(vorige.waar,w.waar):0;
+      const vergoeding=' · '+bij+b.kmPerWedstrijd+' km · '+euro(b.kostPerWedstrijd)
+        +(b.aantal>1?' (aandeel)':'');
       rijen.push({
         uur:w.van, wie:w.wie, tekst:'fluiten — '+fluitTitel(w.titel)+(w.waar?', '+w.waar:''),
-        extra:'tot '+fluitEind(w)+(i===0?' · vertrek '+hhmm(b.vertrek):(rit?' · '+rit+' min rijden vanaf de vorige zaal':' · zelfde zaal'))
-              +(i===b.ketting.length-1?' · thuis ± '+hhmm(b.terug):''),
+        extra:'tot '+fluitEind(w)
+              +(i===0?' · vertrek '+hhmm(b.vertrek):(rit?' · '+rit+' min rijden vanaf de vorige zaal':' · zelfde zaal'))
+              +(i===b.ketting.length-1?' · thuis ± '+hhmm(b.terug):'')
+              +vergoeding,
         soort:'fluit'
       });
     });
+    if(b.aantal>1){
+      rijen.push({
+        uur:'', wie:'', tekst:'volledig traject '+bij+b.totaalKm+' km',
+        extra:euro(b.totaalKost)+' · verdeeld over '+b.aantal+' wedstrijden'
+              +(b.zalen.length>1?' in '+b.zalen.length+' zalen':' in dezelfde zaal'),
+        soort:'fluittotaal'
+      });
+    }
   });
   trainingenOp(dag.wd).forEach(t=>rijen.push({
     uur:t.van, wie:t.wie, tekst:'training, '+(t.waar||''), extra:'tot '+t.tot, soort:'training'

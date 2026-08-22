@@ -22,5 +22,6 @@ CREATE TABLE IF NOT EXISTS geo (
 );
 CREATE TABLE IF NOT EXISTS reis (
   paar    TEXT PRIMARY KEY,
-  minuten INTEGER
+  minuten INTEGER,
+  km      REAL
 );

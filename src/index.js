@@ -124,7 +124,8 @@ function leesAgenda(tekst, wie, vanafIso) {
 ------------------------------------------------------------------------- */
 async function zorgVoorReisTabellen(env) {
   await env.DB.prepare('CREATE TABLE IF NOT EXISTS geo (naam TEXT PRIMARY KEY, lon REAL, lat REAL)').run();
-  await env.DB.prepare('CREATE TABLE IF NOT EXISTS reis (paar TEXT PRIMARY KEY, minuten INTEGER)').run();
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS reis (paar TEXT PRIMARY KEY, minuten INTEGER, km REAL)').run();
+  try { await env.DB.prepare('ALTER TABLE reis ADD COLUMN km REAL').run(); } catch (e) { /* kolom bestond al */ }
 }
 
 async function coordinaten(env, naam) {
@@ -150,12 +151,14 @@ async function reisMinuten(env, paren) {
   const uit = {};
   const ontbreekt = [];
 
+  const km = {};
   for (const [van, naar] of paren) {
     const sleutel = van + '|' + naar;
-    const g = await env.DB.prepare('SELECT minuten FROM reis WHERE paar = ?').bind(sleutel).first();
-    if (g) uit[sleutel] = g.minuten; else ontbreekt.push([van, naar]);
+    const g = await env.DB.prepare('SELECT minuten, km FROM reis WHERE paar = ?').bind(sleutel).first();
+    if (g && g.km != null) { uit[sleutel] = g.minuten; km[sleutel] = g.km; }
+    else ontbreekt.push([van, naar]);
   }
-  if (!ontbreekt.length || !env.ORS_KEY) return { minuten: uit, ontbreekt: ontbreekt.length };
+  if (!ontbreekt.length || !env.ORS_KEY) return { minuten: uit, km, ontbreekt: ontbreekt.length };
 
   // alle betrokken plaatsen één keer opzoeken, dan één matrixoproep
   const plaatsen = [...new Set(ontbreekt.flat())];
@@ -165,7 +168,7 @@ async function reisMinuten(env, paren) {
   const r = await fetch('https://api.openrouteservice.org/v2/matrix/driving-car', {
     method: 'POST',
     headers: { 'content-type': 'application/json', authorization: env.ORS_KEY },
-    body: JSON.stringify({ locations: punten, metrics: ['duration'] })
+    body: JSON.stringify({ locations: punten, metrics: ['duration', 'distance'], units: 'km' })
   });
   if (!r.ok) throw new Error('matrix ' + r.status);
   const d = await r.json();
@@ -173,13 +176,17 @@ async function reisMinuten(env, paren) {
   for (const [van, naar] of ontbreekt) {
     const i = plaatsen.indexOf(van), j = plaatsen.indexOf(naar);
     const sec = d.durations && d.durations[i] && d.durations[i][j];
+    const afst = d.distances && d.distances[i] && d.distances[i][j];
     if (typeof sec !== 'number') continue;
     const min = Math.max(1, Math.round(sec / 60));
+    const kilom = typeof afst === 'number' ? Math.round(afst * 10) / 10 : null;
     const sleutel = van + '|' + naar;
     uit[sleutel] = min;
-    await env.DB.prepare('INSERT OR REPLACE INTO reis (paar, minuten) VALUES (?1, ?2)').bind(sleutel, min).run();
+    if (kilom != null) km[sleutel] = kilom;
+    await env.DB.prepare('INSERT OR REPLACE INTO reis (paar, minuten, km) VALUES (?1, ?2, ?3)')
+      .bind(sleutel, min, kilom).run();
   }
-  return { minuten: uit, ontbreekt: 0 };
+  return { minuten: uit, km, ontbreekt: 0 };
 }
 
 export default {
@@ -207,12 +214,12 @@ export default {
         if (!env.ORS_KEY) {
           // zonder sleutel enkel wat al berekend was
           await zorgVoorReisTabellen(env);
-          const uit = {};
+          const uit = {}, km = {};
           for (const [van, naar] of geldig) {
-            const g = await env.DB.prepare('SELECT minuten FROM reis WHERE paar = ?').bind(van + '|' + naar).first();
-            if (g) uit[van + '|' + naar] = g.minuten;
+            const g = await env.DB.prepare('SELECT minuten, km FROM reis WHERE paar = ?').bind(van + '|' + naar).first();
+            if (g) { uit[van + '|' + naar] = g.minuten; if (g.km != null) km[van + '|' + naar] = g.km; }
           }
-          return json({ minuten: uit, geenSleutel: true });
+          return json({ minuten: uit, km, geenSleutel: true });
         }
         return json(await reisMinuten(env, geldig));
       }

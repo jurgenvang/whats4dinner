@@ -1,7 +1,7 @@
 // Kleine service worker: de app blijft bruikbaar zonder bereik,
 // maar gegevens komen altijd vers van de server als dat kan.
-const CACHE = 'whats4dinner-v1';
-const SCHIL = ['/', '/index.html', '/manifest.webmanifest', '/icoon.svg'];
+const CACHE = 'whats4dinner-v2';
+const SCHIL = ['/', '/index.html', '/manifest.webmanifest', '/icoon.svg', '/icoon-180.png', '/icoon-192.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SCHIL)).then(() => self.skipWaiting()));

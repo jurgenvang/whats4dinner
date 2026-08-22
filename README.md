@@ -161,7 +161,11 @@ aanvragen per dag, geen kredietkaart — en zet de sleutel als Secret:
 npx wrangler secret put ORS_KEY
 ```
 
-De Worker zoekt elke zaal één keer op, berekent de rijtijden en bewaart ze in D1.
+De Worker zoekt elke zaal één keer op, berekent rijtijd én afstand, en bewaart beide
+in D1. De afstanden dienen voor de kilometervergoeding bij fluitopdrachten, aan
+€ 0,40 per kilometer. Fluit je meer dan één wedstrijd op dezelfde rit, dan worden de kosten van het
+volledige traject — van huis, langs elke zaal, en terug — gelijk verdeeld over die
+wedstrijden, ook als ze in dezelfde zaal doorgaan.
 Een nieuw seizoen kost daardoor een handvol aanvragen. De berekende waarden gaan
 voor op de schattingen en op wat je zelf bij ⋯ invulde.
 
