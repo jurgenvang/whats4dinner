@@ -121,9 +121,6 @@ header.top .wrap{padding-bottom:0}
 .chip.verg{background:#EDE4F5;color:#5B3E7A}
 .chip.feest{background:#FDECEF;color:#9B2C43}
 .chip.wed{background:#F0E6F7;color:#6A3489}
-.wedregel{background:#F7F2FB;border:1px solid #DCC9EC;border-radius:9px;padding:7px 10px;font-size:12px;color:#4A2C63;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
-.wedregel b{font-weight:700;white-space:nowrap}
-.wedregel .vertrek{color:#7A5A96;font-weight:600;white-space:nowrap}
 .wedkaart{display:flex;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:10px}
 .wedkaart.voorbij{opacity:.5}
 .wk-datum{flex:0 0 52px;text-align:center;background:#F7F2FB;border:1px solid #DCC9EC;border-radius:10px;padding:6px 0;height:fit-content}
@@ -140,15 +137,17 @@ header.top .wrap{padding-bottom:0}
 .wk-link{display:inline-block;margin-top:6px;font-size:12px;color:var(--muted);text-decoration:underline}
 .wk-link:hover{color:var(--ink)}
 @media(max-width:520px){.wk-tegen{font-size:15px}}
-.wedregel a{color:#4A2C63;text-decoration:underline;text-decoration-color:#C4AEDC;text-underline-offset:2px}
-.wedregel a:hover{text-decoration-color:#4A2C63}
 .day.vrijdag-af{background:#FDF7F8;border-color:#EBC9D1}
 .day.voorbij{opacity:.45}
 .day.voorbij:hover,.day.voorbij:focus-within{opacity:1}
 .day.vergaderdag{border-color:#C4AEDC;box-shadow:inset 3px 0 0 #8B6BB1}
-.dagvoet{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:12px;color:var(--muted)}
-.dagvoet label{display:flex;align-items:center;gap:6px}
-.dagvoet input{width:52px;border:1px solid var(--line);border-radius:7px;padding:3px 6px;font-size:12px}
+.eters{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--muted)}
+.eters span{margin-right:2px}
+.eters input{width:32px;text-align:center;border:1px solid var(--line);border-radius:7px;padding:3px 2px;font-size:13px;font-weight:600;color:var(--ink);-moz-appearance:textfield}
+.eters input::-webkit-outer-spin-button,.eters input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.etersknop{width:24px;height:24px;border:1px solid var(--line);background:#fff;border-radius:7px;cursor:pointer;font-size:14px;line-height:1;color:var(--ink-2);display:flex;align-items:center;justify-content:center}
+.etersknop:hover{border-color:var(--ink-2);background:#F3F6F2}
+.day .agkolom{flex:none;max-width:none;border-left:0;border-top:1px dashed var(--line);padding:8px 0 0;margin-top:4px}
 .vergtoggle{
   margin-top:8px;border:1px dashed var(--line);background:transparent;border-radius:9px;
   padding:6px 10px;font-size:12px;color:var(--muted);cursor:pointer;width:100%;text-align:left;
@@ -217,6 +216,9 @@ header.top .wrap{padding-bottom:0}
 .agrij.fluit .aguur{color:#8A6400}
 .agrij.fluit .agtekst{color:#6B4E00}
 .agicoon{font-size:12px}
+.ic{width:13px;height:13px;vertical-align:-2px;fill:currentColor}
+.ic-fluit{color:#1A1A1A}
+.strip .fluit .ic-fluit{color:#fff}
 .vandaagkaart .agkolom{border-left:0;border-top:1px solid var(--line);padding:10px 0 0;margin-top:12px;max-width:none;flex:none}
 @media(max-width:700px){
   .wl-dag{flex-wrap:wrap}
@@ -360,8 +362,10 @@ header.top .wrap{padding-bottom:0}
 /* ============================================================
    1. Vaste gegevens
    ============================================================ */
-const VERSIE='3.6.0';
+const VERSIE='3.7.1';
 const CHANGELOG=[
+ ['3.7.1','Het fluitje getekend naar de klassieke vorm, met mondstuk en ophangoog.'],
+ ['3.7.0','Getekend fluitje en basketbal als icoon; kalenderinfo ook op de planning, onder de invoer en met het balkje onderaan; eters met plus en min.'],
  ['3.6.0','Fluitopdrachten uit de agenda met echte duur en reistijd, en reistijden berekend via een routeplanner.'],
  ['3.5.1','Handmatige vergaderdatums die niet in Google Agenda staan, worden aangeduid.'],
  ['3.5.0','Persoonlijke agenda\'s van Google naast elke dag in het overzicht; vergaderavonden komen er vanzelf uit.'],
@@ -1751,7 +1755,7 @@ function stripHTML(dag){
   tr.forEach(x=>{
     const breed=pct(x.e)-pct(x.s);
     const hoog=100/banen;
-    const wieTekst=esc(x.t.wie||'')+(x.t.fluiten?' 🦓':(x.t.wedstrijd?' 🏆':''));
+    const wieTekst=(x.t.fluiten?ICOON_FLUIT+' ':ICOON_BAL+' ')+esc(x.t.wie||'');
     const label=(breed>22&&banen<3)?`${wieTekst} ${x.t.van}–${x.t.tot}`:wieTekst;
     if(x.e<=VAN||x.s>=TOT) return;                  // valt buiten de balk, staat als label bovenaan
     h+=`<div class="blk ${x.t.fluiten?'fluit':(x.t.wedstrijd?'wed':'tr')}" style="left:${pct(Math.max(x.s,VAN))}%;width:${breed}%;top:${x.baan*hoog}%;height:${hoog}%;bottom:auto"
@@ -1834,12 +1838,6 @@ function dayHTML(dag){
   const verg=dag.vergadering?'<span class="chip verg">🗓 vergadering</span>':'';
   const feest=dag.feest?`<span class="chip feest">${esc(dag.feest)}</span>`:'';
   const vak=dag.vakantie&&!dag.feest?`<span class="chip feest">${esc(dag.vakantie)}</span>`:'';
-  const wedRegels=(dag.wedstrijden||[]).map(w=>`
-    <div class="wedregel" title="${esc(w.titel||'')}">
-      <b>🏆 ${esc(w.wie)} ${w.van}</b>
-      ${w.waar?`<a href="${esc(routeLink(w.waar))}" target="_blank" rel="noopener" title="Route vanuit ${esc(thuisadres())}">${esc(w.waar)} ↗</a>`:'<span>onbekende zaal</span>'}
-      <span class="vertrek">vertrek ${vertrekTijd(w)} · aanwezig ${aanwezigTijd(w)} · thuis ± ${thuisTijd(w)}</span>
-    </div>`).join('');
   const wknd=(dag.weekend&&!dag.vakantie&&!dag.feest&&!(dag.wedstrijden||[]).length)
     ? (state.wedstrijdenOpgehaald
         ? '<span class="chip train">geen wedstrijd</span>'
@@ -1852,16 +1850,19 @@ function dayHTML(dag){
       <div><div class="day-name">${dag.naam}</div><div class="day-date">${fmtDate(dag.date)}</div></div>
       <div class="chips">${feest}${vak}${verg}${modus}${wknd}</div>
     </div>
-    ${wedRegels}
-    ${dag.regels.slots.map(s=>slotHTML(dag,s)).join('')}
-    ${strip}
-    <div class="dagvoet">
-      <label>eters <input type="number" min="1" max="12" value="${personenOp(dag.iso)}" data-eters="${dag.iso}"></label>
+    <div class="eters">
+      <span>eters</span>
+      <button class="etersknop" data-etermin="${dag.iso}" title="Eén minder">−</button>
+      <input type="number" min="1" max="9" value="${personenOp(dag.iso)}" data-eters="${dag.iso}" aria-label="aantal eters">
+      <button class="etersknop" data-etermeer="${dag.iso}" title="Eén meer">+</button>
       ${personenOp(dag.iso)!==state.personen?`<button class="mini" data-eterswis="${dag.iso}" title="Terug naar ${state.personen}">↺</button>`:''}
     </div>
+    ${dag.regels.slots.map(s=>slotHTML(dag,s)).join('')}
     <button class="vergtoggle ${dag.vergadering?'on':''}" data-verg="${dag.iso}">
       ${dag.vergadering?'🗓 vergadering — klik om weg te halen':'+ vergadering op deze dag'}
     </button>
+    ${agendaKolom(dag)}
+    ${strip}
   </article>`;
 }
 
@@ -1960,11 +1961,16 @@ function renderPlan(){
     save(); render();
   });
   $('#tab-plan').querySelectorAll('[data-eters]').forEach(el=>el.onchange=()=>{
-    const iso=el.dataset.eters, n=Math.max(1,Math.min(12,Number(el.value)||state.personen));
+    zetEters(el.dataset.eters,Number(el.value)||state.personen);
+  });
+  const zetEters=(iso,n)=>{
+    n=Math.max(1,Math.min(9,n));
     state.personenPerDag=state.personenPerDag||{};
     if(n===state.personen) delete state.personenPerDag[iso]; else state.personenPerDag[iso]=n;
     save(); render();
-  });
+  };
+  $('#tab-plan').querySelectorAll('[data-etermin]').forEach(b=>b.onclick=()=>zetEters(b.dataset.etermin,personenOp(b.dataset.etermin)-1));
+  $('#tab-plan').querySelectorAll('[data-etermeer]').forEach(b=>b.onclick=()=>zetEters(b.dataset.etermeer,personenOp(b.dataset.etermeer)+1));
   $('#tab-plan').querySelectorAll('[data-eterswis]').forEach(b=>b.onclick=()=>{
     delete (state.personenPerDag||{})[b.dataset.eterswis]; save(); render();
   });
@@ -2021,6 +2027,13 @@ function dagKaartKort(dag,slot,groot){
   </div>`;
 }
 
+const ICOON_FLUIT='<svg class="ic ic-fluit" viewBox="0 0 24 24" aria-hidden="true">'
+  +'<circle cx="21" cy="5.8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.7"/>'
+  +'<circle cx="15.3" cy="14.2" r="7.6"/>'
+  +'<path d="M2.2 9.6h9.2v9.2H2.2a1.2 1.2 0 0 1-1.2-1.2v-6.8a1.2 1.2 0 0 1 1.2-1.2z"/>'
+  +'<circle cx="16.4" cy="15.2" r="3.1" fill="#fff"/></svg>';
+const ICOON_BAL='🏀';
+
 function afspraakRegels(dag){
   const rijen=[];
   (dag.wedstrijden||[]).forEach(w=>rijen.push({
@@ -2053,7 +2066,7 @@ function agendaKolom(dag){
   return '<div class="agkolom">'+rijen.map(r=>`
     <div class="agrij ${r.soort}">
       <span class="aguur">${esc(r.uur||'—')}</span>
-      <span class="agtekst">${r.soort==='fluit'?'<span class="agicoon" title="fluiten">🦓</span> ':''}<b>${esc(r.wie||'')}</b> ${esc(r.tekst)}${r.extra?` <span class="aghint">${esc(r.extra)}</span>`:''}</span>
+      <span class="agtekst">${r.soort==='fluit'?ICOON_FLUIT+' ':(r.soort==='training'||r.soort==='wed')?'<span class="agicoon">'+ICOON_BAL+'</span> ':''}<b>${esc(r.wie||'')}</b> ${esc(r.tekst)}${r.extra?` <span class="aghint">${esc(r.extra)}</span>`:''}</span>
     </div>`).join('')+'</div>';
 }
 
