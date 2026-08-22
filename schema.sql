@@ -12,3 +12,15 @@ CREATE TABLE IF NOT EXISTS usage (
   k TEXT PRIMARY KEY,
   n INTEGER NOT NULL
 );
+
+-- Berekende reistijden en gevonden coördinaten. De Worker maakt deze tabellen
+-- ook zelf aan; ze staan hier zodat een verse database meteen compleet is.
+CREATE TABLE IF NOT EXISTS geo (
+  naam TEXT PRIMARY KEY,
+  lon  REAL,
+  lat  REAL
+);
+CREATE TABLE IF NOT EXISTS reis (
+  paar    TEXT PRIMARY KEY,
+  minuten INTEGER
+);

@@ -165,6 +165,8 @@ header.top .wrap{padding-bottom:0}
 .strip .eat{background:rgba(37,107,91,.16);border-left:2px solid var(--pine);border-right:2px solid var(--pine)}
 .strip .tr{background:var(--ball);opacity:.85}
 .strip .wed{background:#7A3E9D;opacity:.9}
+.strip .fluit{background:#B8860B;opacity:.9}
+.strip .fluit span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;overflow:hidden}
 .strip .wed span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;overflow:hidden}
 .strip .tr span{
   position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
@@ -212,6 +214,9 @@ header.top .wrap{padding-bottom:0}
 .agrij.wed .aguur{color:#6A3489}
 .agrij.training .aguur{color:#A63B1B}
 .agrij.afspraak .aguur{color:var(--pine)}
+.agrij.fluit .aguur{color:#8A6400}
+.agrij.fluit .agtekst{color:#6B4E00}
+.agicoon{font-size:12px}
 .vandaagkaart .agkolom{border-left:0;border-top:1px solid var(--line);padding:10px 0 0;margin-top:12px;max-width:none;flex:none}
 @media(max-width:700px){
   .wl-dag{flex-wrap:wrap}
@@ -355,8 +360,9 @@ header.top .wrap{padding-bottom:0}
 /* ============================================================
    1. Vaste gegevens
    ============================================================ */
-const VERSIE='3.5.1';
+const VERSIE='3.6.0';
 const CHANGELOG=[
+ ['3.6.0','Fluitopdrachten uit de agenda met echte duur en reistijd, en reistijden berekend via een routeplanner.'],
  ['3.5.1','Handmatige vergaderdatums die niet in Google Agenda staan, worden aangeduid.'],
  ['3.5.0','Persoonlijke agenda\'s van Google naast elke dag in het overzicht; vergaderavonden komen er vanzelf uit.'],
  ['3.4.2','Een half uur na de wedstrijd voor douche en drankje, met het verwachte thuisuur erbij.'],
@@ -940,10 +946,57 @@ function routeLink(waar){
   return 'https://www.google.com/maps/dir/?api=1&origin='+encodeURIComponent(thuisadres())
     +'&destination='+encodeURIComponent(String(waar||'')+', België');
 }
+function reistijdTussen(van,naar){
+  const a=String(van||'').trim(), b=String(naar||'').trim();
+  if(!a||!b) return 0;
+  if(a===b) return 0;
+  const cache=state.reisCache||{};
+  const berekend=cache[a+'|'+b];
+  if(typeof berekend==='number') return berekend;
+  // niets berekend: eigen invulling voor de rit van thuis, anders een schatting
+  if(a===thuisadres()) { const t=(state.reistijden||{})[b]; if(typeof t==='number') return t; return reistijdGok(b); }
+  if(b===thuisadres()) { const t=(state.reistijden||{})[a]; if(typeof t==='number') return t; return reistijdGok(a); }
+  return Math.max(reistijdGok(a),reistijdGok(b));
+}
 function reistijd(waar){
-  const tab=state.reistijden||{};
-  const k=String(waar||'').trim();
-  return (typeof tab[k]==='number'&&tab[k]>=0)?tab[k]:reistijdGok(k);
+  return reistijdTussen(thuisadres(),waar);
+}
+function reisIsBerekend(van,naar){
+  return typeof (state.reisCache||{})[String(van||'').trim()+'|'+String(naar||'').trim()]==='number';
+}
+
+// Vraagt de Worker om alles wat nog niet berekend is
+async function haalReistijden(){
+  if(modus!=='server') return false;
+  const nodig=[]; const zie=new Set();
+  const voegtoe=(a,b)=>{
+    if(!a||!b||a===b) return;
+    const k=a+'|'+b;
+    if(zie.has(k)||reisIsBerekend(a,b)) return;
+    zie.add(k); nodig.push([a,b]);
+  };
+  const thuis=thuisadres();
+  (state.wedstrijden||[]).forEach(w=>{ if(w.waar){ voegtoe(thuis,w.waar); voegtoe(w.waar,thuis); } });
+  const perDag={};
+  (state.agenda||[]).filter(a=>isFluiten(a.titel)&&a.waar).forEach(a=>{ (perDag[a.iso]=perDag[a.iso]||[]).push(a); });
+  Object.values(perDag).forEach(lijst=>{
+    lijst.sort((a,b)=>(a.van||'').localeCompare(b.van||''));
+    lijst.forEach((w,i)=>{
+      voegtoe(thuis,w.waar); voegtoe(w.waar,thuis);
+      const v=lijst[i-1];
+      if(v&&v.waar!==w.waar) voegtoe(v.waar,w.waar);
+    });
+  });
+  if(!nodig.length) return false;
+  try{
+    const r=await fetch('/api/reistijden',{method:'POST',headers:apiHeaders(),body:JSON.stringify({paren:nodig.slice(0,60)})});
+    if(!r.ok) return false;
+    const d=await r.json();
+    if(!d||!d.minuten||!Object.keys(d.minuten).length) return false;
+    state.reisCache=Object.assign({},state.reisCache||{},d.minuten);
+    save();
+    return true;
+  }catch(e){ return false; }
 }
 function vertrekTijd(w){
   const m=mins(w.van)-VOOR_WEDSTRIJD-reistijd(w.waar);
@@ -1008,6 +1061,60 @@ function vergaderdagenUitAgenda(){
     .filter(a=>(a.titel||'').toLowerCase().includes(woord))
     .map(a=>a.iso))];
 }
+
+/* ---- Fluitopdrachten ----------------------------------------------------
+   Herkenbaar aan [Official] of [Official 2] achteraan de titel. Het startuur
+   in de agenda klopt, de duur niet: reken altijd 1u45. Erbij komen 30 minuten
+   vooraf, 30 minuten achteraf, en de rit heen en terug. Volgen er meer
+   wedstrijden binnen drie uur na de vorige start, dan blijft hij ter plaatse
+   en telt de rit naar huis pas na de laatste.
+------------------------------------------------------------------------- */
+const FLUIT_DUUR=105;      // 1u45
+const FLUIT_VOOR=30;
+const FLUIT_NA=30;
+const KETTING_VENSTER=180; // drie uur na de vorige starttijd
+
+function isFluiten(titel){
+  return /\[\s*official\s*\d*\s*\]\s*$/i.test(String(titel||''));
+}
+function fluitTitel(titel){
+  return String(titel||'').replace(/\[\s*official\s*\d*\s*\]\s*$/i,'').trim()||'Wedstrijd fluiten';
+}
+function fluitenOp(iso){
+  return (state.agenda||[]).filter(a=>!a.heledag&&a.van&&isFluiten(a.titel))
+    .filter(a=>a.iso===iso)
+    .sort((a,b)=>a.van.localeCompare(b.van));
+}
+
+// Groepeert de wedstrijden van een dag in kettingen die zonder tussendoor
+// naar huis te gaan aan elkaar hangen.
+function fluitKettingen(iso){
+  const lijst=fluitenOp(iso);
+  const kettingen=[];
+  lijst.forEach(w=>{
+    const laatste=kettingen[kettingen.length-1];
+    const vorige=laatste&&laatste[laatste.length-1];
+    if(vorige&&(mins(w.van)-mins(vorige.van))<=KETTING_VENSTER) laatste.push(w);
+    else kettingen.push([w]);
+  });
+  return kettingen;
+}
+
+// Van vertrek thuis tot terug thuis, per ketting.
+function fluitBlokken(iso){
+  return fluitKettingen(iso).map(k=>{
+    const eerste=k[0], laatste=k[k.length-1];
+    const heen=reistijdTussen(thuisadres(),eerste.waar);
+    const terug=reistijdTussen(laatste.waar,thuisadres());
+    return {
+      ketting:k,
+      vertrek:mins(eerste.van)-FLUIT_VOOR-heen,
+      terug:mins(laatste.van)+FLUIT_DUUR+FLUIT_NA+terug,
+      heen, terugtijd:terug
+    };
+  });
+}
+function fluitEind(w){ return hhmm(mins(w.van)+FLUIT_DUUR); }
 
 function wedstrijdenOp(iso){
   return (state.wedstrijden||[]).filter(w=>w.iso===iso);
@@ -1091,6 +1198,7 @@ function eetvensters(wd,iso){
     const r=reistijd(w.waar);
     busy.push([mins(w.van)-VOOR_WEDSTRIJD-r, mins(w.tot)+NA_WEDSTRIJD+r]);   // vertrek tot thuiskomst
   });
+  if(iso) fluitBlokken(iso).forEach(b=>busy.push([b.vertrek,b.terug]));
   busy.sort((a,b)=>a[0]-b[0]);
   const weekend=wd>=5;
   let free=[[mins(weekend?'11:00':'17:00'),mins('21:00')]];
@@ -1213,8 +1321,13 @@ function bouwDagen(startIso,aantal){
     }
     const matches=wedstrijdenOp(iso);
     const afspraken=afsprakenOp(iso);
+    const fluit=fluitenOp(iso).map(w=>({wie:w.wie,van:w.van,tot:fluitEind(w),waar:w.waar,titel:fluitTitel(w.titel),fluiten:true}));
+    // fluiten rond etenstijd betekent dat er niet samen gegeten kan worden
+    const raaktAvond=fluitBlokken(iso).some(b=>b.terug>mins('17:30')&&b.vertrek<mins('20:30'));
+    if(raaktAvond) r=Object.assign({},r,{samen:null,opwarmen:true,
+      note:'Jij fluit rond etenstijd — het moet op te warmen zijn.'});
     out.push({i,date,iso,wd,naam:DAGEN[wd],regels:r,
-              training:trainingenOp(wd).concat(matches),wedstrijden:matches,
+              training:trainingenOp(wd).concat(matches).concat(fluit),wedstrijden:matches,fluit,
               vensters:eetvensters(wd,iso),weekend:wd>=5,vergadering:verg.includes(iso),
               feest,vakantie:vak,afspraken});
   }
@@ -1638,10 +1751,10 @@ function stripHTML(dag){
   tr.forEach(x=>{
     const breed=pct(x.e)-pct(x.s);
     const hoog=100/banen;
-    const wieTekst=esc(x.t.wie||'')+(x.t.wedstrijd?' 🏆':'');
+    const wieTekst=esc(x.t.wie||'')+(x.t.fluiten?' 🦓':(x.t.wedstrijd?' 🏆':''));
     const label=(breed>22&&banen<3)?`${wieTekst} ${x.t.van}–${x.t.tot}`:wieTekst;
     if(x.e<=VAN||x.s>=TOT) return;                  // valt buiten de balk, staat als label bovenaan
-    h+=`<div class="blk ${x.t.wedstrijd?'wed':'tr'}" style="left:${pct(Math.max(x.s,VAN))}%;width:${breed}%;top:${x.baan*hoog}%;height:${hoog}%;bottom:auto"
+    h+=`<div class="blk ${x.t.fluiten?'fluit':(x.t.wedstrijd?'wed':'tr')}" style="left:${pct(Math.max(x.s,VAN))}%;width:${breed}%;top:${x.baan*hoog}%;height:${hoog}%;bottom:auto"
           title="${esc(x.t.titel||x.t.wie)} — ${x.t.van}–${x.t.tot}, ${esc(x.t.waar||'')}"><span style="font-size:${banen>1?9:10}px">${label}</span></div>`;
   });
   const merken=dag.weekend?['08:00','12:00','16:00','20:00']:['16:00','18:00','20:00','21:30'];
@@ -1913,10 +2026,22 @@ function afspraakRegels(dag){
   (dag.wedstrijden||[]).forEach(w=>rijen.push({
     uur:w.van, wie:w.wie, tekst:(w.waar||'wedstrijd'), extra:'vertrek '+vertrekTijd(w), soort:'wed'
   }));
-  (dag.afspraken||[]).forEach(a=>rijen.push({
+  (dag.afspraken||[]).filter(a=>!isFluiten(a.titel)).forEach(a=>rijen.push({
     uur:a.heledag?'':a.van, wie:a.wie, tekst:a.titel,
     extra:a.heledag?'hele dag':(a.tot?'tot '+a.tot:''), soort:'afspraak'
   }));
+  fluitBlokken(dag.iso).forEach(b=>{
+    b.ketting.forEach((w,i)=>{
+      const vorige=b.ketting[i-1];
+      const rit=vorige&&vorige.waar!==w.waar?reistijdTussen(vorige.waar,w.waar):0;
+      rijen.push({
+        uur:w.van, wie:w.wie, tekst:'fluiten — '+fluitTitel(w.titel)+(w.waar?', '+w.waar:''),
+        extra:'tot '+fluitEind(w)+(i===0?' · vertrek '+hhmm(b.vertrek):(rit?' · '+rit+' min rijden vanaf de vorige zaal':' · zelfde zaal'))
+              +(i===b.ketting.length-1?' · thuis ± '+hhmm(b.terug):''),
+        soort:'fluit'
+      });
+    });
+  });
   trainingenOp(dag.wd).forEach(t=>rijen.push({
     uur:t.van, wie:t.wie, tekst:'training, '+(t.waar||''), extra:'tot '+t.tot, soort:'training'
   }));
@@ -1928,7 +2053,7 @@ function agendaKolom(dag){
   return '<div class="agkolom">'+rijen.map(r=>`
     <div class="agrij ${r.soort}">
       <span class="aguur">${esc(r.uur||'—')}</span>
-      <span class="agtekst"><b>${esc(r.wie||'')}</b> ${esc(r.tekst)}${r.extra?` <span class="aghint">${esc(r.extra)}</span>`:''}</span>
+      <span class="agtekst">${r.soort==='fluit'?'<span class="agicoon" title="fluiten">🦓</span> ':''}<b>${esc(r.wie||'')}</b> ${esc(r.tekst)}${r.extra?` <span class="aghint">${esc(r.extra)}</span>`:''}</span>
     </div>`).join('')+'</div>';
 }
 
@@ -2886,7 +3011,7 @@ document.querySelectorAll('.tab').forEach(t=>{ t.onclick=()=>toonTab(t.dataset.t
   setSync();
   startPolling();
   autoWedstrijden();
-  autoAgenda();
+  autoAgenda().then(()=>haalReistijden().then(ok=>{ if(ok) render(); }));
 
   // Installeerbaar maken en offline laten werken. Lukt alleen op een echte
   // website met https; elders faalt dit stil en verandert er niets.

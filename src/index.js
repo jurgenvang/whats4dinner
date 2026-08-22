@@ -117,6 +117,71 @@ function leesAgenda(tekst, wie, vanafIso) {
   return uit;
 }
 
+/* ---- Reistijden ---------------------------------------------------------
+   Berekend met OpenRouteService en bewaard in D1, zodat elke combinatie van
+   zalen hoogstens één keer opgevraagd wordt. Zonder ORS_KEY valt de app terug
+   op haar eigen schattingen.
+------------------------------------------------------------------------- */
+async function zorgVoorReisTabellen(env) {
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS geo (naam TEXT PRIMARY KEY, lon REAL, lat REAL)').run();
+  await env.DB.prepare('CREATE TABLE IF NOT EXISTS reis (paar TEXT PRIMARY KEY, minuten INTEGER)').run();
+}
+
+async function coordinaten(env, naam) {
+  const gekend = await env.DB.prepare('SELECT lon, lat FROM geo WHERE naam = ?').bind(naam).first();
+  if (gekend) return [gekend.lon, gekend.lat];
+
+  const u = 'https://api.openrouteservice.org/geocode/search'
+    + '?api_key=' + encodeURIComponent(env.ORS_KEY)
+    + '&text=' + encodeURIComponent(naam)
+    + '&boundary.country=BE&size=1';
+  const r = await fetch(u);
+  if (!r.ok) throw new Error('geocode ' + r.status);
+  const d = await r.json();
+  const p = d && d.features && d.features[0];
+  if (!p) throw new Error('adres niet gevonden: ' + naam);
+  const [lon, lat] = p.geometry.coordinates;
+  await env.DB.prepare('INSERT OR REPLACE INTO geo (naam, lon, lat) VALUES (?1, ?2, ?3)').bind(naam, lon, lat).run();
+  return [lon, lat];
+}
+
+async function reisMinuten(env, paren) {
+  await zorgVoorReisTabellen(env);
+  const uit = {};
+  const ontbreekt = [];
+
+  for (const [van, naar] of paren) {
+    const sleutel = van + '|' + naar;
+    const g = await env.DB.prepare('SELECT minuten FROM reis WHERE paar = ?').bind(sleutel).first();
+    if (g) uit[sleutel] = g.minuten; else ontbreekt.push([van, naar]);
+  }
+  if (!ontbreekt.length || !env.ORS_KEY) return { minuten: uit, ontbreekt: ontbreekt.length };
+
+  // alle betrokken plaatsen één keer opzoeken, dan één matrixoproep
+  const plaatsen = [...new Set(ontbreekt.flat())];
+  const punten = [];
+  for (const p of plaatsen) punten.push(await coordinaten(env, p));
+
+  const r = await fetch('https://api.openrouteservice.org/v2/matrix/driving-car', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: env.ORS_KEY },
+    body: JSON.stringify({ locations: punten, metrics: ['duration'] })
+  });
+  if (!r.ok) throw new Error('matrix ' + r.status);
+  const d = await r.json();
+
+  for (const [van, naar] of ontbreekt) {
+    const i = plaatsen.indexOf(van), j = plaatsen.indexOf(naar);
+    const sec = d.durations && d.durations[i] && d.durations[i][j];
+    if (typeof sec !== 'number') continue;
+    const min = Math.max(1, Math.round(sec / 60));
+    const sleutel = van + '|' + naar;
+    uit[sleutel] = min;
+    await env.DB.prepare('INSERT OR REPLACE INTO reis (paar, minuten) VALUES (?1, ?2)').bind(sleutel, min).run();
+  }
+  return { minuten: uit, ontbreekt: 0 };
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -131,6 +196,27 @@ export default {
     }
 
     try {
+      if (url.pathname === '/api/reistijden' && request.method === 'POST') {
+        const body = await request.json();
+        const paren = Array.isArray(body && body.paren) ? body.paren : [];
+        const geldig = paren
+          .filter(p => Array.isArray(p) && typeof p[0] === 'string' && typeof p[1] === 'string' && p[0].trim() && p[1].trim())
+          .slice(0, 60)
+          .map(p => [p[0].trim().slice(0, 120), p[1].trim().slice(0, 120)]);
+        if (!geldig.length) return json({ minuten: {} });
+        if (!env.ORS_KEY) {
+          // zonder sleutel enkel wat al berekend was
+          await zorgVoorReisTabellen(env);
+          const uit = {};
+          for (const [van, naar] of geldig) {
+            const g = await env.DB.prepare('SELECT minuten FROM reis WHERE paar = ?').bind(van + '|' + naar).first();
+            if (g) uit[van + '|' + naar] = g.minuten;
+          }
+          return json({ minuten: uit, geenSleutel: true });
+        }
+        return json(await reisMinuten(env, geldig));
+      }
+
       if (url.pathname === '/api/agenda' && request.method === 'GET') {
         const bronnen = Object.keys(env)
           .filter(k => k.startsWith('AGENDA_') && typeof env[k] === 'string' && env[k])

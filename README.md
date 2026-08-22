@@ -142,6 +142,29 @@ enkel de eerste.
 
 Lekt een adres, genereer het dan opnieuw in Google Agenda en vervang het Secret.
 
+### Fluitopdrachten
+
+Afspraken die eindigen op `[Official]` of `[Official 2]` worden herkend als een
+wedstrijd fluiten. Het startuur uit de agenda klopt, de duur niet: de app rekent
+altijd 1u45, met 30 minuten vooraf en 30 minuten achteraf, plus de rit heen en
+terug. Volgen er meer wedstrijden binnen drie uur na de vorige start, dan blijft
+hij ter plaatse en telt de rit naar huis pas na de laatste. Valt zo'n reeks rond
+etenstijd, dan vervalt het samen-uur en moet het gerecht op te warmen zijn.
+
+### Reistijden berekenen (optioneel)
+
+Zonder sleutel schat de app de reistijd op basis van de naam van de zaal. Wil je
+echte rijtijden, maak dan een gratis account bij openrouteservice.org — 2.500
+aanvragen per dag, geen kredietkaart — en zet de sleutel als Secret:
+
+```bash
+npx wrangler secret put ORS_KEY
+```
+
+De Worker zoekt elke zaal één keer op, berekent de rijtijden en bewaart ze in D1.
+Een nieuw seizoen kost daardoor een handvol aanvragen. De berekende waarden gaan
+voor op de schattingen en op wat je zelf bij ⋯ invulde.
+
 ### Vergaderavonden
 
 In de app staat bij ⋯ een trefwoord, standaard `zonnebloem`. Elke afspraak met dat
