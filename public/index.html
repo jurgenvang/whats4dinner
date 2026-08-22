@@ -69,6 +69,9 @@ header.top .wrap{padding-bottom:0}
 .datumtag{display:inline-flex;align-items:center;gap:6px;background:#F7F2FB;border:1px solid #C4AEDC;color:#5B3E7A;border-radius:99px;padding:4px 6px 4px 11px;font-size:13px}
 .datumtag button{border:0;background:transparent;color:#8B6BB1;cursor:pointer;font-size:14px;line-height:1;padding:0 3px}
 .datumtag button:hover{color:#5B3E7A}
+.datumtag.mist{background:#FDF0EA;border-color:#EDBBA5;color:#A63B1B}
+.datumtag.mist button{color:#C2603E}
+.datumtag.mist button:hover{color:#A63B1B}
 
 /* ---------- controls ---------- */
 .bar{
@@ -200,6 +203,20 @@ header.top .wrap{padding-bottom:0}
 .panel h3{font-size:17px;margin-bottom:4px}
 .hint{color:var(--muted);font-size:13px}
 .weeklijst{display:flex;flex-direction:column;gap:8px}
+.agkolom{flex:0 0 40%;max-width:340px;border-left:1px solid var(--line);padding-left:12px;font-size:12px}
+.agkolom.leeg{color:#B4C0BA;font-style:italic;align-self:center}
+.agrij{display:flex;gap:8px;padding:2px 0;align-items:baseline}
+.aguur{flex:0 0 38px;font-weight:700;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.agtekst{min-width:0;color:var(--ink-2)}
+.aghint{color:var(--muted)}
+.agrij.wed .aguur{color:#6A3489}
+.agrij.training .aguur{color:#A63B1B}
+.agrij.afspraak .aguur{color:var(--pine)}
+.vandaagkaart .agkolom{border-left:0;border-top:1px solid var(--line);padding:10px 0 0;margin-top:12px;max-width:none;flex:none}
+@media(max-width:700px){
+  .wl-dag{flex-wrap:wrap}
+  .agkolom{flex:1 1 100%;max-width:none;border-left:0;border-top:1px dashed var(--line);padding:6px 0 0;margin-top:6px}
+}
 .wl-dag{display:flex;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:10px 12px}
 .wl-dag.weekend{background:#F6F8F4;border-color:#C9D4C7}
 .wl-datum{flex:0 0 40px;text-align:center;line-height:1.15}
@@ -338,8 +355,10 @@ header.top .wrap{padding-bottom:0}
 /* ============================================================
    1. Vaste gegevens
    ============================================================ */
-const VERSIE='3.4.2';
+const VERSIE='3.5.1';
 const CHANGELOG=[
+ ['3.5.1','Handmatige vergaderdatums die niet in Google Agenda staan, worden aangeduid.'],
+ ['3.5.0','Persoonlijke agenda\'s van Google naast elke dag in het overzicht; vergaderavonden komen er vanzelf uit.'],
  ['3.4.2','Een half uur na de wedstrijd voor douche en drankje, met het verwachte thuisuur erbij.'],
  ['3.4.1','Lasagne wordt kant-en-klaar gekocht in plaats van uit de diepvries gehaald.'],
  ['3.4.0','De eerste tab heet nu Overzicht en toont de hele komende week in plaats van enkel vandaag en morgen.'],
@@ -943,6 +962,53 @@ function zalenUitWedstrijden(){
   return uit.sort((a,b)=>a.localeCompare(b,'nl'));
 }
 
+/* ---- Persoonlijke agenda's ----------------------------------------------
+   De app kent de iCal-adressen niet: die staan als geheime variabelen bij de
+   Worker. Ze wordt hier enkel opgehaald en getoond.
+------------------------------------------------------------------------- */
+const AGENDA_MAXLEEFTIJD=6*3600*1000;
+const VERGADERWOORD_STANDAARD='zonnebloem';
+
+async function haalAgenda(){
+  if(modus!=='server') return {ok:false,tekst:'Agenda\'s komen van jullie eigen Worker; die is hier niet bereikbaar.'};
+  try{
+    const r=await fetch('/api/agenda',{headers:apiHeaders(),cache:'no-store'});
+    if(r.status===501) return {ok:false,tekst:'Er staan nog geen agenda-adressen bij de Worker. Voeg AGENDA_JURGEN en AGENDA_SARAH toe als Secret.'};
+    if(!r.ok) return {ok:false,tekst:'De Worker antwoordde met '+r.status+'.'};
+    const d=await r.json();
+    if(!d||!Array.isArray(d.events)) return {ok:false,tekst:'Onleesbaar antwoord.'};
+    state.agenda=d.events;
+    state.agendaBronnen=d.agendas||[];
+    state.agendaOpgehaald=d.opgehaald||new Date().toISOString();
+    save();
+    const f=(d.fouten||[]).length?' — maar '+d.fouten.join('; '):'';
+    return {ok:true,tekst:d.events.length+' afspraken opgehaald uit '+(d.agendas||[]).length+' agenda\'s'+f};
+  }catch(e){ return {ok:false,tekst:'Geen antwoord: '+(e&&e.message?e.message:'onbekend')}; }
+}
+
+function agendaVerouderd(){
+  if(modus!=='server') return false;
+  if(!state.agendaOpgehaald) return true;
+  return (Date.now()-new Date(state.agendaOpgehaald).getTime())>AGENDA_MAXLEEFTIJD;
+}
+async function autoAgenda(){
+  if(!agendaVerouderd()) return;
+  const r=await haalAgenda();
+  if(r.ok) render();
+}
+
+function afsprakenOp(iso){
+  return (state.agenda||[]).filter(a=>a.iso===iso);
+}
+// Dagen waarop haar vergadering het koken onmogelijk maakt
+function vergaderdagenUitAgenda(){
+  const woord=(state.vergaderwoord||VERGADERWOORD_STANDAARD).toLowerCase();
+  if(!woord) return [];
+  return [...new Set((state.agenda||[])
+    .filter(a=>(a.titel||'').toLowerCase().includes(woord))
+    .map(a=>a.iso))];
+}
+
 function wedstrijdenOp(iso){
   return (state.wedstrijden||[]).filter(w=>w.iso===iso);
 }
@@ -1132,7 +1198,7 @@ function komendeDagen(n){
   return dagen;
 }
 function bouwDagen(startIso,aantal){
-  const verg=state.vergaderingen||[];
+  const verg=(state.vergaderingen||[]).concat(vergaderdagenUitAgenda());
   const out=[];
   for(let i=0;i<aantal;i++){
     const date=addDays(startIso,i);
@@ -1146,10 +1212,11 @@ function bouwDagen(startIso,aantal){
       if(state.vakantieLunch&&r.slots.length===1) r=Object.assign({},r,{slots:['lunch','diner']});
     }
     const matches=wedstrijdenOp(iso);
+    const afspraken=afsprakenOp(iso);
     out.push({i,date,iso,wd,naam:DAGEN[wd],regels:r,
               training:trainingenOp(wd).concat(matches),wedstrijden:matches,
               vensters:eetvensters(wd,iso),weekend:wd>=5,vergadering:verg.includes(iso),
-              feest,vakantie:vak});
+              feest,vakantie:vak,afspraken});
   }
   return out;
 }
@@ -1837,7 +1904,32 @@ function dagKaartKort(dag,slot,groot){
     <div class="chips" style="margin-top:8px">${chips.join('')}</div>
     ${groot&&m&&m.tip?`<p class="slot-note">${esc(m.tip)}</p>`:''}
     ${groot&&(dag.training.length||dag.regels.samen)?stripHTML(dag):''}
+    ${groot?agendaKolom(dag):''}
   </div>`;
+}
+
+function afspraakRegels(dag){
+  const rijen=[];
+  (dag.wedstrijden||[]).forEach(w=>rijen.push({
+    uur:w.van, wie:w.wie, tekst:(w.waar||'wedstrijd'), extra:'vertrek '+vertrekTijd(w), soort:'wed'
+  }));
+  (dag.afspraken||[]).forEach(a=>rijen.push({
+    uur:a.heledag?'':a.van, wie:a.wie, tekst:a.titel,
+    extra:a.heledag?'hele dag':(a.tot?'tot '+a.tot:''), soort:'afspraak'
+  }));
+  trainingenOp(dag.wd).forEach(t=>rijen.push({
+    uur:t.van, wie:t.wie, tekst:'training, '+(t.waar||''), extra:'tot '+t.tot, soort:'training'
+  }));
+  return rijen.sort((a,b)=>(a.uur||'00:00').localeCompare(b.uur||'00:00'));
+}
+function agendaKolom(dag){
+  const rijen=afspraakRegels(dag);
+  if(!rijen.length) return '<div class="agkolom leeg">niets in de agenda</div>';
+  return '<div class="agkolom">'+rijen.map(r=>`
+    <div class="agrij ${r.soort}">
+      <span class="aguur">${esc(r.uur||'—')}</span>
+      <span class="agtekst"><b>${esc(r.wie||'')}</b> ${esc(r.tekst)}${r.extra?` <span class="aghint">${esc(r.extra)}</span>`:''}</span>
+    </div>`).join('')+'</div>';
 }
 
 function renderOverzicht(){
@@ -1872,11 +1964,10 @@ function renderOverzicht(){
     if(d.vergadering) merk.push('<span class="chip verg">vergadering</span>');
     if(d.regels.samen) merk.push(`<span class="chip prep">samen ${d.regels.samen}</span>`);
     if(d.regels.opwarmen) merk.push('<span class="chip rush">opwarmen</span>');
-    (d.wedstrijden||[]).forEach(w=>merk.push(
-      `<span class="chip wed" title="${esc(w.titel||'')} — ${esc(w.waar||'')}">🏆 ${esc(w.wie)} ${w.van}, vertrek ${vertrekTijd(w)}</span>`));
     return `<article class="wl-dag ${d.weekend?'weekend':''}">
       <div class="wl-datum"><span>${d.naam.slice(0,2)}</span><b>${d.date.getDate()}</b></div>
       <div class="wl-body">${regels}${merk.length?`<div class="chips" style="margin-top:5px">${merk.join('')}</div>`:''}</div>
+      ${agendaKolom(d)}
     </article>`;
   }).join('')+'</div>';
 
@@ -2369,6 +2460,9 @@ function bindDelenKnoppen(){
 function renderConfig(){
   const tr=state.trainingen||[];
   const verg=(state.vergaderingen||[]).slice().sort();
+  const uitAgenda=vergaderdagenUitAgenda();
+  const agendaGekend=!!state.agendaOpgehaald&&uitAgenda.length>0;
+  const ontbrekend=agendaGekend?verg.filter(d=>!uitAgenda.includes(d)):[];
 
   let h=`<div class="panel">
     <h3>Trainingen</h3>
@@ -2429,11 +2523,34 @@ function renderConfig(){
   </div>
 
   <div class="panel">
-    <h3>Vergaderingen</h3>
-    <p class="hint">Op deze avonden stelt de app enkel afhaal voor, of iets dat meteen op tafel kan.</p>
-    <div class="datumlijst">${verg.length?verg.map(d=>`
-      <span class="datumtag">${esc(new Date(d+'T12:00:00').toLocaleDateString('nl-BE',{day:'numeric',month:'short',year:'numeric'}))}
-        <button data-vergweg="${esc(d)}" title="Verwijderen">✕</button></span>`).join('')
+    <h3>Persoonlijke agenda's</h3>
+    <p class="hint">De iCal-adressen staan als geheime variabelen bij de Worker, niet in de app — daarom kan je ze hier niet zien of wijzigen. Voeg ze toe bij <i>Settings → Variables and Secrets</i> met een naam die begint met <code>AGENDA_</code>, bijvoorbeeld <code>AGENDA_JURGEN</code> en <code>AGENDA_SARAH</code>.</p>
+    <p class="hint" style="margin-top:8px">${
+      (state.agendaBronnen||[]).length
+        ? 'Gevonden: '+state.agendaBronnen.map(a=>esc(a.naam)+' ('+a.aantal+')').join(', ')
+          +(state.agendaOpgehaald?' · opgehaald '+new Date(state.agendaOpgehaald).toLocaleString('nl-BE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'')
+        : 'Nog geen agenda opgehaald.'}</p>
+    <div class="field" style="margin-top:12px;max-width:320px">
+      <label for="vergwoord">Trefwoord voor een vergaderavond</label>
+      <input id="vergwoord" value="${esc(state.vergaderwoord!==undefined?state.vergaderwoord:VERGADERWOORD_STANDAARD)}" placeholder="zonnebloem">
+    </div>
+    <p class="hint" style="margin-top:6px">Afspraken met dit woord in de titel maken van die dag een vergaderavond. De uren in de agenda worden genegeerd: die blijken niet met de werkelijke vergadering overeen te komen.</p>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+      <button class="btn ghost" id="agophalen">Agenda's ophalen</button>
+    </div>
+    <p class="hint" id="aguit" style="margin-top:10px"></p>
+  </div>
+
+  <div class="panel">
+    <h3>Vergaderingen die je zelf toevoegt</h3>
+    <p class="hint">Naast wat uit de agenda komt. Op deze avonden stelt de app enkel afhaal voor, of iets dat meteen op tafel kan.</p>
+    ${uitAgenda.length?`<p class="hint">Uit de agenda komen er al ${uitAgenda.length} bij, herkend aan het trefwoord.</p>`:''}
+    ${agendaGekend&&ontbrekend.length?`<p class="hint" style="color:var(--ball)">${ontbrekend.length} van jouw ${verg.length} datums ${ontbrekend.length===1?'staat':'staan'} niet in Google Agenda. Misschien verplaatst of geschrapt — kijk even na.</p>`:''}
+    <div class="datumlijst">${verg.length?verg.map(d=>{
+      const mist=agendaGekend&&!uitAgenda.includes(d);
+      return `<span class="datumtag ${mist?'mist':''}" ${mist?'title="Staat niet in Google Agenda"':''}>${
+        mist?'⚠ ':''}${esc(new Date(d+'T12:00:00').toLocaleDateString('nl-BE',{day:'numeric',month:'short',year:'numeric'}))}
+        <button data-vergweg="${esc(d)}" title="Verwijderen">✕</button></span>`;}).join('')
       :'<span class="hint">Nog geen data ingesteld.</span>'}</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:6px">
       <div class="field"><label for="vergnieuw">Datum toevoegen</label><input type="date" id="vergnieuw"></div>
@@ -2553,6 +2670,18 @@ function renderConfig(){
     uit.textContent=(r.ok?'✓ ':'✗ ')+r.tekst;
     uit.style.color=r.ok?'var(--pine)':'var(--ball)';
     if(r.ok) toast('Wedstrijden bijgewerkt');
+  };
+
+  // agenda's
+  $('#vergwoord').onchange=e=>{ state.vergaderwoord=e.target.value.trim(); save(); render(); toast('Trefwoord aangepast'); };
+  $('#agophalen').onclick=async()=>{
+    const b=$('#agophalen'), uit=$('#aguit');
+    b.disabled=true; uit.textContent='Bezig…';
+    const r=await haalAgenda();
+    b.disabled=false;
+    uit.textContent=(r.ok?'✓ ':'✗ ')+r.tekst;
+    uit.style.color=r.ok?'var(--pine)':'var(--ball)';
+    if(r.ok) renderConfig();
   };
 
   // reistijden
@@ -2757,6 +2886,7 @@ document.querySelectorAll('.tab').forEach(t=>{ t.onclick=()=>toonTab(t.dataset.t
   setSync();
   startPolling();
   autoWedstrijden();
+  autoAgenda();
 
   // Installeerbaar maken en offline laten werken. Lukt alleen op een echte
   // website met https; elders faalt dit stil en verandert er niets.

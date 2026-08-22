@@ -53,6 +53,70 @@ async function huidige(env) {
   return r ? { rev: r.rev, data: JSON.parse(r.data) } : { rev: 0, data: null };
 }
 
+/* ---- Persoonlijke agenda's ----------------------------------------------
+   De iCal-adressen zijn geheim en staan als variabelen bij de Worker, niet in
+   de app. Elke variabele die met AGENDA_ begint, wordt een agenda; de naam
+   erachter is wat de app toont. Bijvoorbeeld: AGENDA_JURGEN, AGENDA_SARAH.
+------------------------------------------------------------------------- */
+function ontvouw(tekst) {
+  const regels = String(tekst || '').replace(/\r/g, '').split('\n');
+  const uit = [];
+  for (const r of regels) {
+    if ((r[0] === ' ' || r[0] === '\t') && uit.length) uit[uit.length - 1] += r.slice(1);
+    else uit.push(r);
+  }
+  return uit;
+}
+
+// Zet een DTSTART/DTEND om naar Belgische datum en uur.
+function naarLokaal(sleutel, waarde) {
+  const m = String(waarde).match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?)?(Z)?/);
+  if (!m) return null;
+  if (!m[4]) return { iso: `${m[1]}-${m[2]}-${m[3]}`, uur: null, heledag: true };
+  if (m[7]) {
+    // in UTC opgeslagen: omrekenen naar Europe/Brussels
+    const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], 0));
+    const s = d.toLocaleString('sv-SE', { timeZone: 'Europe/Brussels' }); // "YYYY-MM-DD HH:MM:SS"
+    return { iso: s.slice(0, 10), uur: s.slice(11, 16), heledag: false };
+  }
+  // met TZID of zonder zone: staat al in lokale tijd
+  return { iso: `${m[1]}-${m[2]}-${m[3]}`, uur: `${m[4]}:${m[5]}`, heledag: false };
+}
+
+function leesAgenda(tekst, wie, vanafIso) {
+  const uit = [];
+  let ev = null;
+  for (const r of ontvouw(tekst)) {
+    if (r.startsWith('BEGIN:VEVENT')) { ev = {}; continue; }
+    if (r.startsWith('END:VEVENT')) {
+      if (ev && ev.start && ev.start.iso >= vanafIso) {
+        uit.push({
+          wie,
+          iso: ev.start.iso,
+          van: ev.start.uur,
+          tot: ev.eind ? ev.eind.uur : null,
+          heledag: !!ev.start.heledag,
+          titel: ev.titel || '(zonder titel)',
+          waar: ev.waar || '',
+          herhaalt: !!ev.herhaalt
+        });
+      }
+      ev = null; continue;
+    }
+    if (!ev) continue;
+    const dp = r.indexOf(':');
+    if (dp < 0) continue;
+    const sleutel = r.slice(0, dp), waarde = r.slice(dp + 1).trim();
+    const naam = sleutel.split(';')[0];
+    if (naam === 'DTSTART') ev.start = naarLokaal(sleutel, waarde);
+    else if (naam === 'DTEND') ev.eind = naarLokaal(sleutel, waarde);
+    else if (naam === 'SUMMARY') ev.titel = waarde.replace(/\\,/g, ',').replace(/\\n/g, ' ');
+    else if (naam === 'LOCATION') ev.waar = waarde.replace(/\\,/g, ',').replace(/\\n/g, ' ');
+    else if (naam === 'RRULE') ev.herhaalt = true;
+  }
+  return uit;
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -67,6 +131,41 @@ export default {
     }
 
     try {
+      if (url.pathname === '/api/agenda' && request.method === 'GET') {
+        const bronnen = Object.keys(env)
+          .filter(k => k.startsWith('AGENDA_') && typeof env[k] === 'string' && env[k])
+          .map(k => ({ sleutel: k, naam: k.slice(7).charAt(0) + k.slice(8).toLowerCase() }));
+
+        if (!bronnen.length) {
+          return json({ fout: 'geen agenda ingesteld', agendas: [], events: [] }, 501);
+        }
+
+        // twee weken terugkijken volstaat; de rest is ballast
+        const vanaf = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
+        const events = [];
+        const agendas = [];
+        const fouten = [];
+
+        for (const b of bronnen) {
+          try {
+            const r = await fetch(env[b.sleutel], {
+              headers: { 'user-agent': 'Mozilla/5.0 (compatible; whats4dinner/1.0)' },
+              cf: { cacheTtl: 900, cacheEverything: true }
+            });
+            if (!r.ok) { fouten.push(b.naam + ': ' + r.status); agendas.push({ naam: b.naam, aantal: 0 }); continue; }
+            const ev = leesAgenda(await r.text(), b.naam, vanaf);
+            events.push(...ev);
+            agendas.push({ naam: b.naam, aantal: ev.length });
+          } catch (e) {
+            fouten.push(b.naam + ': ' + (e && e.message ? e.message : 'mislukt'));
+            agendas.push({ naam: b.naam, aantal: 0 });
+          }
+        }
+
+        events.sort((a, b) => (a.iso + (a.van || '')).localeCompare(b.iso + (b.van || '')));
+        return json({ agendas, events: events.slice(0, 800), fouten, opgehaald: new Date().toISOString() });
+      }
+
       if (url.pathname === '/api/rev' && request.method === 'GET') {
         const r = await env.DB.prepare('SELECT rev FROM state WHERE id = ?').bind(ROW).first();
         return json({ rev: r ? r.rev : 0 });

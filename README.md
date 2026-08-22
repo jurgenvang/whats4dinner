@@ -118,6 +118,38 @@ workers.dev-adres of je eigen domein — niet bij een lokaal geopend bestand.
 De bestanden daarvoor (`manifest.webmanifest`, `sw.js`, `icoon.svg`) staan in
 `public/` en worden mee gepubliceerd.
 
+## Persoonlijke agenda's
+
+De app kan de afspraken van Google Agenda naast elke dag tonen. De adressen zijn
+geheim en horen daarom bij de Worker, niet in de app.
+
+Haal per persoon het privéadres op: Google Agenda → instellingen van die ene agenda
+→ *Privéadres in iCal-indeling*. Voeg dat toe als **Secret** bij de Worker, met een
+naam die begint met `AGENDA_`:
+
+```bash
+npx wrangler secret put AGENDA_JURGEN
+npx wrangler secret put AGENDA_SARAH
+```
+
+Het stuk na `AGENDA_` wordt de naam die de app toont. Een derde agenda toevoegen is
+dus enkel een extra Secret; er hoeft niets aan de code te veranderen.
+
+De Worker haalt ze op via `/api/agenda`, rekent de uren om naar Belgische tijd
+(Google bewaart ze in UTC) en geeft alleen de afspraken van de laatste twee weken
+en later terug. Herhalende afspraken worden niet uitgerekend: daarvan verschijnt
+enkel de eerste.
+
+Lekt een adres, genereer het dan opnieuw in Google Agenda en vervang het Secret.
+
+### Vergaderavonden
+
+In de app staat bij ⋯ een trefwoord, standaard `zonnebloem`. Elke afspraak met dat
+woord in de titel maakt van die dag een vergaderavond, waarop de app enkel afhaal
+voorstelt of iets dat meteen op tafel kan. De uren uit de agenda worden bewust
+genegeerd — bij Sarah blijken die niet met de werkelijke vergadering overeen te
+komen, het echte uur staat in de titel.
+
 ## Wedstrijdkalenders
 
 De app haalt de wedstrijden op uit de kalenderfeeds van de basketbalbond. De browser
