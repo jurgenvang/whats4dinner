@@ -1,0 +1,3201 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>whats4dinner</title>
+<meta name="theme-color" content="#172622">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icoon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icoon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="whats4dinner">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --base:#EBEEE8;
+  --surface:#FFFFFF;
+  --ink:#172622;
+  --ink-2:#3D504A;
+  --muted:#7C8B85;
+  --line:#D6DCD5;
+  --pine:#256B5B;
+  --pine-soft:#E2EFEA;
+  --ball:#E4572E;
+  --ball-soft:#FBE7DE;
+  --amber:#B8860B;
+  --radius:14px;
+  --display:'Outfit',ui-sans-serif,system-ui,'Segoe UI',sans-serif;
+  --body:'Inter',ui-sans-serif,system-ui,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--base);color:var(--ink);font-family:var(--body);
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:var(--display);margin:0;letter-spacing:-0.015em}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding:0 18px 80px}
+#tab-vandaag{padding-top:20px}
+section[hidden]{display:none!important}
+
+/* ---------- header ---------- */
+header.top{background:var(--ink);color:#fff;padding:22px 0 0}
+header.top .wrap{padding-bottom:0}
+.brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.brand h1{font-size:26px;font-weight:800;color:#fff}
+.syncbadge{
+  font-size:11px;font-weight:600;color:#9FB3AC;border:1px solid #33453F;background:transparent;
+  padding:3px 10px;border-radius:99px;white-space:nowrap;cursor:pointer;font-family:inherit;
+}
+.syncbadge:hover{border-color:#5A736A;color:#CFE0DA}
+.syncbadge[data-st="bezig"]{color:#C9D6D1}
+.syncbadge[data-st="live"]{color:#7FD1B9;border-color:#2E5B4F}
+.syncbadge[data-st="fout"]{color:#F0A58C;border-color:#6B3A2A}
+.versiebadge{font-size:11px;color:#6B7F79;letter-spacing:.02em}
+.tabs{display:flex;gap:4px;margin-top:18px;flex-wrap:wrap}
+.tab{
+  background:transparent;border:0;border-radius:10px 10px 0 0;color:#9FB3AC;
+  padding:11px 16px;cursor:pointer;font-family:var(--display);font-weight:600;font-size:14px;
+}
+.tab:hover{color:#fff}
+.tab[aria-selected="true"]{background:var(--base);color:var(--ink)}
+.tab-config{margin-left:auto;font-size:18px;line-height:1;padding:8px 14px}
+.testlijst{margin-top:14px;display:flex;flex-direction:column;gap:2px}
+.testrij{display:flex;gap:9px;align-items:baseline;font-size:13px;padding:5px 0;border-top:1px solid #EEF0EC}
+.testrij:first-child{border-top:0}
+.testmerk{flex:0 0 16px;font-weight:700}
+.testrij.ok .testmerk{color:var(--pine)}
+.testrij.nok .testmerk{color:var(--ball)}
+.testrij.nok span:last-child{color:var(--ink-2)}
+.cfgrow{display:grid;grid-template-columns:1.2fr 1.3fr 90px 90px 1.6fr 36px;gap:6px;margin-bottom:6px;align-items:center}
+.cfgrow input,.cfgrow select{border:1px solid var(--line);border-radius:8px;padding:7px 8px;width:100%;min-width:0}
+.cfghead{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+@media(max-width:760px){.cfgrow{grid-template-columns:1fr 1fr;}.cfgrow .weg{grid-column:span 2}.cfghead{display:none}}
+.datumlijst{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.datumtag{display:inline-flex;align-items:center;gap:6px;background:#F7F2FB;border:1px solid #C4AEDC;color:#5B3E7A;border-radius:99px;padding:4px 6px 4px 11px;font-size:13px}
+.datumtag button{border:0;background:transparent;color:#8B6BB1;cursor:pointer;font-size:14px;line-height:1;padding:0 3px}
+.datumtag button:hover{color:#5B3E7A}
+.datumtag.mist{background:#FDF0EA;border-color:#EDBBA5;color:#A63B1B}
+.datumtag.mist button{color:#C2603E}
+.datumtag.mist button:hover{color:#A63B1B}
+
+/* ---------- controls ---------- */
+.bar{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 16px;margin:18px 0;display:flex;gap:18px;align-items:flex-end;flex-wrap:wrap;
+}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.field input,.field select{
+  border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:#fff;min-width:130px;
+}
+.btn{
+  border:1px solid var(--ink);background:var(--ink);color:#fff;border-radius:10px;
+  padding:9px 16px;cursor:pointer;font-family:var(--display);font-weight:600;font-size:14px;
+}
+.btn:hover{background:#0d1a16}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{background:#F3F6F2;border-color:var(--ink-2)}
+.btn.small{padding:5px 10px;font-size:13px;border-radius:8px}
+.btn.pine{background:var(--pine);border-color:var(--pine)}
+.btn.pine:hover{background:#1d5546}
+:focus-visible{outline:2.5px solid var(--ball);outline-offset:2px}
+
+/* ---------- week / day ---------- */
+.weekhead{display:flex;align-items:center;gap:12px;margin:26px 0 12px}
+.weekhead h2{font-size:19px}
+.weekhead .rule{flex:1;height:1px;background:var(--line)}
+.weekhead .meta{font-size:12px;color:var(--muted)}
+.days{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:700px){
+  .days{grid-template-columns:repeat(2,1fr)}
+  /* kolom 1 wordt ma – wo – vr – za, kolom 2 di – do – (leeg) – zo */
+  .days>.wd5{grid-column:1}
+}
+.day{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:10px}
+.day.weekend{background:#F6F8F4;border-color:#C9D4C7}
+.day-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.day-name{font-family:var(--display);font-weight:600;font-size:16px;text-transform:capitalize}
+.day-date{font-size:12px;color:var(--muted)}
+.chip{
+  display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
+  padding:3px 8px;border-radius:99px;white-space:nowrap;
+}
+.chip.train{background:var(--ball-soft);color:#A63B1B}
+.chip.rush{background:#FFF3D6;color:#8A6400}
+.chip.prep{background:var(--pine-soft);color:var(--pine)}
+.chip.verg{background:#EDE4F5;color:#5B3E7A}
+.chip.feest{background:#FDECEF;color:#9B2C43}
+.chip.wed{background:#F0E6F7;color:#6A3489}
+.wedkaart{display:flex;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:10px}
+.wedkaart.voorbij{opacity:.5}
+.wk-datum{flex:0 0 52px;text-align:center;background:#F7F2FB;border:1px solid #DCC9EC;border-radius:10px;padding:6px 0;height:fit-content}
+.wk-dag{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#7A5A96;font-weight:700}
+.wk-nr{display:block;font-family:var(--display);font-size:22px;font-weight:800;color:#4A2C63;line-height:1.1}
+.wk-body{min-width:0;flex:1}
+.wk-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.wk-uur{font-weight:600;color:var(--ink-2)}
+.wk-tegen{font-family:var(--display);font-weight:600;font-size:16px;margin-top:3px}
+.wk-zaal{font-size:13px;margin-top:4px}
+.wk-zaal a{color:var(--ink-2);text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:2px}
+.wk-zaal a:hover{color:var(--pine);text-decoration-color:var(--pine)}
+.wk-vertrek{font-size:13px;color:#7A5A96;font-weight:600;margin-top:4px}
+.wk-link{display:inline-block;margin-top:6px;font-size:12px;color:var(--muted);text-decoration:underline}
+.wk-link:hover{color:var(--ink)}
+@media(max-width:520px){.wk-tegen{font-size:15px}}
+.day.vrijdag-af{background:#FDF7F8;border-color:#EBC9D1}
+.day.voorbij{opacity:.45}
+.day.voorbij:hover,.day.voorbij:focus-within{opacity:1}
+.day.vergaderdag{border-color:#C4AEDC;box-shadow:inset 3px 0 0 #8B6BB1}
+.eters{display:flex;align-items:center;gap:2px;font-size:12px;color:#9AA8A2;margin-top:6px}
+.eterswaarde{min-width:14px;text-align:center;font-weight:600;font-variant-numeric:tabular-nums}
+.eterslabel{margin-left:3px}
+.etersknop{width:19px;height:19px;border:0;background:transparent;border-radius:5px;cursor:pointer;font-size:13px;line-height:1;color:#9AA8A2;display:flex;align-items:center;justify-content:center}
+.etersknop:hover{background:#EDF0EB;color:var(--ink)}
+.eters.afwijkend{color:var(--pine);font-weight:600}
+.eters.afwijkend .etersknop{color:var(--pine)}
+.day .agkolom{flex:none;max-width:none;border-left:0;border-top:1px dashed var(--line);padding:8px 0 0;margin-top:4px}
+.chip.prot-hoog{background:var(--pine-soft);color:var(--pine)}
+.chip.prot-gemiddeld{background:#EEF0EC;color:var(--ink-2)}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+
+/* signature: time strip */
+.strip{position:relative;height:34px;border-radius:8px;background:#F1F3EF;border:1px solid var(--line);overflow:hidden}
+.strip .blk{position:absolute;top:0;bottom:0}
+.strip .eat{background:rgba(37,107,91,.16);border-left:2px solid var(--pine);border-right:2px solid var(--pine)}
+.strip .tr{background:var(--ball);opacity:.85}
+.strip .wed{background:#7A3E9D;opacity:.9}
+.strip .fluit{background:#B8860B;opacity:.9}
+.strip .fluit span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;overflow:hidden}
+.strip .wed span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10px;font-weight:700;overflow:hidden}
+.strip .tr span{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:10px;font-weight:700;letter-spacing:.02em;overflow:hidden;
+}
+.strip .eat span{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  color:var(--pine);font-size:10px;font-weight:700;
+}
+.strip .tick{position:absolute;top:0;bottom:0;width:1px;background:rgba(0,0,0,.07)}
+.striplabels{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:2px}
+.trainlist{font-size:12px;color:var(--ink-2);margin:0}
+
+/* slots */
+.slot{border-top:1px dashed var(--line);padding-top:10px}
+.slot-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:5px}
+.slot-row{display:flex;gap:6px;align-items:center}
+.slot-row select{flex:1;min-width:0;border:1px solid var(--line);border-radius:9px;padding:8px 9px;background:#fff}
+.iconbtn{
+  border:1px solid var(--line);background:#fff;border-radius:9px;width:34px;height:34px;
+  cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+}
+.iconbtn:hover{border-color:var(--ink-2);background:#F3F6F2}
+.iconbtn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.slot-note{font-size:12px;color:var(--ink-2);margin-top:6px}
+.slot-extra{display:flex;gap:5px;align-items:center;margin-top:7px;flex-wrap:wrap}
+.mini{border:1px solid var(--line);background:#fff;border-radius:8px;padding:3px 8px;font-size:12px;cursor:pointer;line-height:1.4}
+.mini:hover{border-color:var(--ink-2)}
+.mini.op{background:var(--pine-soft);border-color:var(--pine)}
+.mini.neer{background:#FBE7DE;border-color:var(--ball)}
+.slot-extra .hint{font-size:11px}
+.slot-note b{font-weight:600}
+
+/* ---------- generic panels ---------- */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:14px}
+.panel h3{font-size:17px;margin-bottom:4px}
+.hint{color:var(--muted);font-size:13px}
+.weeklijst{display:flex;flex-direction:column;gap:8px}
+.agkolom{flex:0 0 40%;max-width:340px;border-left:1px solid var(--line);padding-left:12px;font-size:12px}
+.agkolom.leeg{color:#B4C0BA;font-style:italic;align-self:center}
+.agrij{display:flex;gap:8px;padding:2px 0;align-items:baseline}
+.aguur{flex:0 0 38px;font-weight:700;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.agtekst{min-width:0;color:var(--ink-2)}
+.aghint{color:var(--muted)}
+.agrij.wed .aguur{color:#6A3489}
+.agrij.training .aguur{color:#A63B1B}
+.agrij.afspraak .aguur{color:var(--pine)}
+.agrij.fluit .aguur{color:#8A6400}
+.agrij.fluit .agtekst{color:#6B4E00}
+.agrij.fluittotaal .agtekst{color:#8A6400;font-weight:600}
+.agrij.fluittotaal .aguur{color:#8A6400}
+.agicoon{font-size:12px}
+.ic{width:13px;height:13px;vertical-align:-2px;fill:currentColor}
+.ic-fluit{color:#1A1A1A}
+.strip .fluit .ic-fluit{color:#fff}
+.vandaagkaart .agkolom{border-left:0;border-top:1px solid var(--line);padding:10px 0 0;margin-top:12px;max-width:none;flex:none}
+@media(max-width:700px){
+  .wl-dag{flex-wrap:wrap}
+  .agkolom{flex:1 1 100%;max-width:none;border-left:0;border-top:1px dashed var(--line);padding:6px 0 0;margin-top:6px}
+}
+.wl-dag{display:flex;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:10px 12px}
+.wl-dag.weekend{background:#F6F8F4;border-color:#C9D4C7}
+.wl-datum{flex:0 0 40px;text-align:center;line-height:1.15}
+.wl-datum span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+.wl-datum b{display:block;font-family:var(--display);font-size:19px;font-weight:800}
+.wl-body{min-width:0;flex:1}
+.wl-maaltijd{display:flex;gap:8px;align-items:baseline}
+.wl-slot{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;flex:0 0 24px}
+.wl-naam{font-family:var(--display);font-weight:600;font-size:15px}
+.wl-maaltijd.leeg .wl-naam{color:var(--muted);font-weight:400}
+.vandaagkaart{background:var(--surface);border:1px solid #C2CFC8;border-radius:var(--radius);padding:16px 18px;margin-bottom:14px}
+.vk-top{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:10px}
+.vk-rij{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:3px 0}
+.vk-slot{flex:0 0 46px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
+.vk-naam{font-family:var(--display);font-weight:600;font-size:19px;line-height:1.3}
+.vk-rij.leeg .vk-naam{color:var(--muted);font-weight:400}
+.vandaagkaart .strip{margin-top:12px}
+.empty{border:1px dashed var(--line);border-radius:var(--radius);padding:26px;text-align:center;color:var(--muted)}
+
+/* meals */
+.tabelwrap{overflow-x:auto}
+.rtabel{border-collapse:collapse;width:100%;font-size:13px;min-width:820px}
+.rtabel th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;padding:6px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+.rtabel td{padding:4px 6px;border-bottom:1px solid #EEF0EC;vertical-align:middle}
+.rtabel td.naam{min-width:230px;font-weight:500}
+.linkje{border:0;background:transparent;padding:0;font:inherit;color:var(--ink);text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.linkje:hover{color:var(--pine);text-decoration-color:var(--pine)}
+.rtabel input,.rtabel select{border:1px solid var(--line);border-radius:7px;padding:5px 6px;width:100%;font-size:13px;background:#fff}
+.rtabel input[type=number]{width:62px}
+.rtabel input[type=checkbox]{width:16px;height:16px;accent-color:var(--pine)}
+.rtabel tr:hover td{background:#FAFBF9}
+.rtabel tr.groeprij td{background:#EFF2ED;font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--pine);font-weight:700;padding:8px 6px}
+.rtabel tr.groeprij:hover td{background:#EFF2ED}
+.meal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.meal-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:8px}
+.meal-card.off{opacity:.5}
+.meal-card h4{font-size:15px}
+.ing{font-size:13px;color:var(--ink-2);margin:0;padding-left:16px}
+.ing li{margin:1px 0}
+.meal-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}
+.toggle{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-2);cursor:pointer}
+.ingrow{display:grid;grid-template-columns:1fr 80px 90px 130px 34px;gap:6px;margin-bottom:6px}
+.ingrow input,.ingrow select{border:1px solid var(--line);border-radius:8px;padding:7px 8px;min-width:0;width:100%}
+@media(max-width:620px){.ingrow{grid-template-columns:1fr 1fr;}.ingrow .del{grid-column:span 2}}
+
+/* groceries */
+.seg{display:inline-flex;background:#E3E7E0;border-radius:10px;padding:3px;gap:3px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:7px 13px;border-radius:8px;cursor:pointer;font-family:var(--display);font-weight:600;font-size:13px;color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.cats{columns:2;column-gap:22px}
+@media(max-width:760px){.cats{columns:1}}
+.cat{break-inside:avoid;margin-bottom:18px}
+.cat h4{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--pine);border-bottom:1px solid var(--line);padding-bottom:5px;margin-bottom:7px}
+.gitem{display:flex;gap:9px;align-items:flex-start;padding:4px 0;font-size:14px}
+.gitem input{margin-top:3px;width:17px;height:17px;accent-color:var(--pine);flex:0 0 auto;cursor:pointer}
+.gitem.done label{text-decoration:line-through;color:var(--muted)}
+.gitem .qty{color:var(--muted);font-size:13px}
+.gitem label{cursor:pointer}
+.gitem .zoek{margin-left:auto;text-decoration:none;opacity:.35;font-size:13px;flex:0 0 auto}
+.gitem .zoek:hover{opacity:1}
+.kastblok{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.kastblok h4{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px}
+.kastlijst{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.kasttag{display:inline-flex;align-items:center;gap:6px;background:#F1F3EF;border:1px solid var(--line);border-radius:99px;padding:4px 4px 4px 11px;font-size:13px;color:var(--ink-2)}
+.kasttag button{border:0;background:var(--surface);color:var(--pine);border-radius:99px;width:20px;height:20px;cursor:pointer;font-size:14px;line-height:1;font-weight:700}
+.kasttag button:hover{background:var(--pine);color:#fff}
+.kastblok{margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
+.kastblok h4{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin-bottom:10px}
+.kastlijst{display:flex;flex-wrap:wrap;gap:7px}
+.kastitem{display:inline-flex;align-items:center;gap:7px;background:#F3F5F1;border:1px solid var(--line);border-radius:99px;padding:4px 5px 4px 12px;font-size:13px;color:var(--ink-2)}
+.kastitem .qty{color:var(--muted);font-size:12px}
+.kastitem button{border:0;background:#E3E7E0;color:var(--pine);width:20px;height:20px;border-radius:50%;cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center}
+.kastitem button:hover{background:var(--pine);color:#fff}
+.zoekinstel{margin-top:18px;padding-top:14px;border-top:1px solid var(--line)}
+.zoekinstel label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:5px}
+.zoekinstel input{width:100%;border:1px solid var(--line);border-radius:9px;padding:8px 10px}
+.zoekinstel code{background:#EEF0EC;padding:1px 5px;border-radius:4px;font-size:12px}
+.permeal{border-top:1px solid var(--line);padding:12px 0}
+.permeal summary{cursor:pointer;font-family:var(--display);font-weight:600;font-size:15px}
+.permeal .ing{margin-top:8px}
+.progress{height:6px;background:#E3E7E0;border-radius:99px;overflow:hidden;margin:10px 0 0}
+.progress i{display:block;height:100%;background:var(--pine);border-radius:99px;transition:width .25s}
+
+.toast{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;
+  padding:10px 18px;border-radius:99px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50;
+}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{
+  header.top,.tabs,.bar,.iconbtn,.btn,.seg,.toast,.vergtoggle,.slot-extra,.dagvoet,
+  .strip,.striplabels,.permeal,.zoekinstel{display:none!important}
+  body{background:#fff;font-size:12pt}
+  .wrap{max-width:none;padding:0}
+  .panel,.day,.meal-card{border-color:#bbb;box-shadow:none}
+  .days{grid-template-columns:1fr!important;gap:6px}
+  .day{break-inside:avoid;padding:8px 10px;opacity:1!important}
+  .day .slot-row select{border:0;padding:0;font-weight:600;font-size:13pt;-webkit-appearance:none;appearance:none}
+  .slot{border-top:0;padding-top:4px}
+  .weekhead h2{font-size:16pt}
+  a[href]:after{content:''}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <h1>whats4dinner</h1>
+      <button class="syncbadge" id="sync" type="button" aria-label="Opslagstatus"></button>
+      <span class="versiebadge" id="versie"></span>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="overzicht" aria-selected="true">Overzicht</button>
+      <button class="tab" role="tab" data-tab="week" aria-selected="false">Planning</button>
+      <button class="tab" role="tab" data-tab="meals" aria-selected="false">Maaltijden</button>
+      <button class="tab" role="tab" data-tab="shop" aria-selected="false">Boodschappen</button>
+      <button class="tab" role="tab" data-tab="wed" aria-selected="false">Wedstrijden</button>
+      <button class="tab tab-config" role="tab" data-tab="config" aria-selected="false" title="Instellingen" aria-label="Instellingen">⋯</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <section id="tab-vandaag"></section>
+  <section id="tab-plan" hidden></section>
+  <section id="tab-meals" hidden></section>
+  <section id="tab-shop" hidden></section>
+  <section id="tab-wed" hidden></section>
+  <section id="tab-config" hidden></section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   1. Vaste gegevens
+   ============================================================ */
+const VERSIE='3.9.1';
+const CHANGELOG=[
+ ['3.9.1','Herstel: de tabs toonden allemaal het overzicht. Reistijden worden nu ook opgehaald als enkel de afstand ontbreekt, met een knop om alles te herberekenen.'],
+ ['3.9.0','Knop bij ⋯ die alle koppelingen en sleutels in één keer doorlicht.'],
+ ['3.8.4','De rit toont nu de enkele afstand én de gereden kilometers, zodat het aandeel per wedstrijd niet meer te verwarren is.'],
+ ['3.8.2','Kilometervergoeding verdeeld per wedstrijd in plaats van per zaal.'],
+ ['3.8.1','Echt app-icoon op iPhone: een PNG als apple-touch-icon, met bestek rond de bal.'],
+ ['3.8.0','Kilometers en vergoeding aan € 0,40 per km bij elke fluitopdracht, met de kosten verdeeld over de zalen van dezelfde rit.'],
+ ['3.7.3','Vandaag als één kaart in plaats van twee, met dezelfde letterhoogte voor middag en avond en meer ruimte onder de tabbalk.'],
+ ['3.7.2','Vergaderknop van de dagkaart weg; het aantal eters staat nu klein onder de keuze en valt alleen op als het afwijkt.'],
+ ['3.7.1','Het fluitje getekend naar de klassieke vorm, met mondstuk en ophangoog.'],
+ ['3.7.0','Getekend fluitje en basketbal als icoon; kalenderinfo ook op de planning, onder de invoer en met het balkje onderaan; eters met plus en min.'],
+ ['3.6.0','Fluitopdrachten uit de agenda met echte duur en reistijd, en reistijden berekend via een routeplanner.'],
+ ['3.5.1','Handmatige vergaderdatums die niet in Google Agenda staan, worden aangeduid.'],
+ ['3.5.0','Persoonlijke agenda\'s van Google naast elke dag in het overzicht; vergaderavonden komen er vanzelf uit.'],
+ ['3.4.2','Een half uur na de wedstrijd voor douche en drankje, met het verwachte thuisuur erbij.'],
+ ['3.4.1','Lasagne wordt kant-en-klaar gekocht in plaats van uit de diepvries gehaald.'],
+ ['3.4.0','De eerste tab heet nu Overzicht en toont de hele komende week in plaats van enkel vandaag en morgen.'],
+ ['3.3.0','Aparte tab met alle wedstrijden: thuis of uit, tegenstander, zaal met route, vertrekuur en het wedstrijdblad.'],
+ ['3.2.0','Vertrekpunt Pellenberg: herijkte reistijden en een routelink per zaal.'],
+ ['3.1.0','Wedstrijden tonen zaal, aanwezigheidsuur en vertrekuur; instelbare reistijden; weekendbalk loopt van 8 tot 20 uur.'],
+ ['3.0.0','Vinkjes per week, geschiedenis en duimpjes in het voorstel, restjes, eters per dag, afdrukken, installeerbaar op de gsm, en wedstrijden die zichzelf ophalen.'],
+ ['2.5.0','Per week plannen in plaats van per twee weken, en een voorraadkast die apart staat op de boodschappenlijst.'],
+ ['2.4.0','Planning per datum, dus meerdere periodes na elkaar; boodschappen tellen enkel vastgezette maaltijden.'],
+ ['2.3.0','Wedstrijden worden opgehaald uit de kalenders van de basketbalbond en verschijnen op de juiste dag.'],
+ ['2.2.0','Elk recept bewerkbaar inclusief hoeveelheden, aparte categorie voor bestellen, gestapelde trainingen, slot werkt op de dobbelsteen, gerechtkeuze boven de agendalijn.'],
+ ['2.1.1','Bevestiging dat een wijziging in de database staat, en geen verwarrende eetvensters meer tijdens vakanties.'],
+ ['2.1.0','Duidelijker opslagstatus: bevestiging na bewaren, en onderscheid tussen geen opslag en een mislukte poging.'],
+ ['2.0.3','Herstel: de wijziging van 2.0.2 zat niet echt in de code.'],
+ ['2.0.2','Begint de planning later, dan toont Vandaag de eerste ingeplande dagen in plaats van een lege melding.'],
+ ['2.0.1','Voorbije dagen tellen niet meer mee op Vandaag en vervagen op de weektabs.'],
+ ['2.0.0','Nieuwe tab Vandaag met het gerecht van vanavond en morgen; week 1 en week 2 als eigen tabs.'],
+ ['1.9.0','Weektabs, recepttabel, feestdagen en schoolvakanties, opgeschoonde dagkaarten, eigen recepten bovenaan.'],
+ ['1.8.0','Alle instellingen achter de ⋯ in de kopbalk. Trainingen en vergaderingen nu zelf te beheren.'],
+ ['1.7.0','Knop naast het naamveld, alle velden worden ingevuld, en een daglimiet op de Claude-oproepen.'],
+ ['1.6.1','Ondertitel uit de kopbalk gehaald.'],
+ ['1.6.0','Versienummer, testknop voor de Claude-koppeling, en Claude vult nu alle receptvelden in.'],
+ ['1.5.0','Knop die ingrediënten voorstelt op basis van de naam, met Claude via de Worker als die ingesteld is.'],
+ ['1.4.0','Lijst kopiëren, zoeklinks per product, en gerechten die enkel op zondag of in het weekend mogen.'],
+ ['1.3.0','Vergaderdagen, afhaal en uit eten, diepvriesgerechten met voorraadcontrole.'],
+ ['1.2.0','Vaste eeturen per dag en de eis dat een gerecht opwarmbaar is op dinsdag en vrijdag.'],
+ ['1.1.0','Eigen Cloudflare-server met D1, live synchronisatie en wachtwoord.'],
+ ['1.0.0','Planning, maaltijdenbibliotheek en boodschappenlijst.']
+];
+const PERIODE=7;   // één week per planningsscherm
+const DAGEN = ['maandag','dinsdag','woensdag','donderdag','vrijdag','zaterdag','zondag'];
+
+// weekdag-index 0 = maandag. Beheerbaar via het configuratiescherm.
+const TRAINING_STANDAARD = [
+  {wie:'Dries',dag:0,van:'18:00',tot:'19:30',waar:'Sportoase Wilsele'},
+  {wie:'Bram', dag:1,van:'19:30',tot:'21:00',waar:'Sportoase Leuven'},
+  {wie:'Dries',dag:2,van:'16:30',tot:'18:00',waar:'Sporthal Wilsele'},
+  {wie:'Bram', dag:3,van:'18:00',tot:'19:30',waar:'Sportoase Leuven'},
+  {wie:'Bram', dag:4,van:'19:30',tot:'21:00',waar:'Sportoase Leuven'},
+  {wie:'Dries',dag:4,van:'19:30',tot:'21:00',waar:'Sporthal Wilsele'}
+];
+function trainingenOp(wd){
+  return (state.trainingen||[]).filter(t=>t&&t.dag===wd&&t.van&&t.tot)
+    .sort((a,b)=>a.van.localeCompare(b.van));
+}
+
+// Per weekdag: welke maaltijden, wanneer er gegeten wordt, en of het gerecht op te warmen moet zijn
+const DAGREGELS = {
+  0:{slots:['diner'],samen:'20:00',max:45,note:'Samen eten om 20:00, na de training van Dries.'},
+  1:{slots:['diner'],samen:'18:30',opwarmen:true,max:45,note:'Samen eten om 18:30. Bram eet later, dus het moet op te warmen zijn.'},
+  2:{slots:['diner'],samen:'18:30',max:45,note:'Samen eten om 18:30, meteen na de training van Dries.'},
+  3:{slots:['diner'],samen:'20:00',max:45,note:'Samen eten om 20:00, na de training van Bram.'},
+  4:{slots:['diner'],opwarmen:true,max:45,note:'Moet op te warmen zijn — allebei training tot 21:00.'},
+  5:{slots:['lunch','diner'],max:999,maxLunch:30,note:'Vaak wedstrijd — hou de lunch licht en snel.'},
+  6:{slots:['lunch','diner'],max:999,maxLunch:45,note:'Goede dag om voor de week voor te bereiden.'}
+};
+
+const CATS = {
+  groenten:'Groenten & fruit', vlees:'Vlees & vis', zuivel:'Zuivel & eieren',
+  droog:'Voorraadkast', brood:'Brood & bakkerij', koel:'Koelkast (kant-en-klaar)', diepvries:'Diepvries', overig:'Overig'
+};
+
+// Vergaderingen: op die avonden is er geen tijd om te koken.
+// Aanpasbaar in de app zelf met de knop op de dagkaart.
+const VERGADERINGEN = [
+  '2026-08-27','2026-09-15','2026-10-08','2026-10-19','2026-10-26','2026-11-19',
+  '2026-12-08','2027-01-07','2027-01-26','2027-02-18','2027-03-16','2027-04-15',
+  '2027-05-03','2027-05-27','2027-06-24'
+];
+
+/* Recepten: hoeveelheden voor 4 personen.
+   tijd = actieve kooktijd in minuten, prep = kan (deels) vooraf gemaakt worden. */
+const BASIS = [
+{id:'kipcurry',naam:'Kip-curry met bloemkoolrijst',tijd:30,eiwit:'hoog',bron:'kip',slots:['diner'],prep:true,opwarm:true,tip:'Maak de curry een dag vooraf; hij wordt alleen maar beter.',ing:[
+ {n:'kipfilet',q:600,u:'g',c:'vlees'},{n:'bloemkool',q:1,u:'st',c:'groenten'},{n:'kokosmelk',q:400,u:'ml',c:'droog'},
+ {n:'currypasta',q:2,u:'el',c:'droog'},{n:'ui',q:1,u:'st',c:'groenten'},{n:'erwten (diepvries)',q:200,u:'g',c:'diepvries'},
+ {n:'gember',q:1,u:'st',c:'groenten'},{n:'rijst',q:250,u:'g',c:'droog'}]},
+
+{id:'bolo',naam:'Spaghetti bolognese met linzen',tijd:40,eiwit:'hoog',bron:'rund',slots:['diner'],prep:true,opwarm:true,tip:'Saus vriest perfect in — maak dubbel.',ing:[
+ {n:'rundsgehakt',q:400,u:'g',c:'vlees'},{n:'rode linzen',q:100,u:'g',c:'droog'},{n:'gepelde tomaten',q:800,u:'g',c:'droog'},
+ {n:'ui',q:1,u:'st',c:'groenten'},{n:'wortel',q:2,u:'st',c:'groenten'},{n:'selder',q:2,u:'st',c:'groenten'},
+ {n:'spaghetti',q:400,u:'g',c:'droog'},{n:'geraspte kaas',q:100,u:'g',c:'zuivel'}]},
+
+{id:'tajine',naam:'Kikkererwtentajine met couscous',tijd:30,eiwit:'gemiddeld',bron:'peulvrucht',slots:['lunch','diner'],prep:true,opwarm:true,tip:'',ing:[
+ {n:'kikkererwten (blik)',q:2,u:'blik',c:'droog'},{n:'zoete aardappel',q:2,u:'st',c:'groenten'},{n:'gepelde tomaten',q:400,u:'g',c:'droog'},
+ {n:'ui',q:1,u:'st',c:'groenten'},{n:'couscous',q:300,u:'g',c:'droog'},{n:'ras el hanout',q:2,u:'tl',c:'droog'},
+ {n:'platte peterselie',q:1,u:'bosje',c:'groenten'},{n:'Griekse yoghurt',q:250,u:'g',c:'zuivel'}]},
+
+{id:'roerbakkip',naam:'Roerbak kip-broccoli met noedels',tijd:20,eiwit:'hoog',bron:'kip',slots:['diner'],prep:false,opwarm:false,tip:'Snijwerk kan de avond ervoor.',ing:[
+ {n:'kipfilet',q:600,u:'g',c:'vlees'},{n:'broccoli',q:1,u:'st',c:'groenten'},{n:'paprika',q:2,u:'st',c:'groenten'},
+ {n:'eiernoedels',q:300,u:'g',c:'droog'},{n:'sojasaus',q:4,u:'el',c:'droog'},{n:'sesamzaad',q:1,u:'el',c:'droog'}]},
+
+{id:'chili',naam:'Chili con carne',tijd:40,eiwit:'hoog',bron:'rund',slots:['lunch','diner'],prep:true,opwarm:true,tip:'Ideaal om zondag te maken en maandag op te warmen.',ing:[
+ {n:'rundsgehakt',q:500,u:'g',c:'vlees'},{n:'kidneybonen (blik)',q:2,u:'blik',c:'droog'},{n:'maïs (blik)',q:1,u:'blik',c:'droog'},
+ {n:'gepelde tomaten',q:800,u:'g',c:'droog'},{n:'ui',q:2,u:'st',c:'groenten'},{n:'paprika',q:2,u:'st',c:'groenten'},
+ {n:'rijst',q:300,u:'g',c:'droog'},{n:'zure room',q:200,u:'ml',c:'zuivel'}]},
+
+{id:'frittata',naam:'Frittata met spinazie en feta',tijd:20,eiwit:'hoog',bron:'ei',slots:['lunch','diner'],prep:false,opwarm:true,tip:'Ook lekker koud in de brooddoos.',ing:[
+ {n:'eieren',q:10,u:'st',c:'zuivel'},{n:'spinazie',q:300,u:'g',c:'groenten'},{n:'feta',q:200,u:'g',c:'zuivel'},
+ {n:'aardappelen',q:500,u:'g',c:'groenten'},{n:'ui',q:1,u:'st',c:'groenten'},{n:'volkorenbrood',q:1,u:'st',c:'brood'}]},
+
+{id:'volauvent',naam:'Vol-au-vent met puree en salade',tijd:40,eiwit:'hoog',bron:'kip',slots:['diner'],prep:true,opwarm:true,tip:'De ragout kan twee dagen vooraf.',ing:[
+ {n:'kipfilet',q:600,u:'g',c:'vlees'},{n:'champignons',q:250,u:'g',c:'groenten'},{n:'bladerdeegkoekjes',q:4,u:'st',c:'diepvries'},
+ {n:'aardappelen',q:1,u:'kg',c:'groenten'},{n:'melk',q:200,u:'ml',c:'zuivel'},{n:'boter',q:50,u:'g',c:'zuivel'},
+ {n:'kropsla',q:1,u:'st',c:'groenten'}]},
+
+{id:'stoofvlees',naam:'Vlaams stoofvlees met puree',tijd:150,eiwit:'hoog',bron:'rund',slots:['diner'],prep:true,opwarm:true,tip:'Weekendwerk. Maak dubbel en vries de helft in.',ing:[
+ {n:'stoofvlees',q:800,u:'g',c:'vlees'},{n:'ui',q:3,u:'st',c:'groenten'},{n:'bruin bier',q:330,u:'ml',c:'droog'},
+ {n:'peperkoek',q:2,u:'sneden',c:'brood'},{n:'mosterd',q:2,u:'el',c:'droog'},{n:'aardappelen',q:1.2,u:'kg',c:'groenten'},
+ {n:'wortel',q:4,u:'st',c:'groenten'}]},
+
+{id:'kabeljauw',naam:'Ovenschotel kabeljauw, prei en aardappel',tijd:40,eiwit:'hoog',bron:'vis',slots:['diner'],prep:false,opwarm:true,tip:'',ing:[
+ {n:'kabeljauwfilet',q:600,u:'g',c:'vlees'},{n:'prei',q:3,u:'st',c:'groenten'},{n:'aardappelen',q:800,u:'g',c:'groenten'},
+ {n:'kookroom',q:200,u:'ml',c:'zuivel'},{n:'geraspte kaas',q:100,u:'g',c:'zuivel'},{n:'citroen',q:1,u:'st',c:'groenten'}]},
+
+{id:'linzensoep',naam:'Linzensoep met volkorenbrood',tijd:30,eiwit:'gemiddeld',bron:'peulvrucht',slots:['lunch','diner'],prep:true,opwarm:true,tip:'Grote pot maken loont.',ing:[
+ {n:'rode linzen',q:300,u:'g',c:'droog'},{n:'wortel',q:4,u:'st',c:'groenten'},{n:'ui',q:1,u:'st',c:'groenten'},
+ {n:'selder',q:2,u:'st',c:'groenten'},{n:'groentebouillon',q:1.5,u:'l',c:'droog'},{n:'komijn',q:2,u:'tl',c:'droog'},
+ {n:'volkorenbrood',q:1,u:'st',c:'brood'},{n:'oude kaas',q:150,u:'g',c:'zuivel'}]},
+
+{id:'balletjes',naam:'Balletjes in tomatensaus met pasta',tijd:35,eiwit:'hoog',bron:'rund',slots:['diner'],prep:true,opwarm:true,tip:'Balletjes en saus kunnen vooraf.',ing:[
+ {n:'gemengd gehakt',q:600,u:'g',c:'vlees'},{n:'ei',q:1,u:'st',c:'zuivel'},{n:'paneermeel',q:50,u:'g',c:'droog'},
+ {n:'passata',q:700,u:'g',c:'droog'},{n:'ui',q:1,u:'st',c:'groenten'},{n:'penne',q:400,u:'g',c:'droog'},
+ {n:'wortel',q:2,u:'st',c:'groenten'}]},
+
+{id:'nasi',naam:'Nasi goreng met ei en kip',tijd:25,eiwit:'hoog',bron:'kip',slots:['diner'],prep:true,opwarm:true,tip:'Werkt het best met rijst van de dag ervoor.',ing:[
+ {n:'rijst',q:350,u:'g',c:'droog'},{n:'kipfilet',q:500,u:'g',c:'vlees'},{n:'eieren',q:4,u:'st',c:'zuivel'},
+ {n:'wortel',q:2,u:'st',c:'groenten'},{n:'prei',q:1,u:'st',c:'groenten'},{n:'ketjap',q:4,u:'el',c:'droog'},
+ {n:'erwten (diepvries)',q:150,u:'g',c:'diepvries'}]},
+
+{id:'couscousbowl',naam:'Couscousbowl met kip en feta',tijd:25,eiwit:'hoog',bron:'kip',slots:['lunch','diner'],prep:false,opwarm:false,tip:'',ing:[
+ {n:'kipfilet',q:500,u:'g',c:'vlees'},{n:'couscous',q:300,u:'g',c:'droog'},{n:'komkommer',q:1,u:'st',c:'groenten'},
+ {n:'cherrytomaten',q:250,u:'g',c:'groenten'},{n:'feta',q:150,u:'g',c:'zuivel'},{n:'citroen',q:1,u:'st',c:'groenten'},
+ {n:'munt',q:1,u:'bosje',c:'groenten'}]},
+
+{id:'tortilla',naam:'Spaanse tortilla met salade',tijd:35,eiwit:'hoog',bron:'ei',slots:['lunch','diner'],prep:true,opwarm:true,tip:'Koud even lekker als warm.',ing:[
+ {n:'eieren',q:10,u:'st',c:'zuivel'},{n:'aardappelen',q:800,u:'g',c:'groenten'},{n:'ui',q:2,u:'st',c:'groenten'},
+ {n:'olijfolie',q:5,u:'el',c:'droog'},{n:'kropsla',q:1,u:'st',c:'groenten'},{n:'tomaat',q:3,u:'st',c:'groenten'}]},
+
+{id:'quiche',naam:'Quiche met zalm en broccoli',tijd:45,eiwit:'hoog',bron:'vis',slots:['lunch','diner'],prep:true,opwarm:true,tip:'',ing:[
+ {n:'bladerdeeg',q:1,u:'rol',c:'diepvries'},{n:'zalmfilet',q:400,u:'g',c:'vlees'},{n:'broccoli',q:1,u:'st',c:'groenten'},
+ {n:'eieren',q:4,u:'st',c:'zuivel'},{n:'kookroom',q:200,u:'ml',c:'zuivel'},{n:'geraspte kaas',q:100,u:'g',c:'zuivel'}]},
+
+{id:'tofu',naam:'Tofu teriyaki met rijst en edamame',tijd:25,eiwit:'hoog',bron:'tofu',slots:['diner'],prep:false,opwarm:true,tip:'',ing:[
+ {n:'stevige tofu',q:500,u:'g',c:'zuivel'},{n:'edamame (diepvries)',q:250,u:'g',c:'diepvries'},{n:'rijst',q:300,u:'g',c:'droog'},
+ {n:'sojasaus',q:4,u:'el',c:'droog'},{n:'honing',q:2,u:'el',c:'droog'},{n:'lente-ui',q:1,u:'bosje',c:'groenten'},
+ {n:'wortel',q:2,u:'st',c:'groenten'}]},
+
+{id:'kalkoen',naam:'Kalkoenreepjes met witloof en aardappelen',tijd:35,eiwit:'hoog',bron:'kalkoen',slots:['diner'],prep:false,opwarm:true,tip:'',ing:[
+ {n:'kalkoenreepjes',q:600,u:'g',c:'vlees'},{n:'witloof',q:6,u:'st',c:'groenten'},{n:'aardappelen',q:1,u:'kg',c:'groenten'},
+ {n:'kookroom',q:150,u:'ml',c:'zuivel'},{n:'mosterd',q:1,u:'el',c:'droog'}]},
+
+{id:'pastapesto',naam:'Pasta pesto met kip en cherrytomaat',tijd:20,eiwit:'hoog',bron:'kip',slots:['lunch','diner'],prep:false,opwarm:false,tip:'Klaar in twintig minuten.',ing:[
+ {n:'kipfilet',q:500,u:'g',c:'vlees'},{n:'penne',q:400,u:'g',c:'droog'},{n:'groene pesto',q:1,u:'pot',c:'droog'},
+ {n:'cherrytomaten',q:250,u:'g',c:'groenten'},{n:'rucola',q:100,u:'g',c:'groenten'},{n:'pijnboompitten',q:40,u:'g',c:'droog'}]},
+
+{id:'groentesoep',naam:'Groentesoep met balletjes',tijd:40,eiwit:'gemiddeld',bron:'rund',slots:['lunch','diner'],prep:true,opwarm:true,tip:'',ing:[
+ {n:'gemengd gehakt',q:300,u:'g',c:'vlees'},{n:'wortel',q:4,u:'st',c:'groenten'},{n:'prei',q:2,u:'st',c:'groenten'},
+ {n:'selder',q:3,u:'st',c:'groenten'},{n:'aardappelen',q:300,u:'g',c:'groenten'},{n:'groentebouillon',q:2,u:'l',c:'droog'},
+ {n:'volkorenbrood',q:1,u:'st',c:'brood'}]},
+
+{id:'shakshuka',naam:'Shakshuka met brood',tijd:25,eiwit:'hoog',bron:'ei',slots:['lunch','diner'],prep:false,opwarm:false,tip:'',ing:[
+ {n:'eieren',q:8,u:'st',c:'zuivel'},{n:'gepelde tomaten',q:800,u:'g',c:'droog'},{n:'paprika',q:2,u:'st',c:'groenten'},
+ {n:'ui',q:1,u:'st',c:'groenten'},{n:'feta',q:150,u:'g',c:'zuivel'},{n:'komijn',q:2,u:'tl',c:'droog'},
+ {n:'ciabatta',q:1,u:'st',c:'brood'}]},
+
+{id:'poke',naam:'PokeBowl met zalm',tijd:25,eiwit:'hoog',bron:'vis',slots:['lunch','diner'],eigen:true,prep:false,opwarm:false,tip:'',ing:[
+ {n:'zalmfilet',q:500,u:'g',c:'vlees'},{n:'sushirijst',q:300,u:'g',c:'droog'},{n:'avocado',q:2,u:'st',c:'groenten'},
+ {n:'komkommer',q:1,u:'st',c:'groenten'},{n:'wortel',q:2,u:'st',c:'groenten'},{n:'edamame (diepvries)',q:200,u:'g',c:'diepvries'},
+ {n:'sojasaus',q:3,u:'el',c:'droog'}]},
+
+{id:'ovenschotel',naam:'Ovenschotel gehakt, courgette en feta',tijd:50,eiwit:'hoog',bron:'rund',slots:['diner'],prep:true,opwarm:true,tip:'Kan volledig vooraf; enkel nog in de oven.',ing:[
+ {n:'rundsgehakt',q:600,u:'g',c:'vlees'},{n:'courgette',q:3,u:'st',c:'groenten'},{n:'passata',q:500,u:'g',c:'droog'},
+ {n:'feta',q:200,u:'g',c:'zuivel'},{n:'ui',q:1,u:'st',c:'groenten'},{n:'aardappelen',q:600,u:'g',c:'groenten'}]},
+
+{id:'ovenkip',naam:'Hele ovenkip met rozemarijnaardappelen',tijd:75,eiwit:'hoog',bron:'kip',slots:['diner'],prep:false,opwarm:false,tip:'Restjes kip = wraps of soep de dag erna.',ing:[
+ {n:'hele kip',q:1,u:'st',c:'vlees'},{n:'aardappelen',q:1.2,u:'kg',c:'groenten'},{n:'rozemarijn',q:1,u:'takje',c:'groenten'},
+ {n:'citroen',q:1,u:'st',c:'groenten'},{n:'wortel',q:4,u:'st',c:'groenten'},{n:'olijfolie',q:3,u:'el',c:'droog'}]},
+
+{id:'stoemp',naam:'Stoemp met prei en worst',tijd:45,eiwit:'hoog',bron:'varken',slots:['diner'],prep:true,opwarm:true,tip:'',ing:[
+ {n:'aardappelen',q:1.2,u:'kg',c:'groenten'},{n:'prei',q:3,u:'st',c:'groenten'},{n:'braadworst',q:4,u:'st',c:'vlees'},
+ {n:'melk',q:150,u:'ml',c:'zuivel'},{n:'boter',q:40,u:'g',c:'zuivel'},{n:'nootmuskaat',q:1,u:'snuf',c:'droog'}]},
+
+{id:'broodplank',naam:'Broodplank met eieren, kaas en hummus',tijd:15,eiwit:'gemiddeld',bron:'gemengd',slots:['lunch'],prep:false,opwarm:false,tip:'Perfect na een wedstrijd.',ing:[
+ {n:'volkorenbrood',q:1,u:'st',c:'brood'},{n:'eieren',q:6,u:'st',c:'zuivel'},{n:'hummus',q:200,u:'g',c:'zuivel'},
+ {n:'oude kaas',q:200,u:'g',c:'zuivel'},{n:'cherrytomaten',q:250,u:'g',c:'groenten'},{n:'komkommer',q:1,u:'st',c:'groenten'}]},
+
+{id:'croque',naam:'Croques met tomatensoep',tijd:25,eiwit:'gemiddeld',bron:'kaas',slots:['lunch'],prep:true,opwarm:false,tip:'',ing:[
+ {n:'boterhammen',q:12,u:'sneden',c:'brood'},{n:'gekookte ham',q:8,u:'sneden',c:'vlees'},{n:'kaas (plakken)',q:12,u:'sneden',c:'zuivel'},
+ {n:'gepelde tomaten',q:800,u:'g',c:'droog'},{n:'ui',q:1,u:'st',c:'groenten'},{n:'groentebouillon',q:0.5,u:'l',c:'droog'}]},
+
+{id:'tonijnpasta',naam:'Spaghetti met tonijn en tomaat',tijd:20,eiwit:'hoog',bron:'vis',slots:['diner'],prep:false,opwarm:true,tip:'Alles uit de kast — noodplan-gerecht.',ing:[
+ {n:'tonijn (blik)',q:3,u:'blik',c:'droog'},{n:'spaghetti',q:400,u:'g',c:'droog'},{n:'passata',q:500,u:'g',c:'droog'},
+ {n:'kappertjes',q:2,u:'el',c:'droog'},{n:'knoflook',q:2,u:'teentjes',c:'groenten'},{n:'platte peterselie',q:1,u:'bosje',c:'groenten'}]},
+
+{id:'garnalen',naam:'Rijstschotel met garnalen en groenten',tijd:25,eiwit:'hoog',bron:'garnaal',slots:['diner'],prep:false,opwarm:false,tip:'',ing:[
+ {n:'garnalen',q:500,u:'g',c:'vlees'},{n:'rijst',q:300,u:'g',c:'droog'},{n:'paprika',q:2,u:'st',c:'groenten'},
+ {n:'courgette',q:1,u:'st',c:'groenten'},{n:'knoflook',q:3,u:'teentjes',c:'groenten'},{n:'citroen',q:1,u:'st',c:'groenten'}]},
+
+{id:'bloemkoolcurry',naam:'Bloemkool-kikkererwtencurry',tijd:30,eiwit:'gemiddeld',bron:'peulvrucht',slots:['lunch','diner'],prep:true,opwarm:true,tip:'',ing:[
+ {n:'bloemkool',q:1,u:'st',c:'groenten'},{n:'kikkererwten (blik)',q:2,u:'blik',c:'droog'},{n:'kokosmelk',q:400,u:'ml',c:'droog'},
+ {n:'spinazie',q:200,u:'g',c:'groenten'},{n:'currypasta',q:2,u:'el',c:'droog'},{n:'rijst',q:300,u:'g',c:'droog'},
+ {n:'Griekse yoghurt',q:200,u:'g',c:'zuivel'}]},
+
+{id:'gyros',naam:'Pitabroodjes met kipgyros en salade',tijd:25,eiwit:'hoog',bron:'kip',slots:['lunch','diner'],prep:false,opwarm:false,tip:'Marineer de kip \'s ochtends.',ing:[
+ {n:'kipfilet',q:600,u:'g',c:'vlees'},{n:'pitabroodjes',q:8,u:'st',c:'brood'},{n:'Griekse yoghurt',q:250,u:'g',c:'zuivel'},
+ {n:'komkommer',q:1,u:'st',c:'groenten'},{n:'tomaat',q:3,u:'st',c:'groenten'},{n:'rode ui',q:1,u:'st',c:'groenten'},
+ {n:'oregano',q:2,u:'tl',c:'droog'}]},
+
+/* --- jullie vaste gerechten --- */
+{id:'kipappelmoes',naam:'Kip met appelmoes en puree',tijd:40,eiwit:'hoog',bron:'kip',slots:['diner'],eigen:true,prep:true,opwarm:true,tip:'Puree en kip warmen prima op; appelmoes koud erbij.',ing:[
+ {n:'kippenbillen',q:8,u:'st',c:'vlees'},{n:'aardappelen',q:1.2,u:'kg',c:'groenten'},{n:'appelmoes',q:700,u:'g',c:'droog'},
+ {n:'melk',q:200,u:'ml',c:'zuivel'},{n:'boter',q:50,u:'g',c:'zuivel'},{n:'nootmuskaat',q:1,u:'snuf',c:'droog'}]},
+
+{id:'kipwok',naam:'Kip met wokgroenten en noedels',tijd:25,eiwit:'hoog',bron:'kip',slots:['diner'],eigen:true,prep:false,opwarm:false,tip:'Vers uit de wok het lekkerst — groenten worden slap bij opwarmen.',ing:[
+ {n:'kipfilet',q:600,u:'g',c:'vlees'},{n:'wokgroenten',q:600,u:'g',c:'groenten'},{n:'eiernoedels',q:300,u:'g',c:'droog'},
+ {n:'sojasaus',q:4,u:'el',c:'droog'},{n:'gember',q:1,u:'st',c:'groenten'},{n:'knoflook',q:2,u:'teentjes',c:'groenten'}]},
+
+{id:'steakfriet',naam:'Steak met frieten, peper- en champignonsaus',tijd:40,eiwit:'hoog',bron:'rund',slots:['diner'],eigen:true,prep:false,opwarm:false,alleen:'zondag',tip:'Frieten wachten niet — dit is een gerecht om samen aan tafel te gaan.',ing:[
+ {n:'steak',q:600,u:'g',c:'vlees'},{n:'frieten (diepvries)',q:1,u:'kg',c:'diepvries'},{n:'champignons',q:250,u:'g',c:'groenten'},
+ {n:'kookroom',q:400,u:'ml',c:'zuivel'},{n:'groene peperkorrels',q:2,u:'el',c:'droog'},{n:'sjalot',q:2,u:'st',c:'groenten'},
+ {n:'boter',q:40,u:'g',c:'zuivel'},{n:'kropsla',q:1,u:'st',c:'groenten'}]},
+
+{id:'pastagehakt',naam:'Pasta met gehakt, puntpaprika en courgette',tijd:35,eiwit:'hoog',bron:'rund',slots:['lunch','diner'],eigen:true,prep:true,opwarm:true,tip:'Onze standaard — saus kan gerust een dag vooraf.',ing:[
+ {n:'rundsgehakt',q:600,u:'g',c:'vlees'},{n:'puntpaprika',q:3,u:'st',c:'groenten'},{n:'courgette',q:2,u:'st',c:'groenten'},
+ {n:'passata',q:700,u:'g',c:'droog'},{n:'ui',q:1,u:'st',c:'groenten'},{n:'penne',q:400,u:'g',c:'droog'},
+ {n:'geraspte kaas',q:100,u:'g',c:'zuivel'},{n:'Italiaanse kruiden',q:2,u:'tl',c:'droog'}]},
+
+{id:'sausmaken',naam:'Spaghettisaus maken voor de diepvries',tijd:75,eiwit:'hoog',bron:'rund',slots:['diner'],eigen:true,prep:true,opwarm:true,tip:'Dubbele hoeveelheid: vanavond eten, de rest in porties invriezen voor drukke dagen.',ing:[
+ {n:'rundsgehakt',q:1,u:'kg',c:'vlees'},{n:'gepelde tomaten',q:1.6,u:'kg',c:'droog'},{n:'wortel',q:6,u:'st',c:'groenten'},
+ {n:'champignons',q:500,u:'g',c:'groenten'},{n:'courgette',q:2,u:'st',c:'groenten'},{n:'ui',q:2,u:'st',c:'groenten'},
+ {n:'spaghetti',q:400,u:'g',c:'droog'},{n:'geraspte kaas',q:150,u:'g',c:'zuivel'},{n:'diepvriesdozen',q:4,u:'st',c:'overig'}]},
+
+{id:'sausdiepvries',naam:'Spaghetti met saus uit de diepvries',tijd:15,eiwit:'hoog',bron:'rund',slots:['lunch','diner'],prep:false,opwarm:true,instant:true,tip:'Saus \'s ochtends uit de diepvries halen. Enkel spaghetti koken.',ing:[
+ {n:'spaghetti',q:400,u:'g',c:'droog'},{n:'geraspte kaas',q:100,u:'g',c:'zuivel'},
+ {n:'spaghettisaus uit eigen diepvries',q:1,u:'doos',c:'diepvries'}]},
+
+{id:'lasagnemaken',naam:'Lasagne zelf maken',tijd:70,eiwit:'hoog',bron:'rund',slots:['diner'],prep:true,opwarm:true,tip:'Kan een dag vooraf; enkel nog de oven in.',ing:[
+ {n:'rundsgehakt',q:600,u:'g',c:'vlees'},{n:'lasagnebladen',q:1,u:'pak',c:'droog'},{n:'passata',q:700,u:'g',c:'droog'},
+ {n:'melk',q:500,u:'ml',c:'zuivel'},{n:'boter',q:40,u:'g',c:'zuivel'},{n:'bloem',q:40,u:'g',c:'droog'},
+ {n:'geraspte kaas',q:150,u:'g',c:'zuivel'},{n:'wortel',q:2,u:'st',c:'groenten'},{n:'ui',q:1,u:'st',c:'groenten'}]},
+
+{id:'lasagnekant',naam:'Kant-en-klare lasagne',tijd:10,eiwit:'hoog',bron:'rund',slots:['diner'],prep:false,opwarm:true,instant:true,tip:'Kopen en in de koelkast zetten; enkel nog de oven aan. Geen werk.',ing:[
+ {n:'verse lasagne (kant-en-klaar)',q:1,u:'schotel',c:'koel'},{n:'kropsla',q:1,u:'st',c:'groenten'},
+ {n:'tomaat',q:2,u:'st',c:'groenten'}]},
+
+{id:'fishsticks',naam:'Fishsticks met spinazie',tijd:25,eiwit:'hoog',bron:'vis',slots:['diner'],eigen:true,prep:false,opwarm:false,tip:'',ing:[
+ {n:'fishsticks',q:16,u:'st',c:'diepvries'},{n:'spinazie',q:800,u:'g',c:'groenten'},{n:'aardappelen',q:1,u:'kg',c:'groenten'},
+ {n:'melk',q:150,u:'ml',c:'zuivel'},{n:'boter',q:40,u:'g',c:'zuivel'},{n:'nootmuskaat',q:1,u:'snuf',c:'droog'}]},
+
+{id:'zalmspinazie',naam:'Zalmfilet met spinazie',tijd:25,eiwit:'hoog',bron:'vis',slots:['diner'],prep:false,opwarm:false,tip:'',ing:[
+ {n:'zalmfilet',q:600,u:'g',c:'vlees'},{n:'spinazie',q:800,u:'g',c:'groenten'},{n:'aardappelen',q:1,u:'kg',c:'groenten'},
+ {n:'kookroom',q:150,u:'ml',c:'zuivel'},{n:'citroen',q:1,u:'st',c:'groenten'}]},
+
+{id:'zalmkrieltjes',naam:'Zalmfilet met krieltjes en sla',tijd:30,eiwit:'hoog',bron:'vis',slots:['diner'],eigen:true,prep:false,opwarm:false,tip:'',ing:[
+ {n:'zalmfilet',q:600,u:'g',c:'vlees'},{n:'krieltjes',q:1,u:'kg',c:'groenten'},{n:'kropsla',q:1,u:'st',c:'groenten'},
+ {n:'tomaat',q:3,u:'st',c:'groenten'},{n:'citroen',q:1,u:'st',c:'groenten'},{n:'olijfolie',q:3,u:'el',c:'droog'}]},
+
+{id:'boontjesburger',naam:'Boontjes met hamburger en aardappelen',tijd:30,eiwit:'hoog',bron:'rund',slots:['diner'],eigen:true,prep:true,opwarm:true,tip:'',ing:[
+ {n:'hamburgers',q:4,u:'st',c:'vlees'},{n:'prinsessenboontjes',q:800,u:'g',c:'groenten'},{n:'aardappelen',q:1,u:'kg',c:'groenten'},
+ {n:'ui',q:1,u:'st',c:'groenten'},{n:'boter',q:40,u:'g',c:'zuivel'}]},
+
+{id:'boontjesworst',naam:'Boontjes met worst en aardappelen',tijd:30,eiwit:'hoog',bron:'varken',slots:['diner'],eigen:true,prep:true,opwarm:true,tip:'',ing:[
+ {n:'braadworst',q:4,u:'st',c:'vlees'},{n:'prinsessenboontjes',q:800,u:'g',c:'groenten'},{n:'aardappelen',q:1,u:'kg',c:'groenten'},
+ {n:'ui',q:1,u:'st',c:'groenten'},{n:'boter',q:40,u:'g',c:'zuivel'}]},
+
+{id:'kipcurrysaus',naam:'Kip met rijst en currysaus',tijd:30,eiwit:'hoog',bron:'kip',slots:['diner'],eigen:true,prep:true,opwarm:true,tip:'',ing:[
+ {n:'kipfilet',q:600,u:'g',c:'vlees'},{n:'rijst',q:300,u:'g',c:'droog'},{n:'kookroom',q:250,u:'ml',c:'zuivel'},
+ {n:'currypoeder',q:2,u:'el',c:'droog'},{n:'ui',q:1,u:'st',c:'groenten'},{n:'appel',q:1,u:'st',c:'groenten'},
+ {n:'erwten (diepvries)',q:200,u:'g',c:'diepvries'}]},
+
+{id:'wrapfamilie',naam:'Wrap met kip of zalm en groenten',tijd:20,eiwit:'hoog',bron:'kip',slots:['lunch','diner'],eigen:true,prep:false,opwarm:false,tip:'Kip of zalm, naargelang wat er in huis is.',ing:[
+ {n:'kipfilet of zalmfilet',q:600,u:'g',c:'vlees'},{n:'wraps',q:8,u:'st',c:'brood'},{n:'Philadelphia',q:200,u:'g',c:'zuivel'},
+ {n:'kropsla',q:1,u:'st',c:'groenten'},{n:'tomaat',q:3,u:'st',c:'groenten'},{n:'komkommer',q:1,u:'st',c:'groenten'},
+ {n:'wortel',q:2,u:'st',c:'groenten'}]},
+
+{id:'bicky',naam:'Bicky burger / hamburger',tijd:25,eiwit:'hoog',bron:'rund',slots:['diner'],prep:false,opwarm:false,tip:'',ing:[
+ {n:'hamburgers',q:4,u:'st',c:'vlees'},{n:'hamburgerbroodjes',q:4,u:'st',c:'brood'},{n:'ijsbergsla',q:1,u:'st',c:'groenten'},
+ {n:'ui',q:1,u:'st',c:'groenten'},{n:'bickysaus',q:1,u:'pot',c:'droog'},{n:'augurken',q:1,u:'pot',c:'droog'},
+ {n:'frieten (diepvries)',q:1,u:'kg',c:'diepvries'}]},
+
+/* --- afhaal en uit eten --- */
+{id:'restjes',naam:'Restjes van gisteren',tijd:10,eiwit:'hoog',bron:'gemengd',slots:['lunch','diner'],prep:false,opwarm:true,instant:true,handmatig:true,tip:'Verschijnt vanzelf wanneer je de avond ervoor een dubbele portie maakt.',ing:[]},
+
+{id:'kebab',naam:'Kebab afhalen',tijd:0,eiwit:'hoog',bron:'gemengd',slots:['diner'],prep:false,opwarm:false,afhaal:true,instant:true,tip:'Geen boodschappen nodig.',ing:[]},
+
+{id:'afhaal',naam:'Afhaal (pizza, sushi of frituur)',tijd:0,eiwit:'gemiddeld',bron:'gemengd',slots:['lunch','diner'],prep:false,opwarm:false,afhaal:true,instant:true,tip:'Geen boodschappen nodig.',ing:[]},
+
+{id:'uiteten',naam:'Wij gaan samen uit eten',tijd:0,eiwit:'gemiddeld',bron:'gemengd',slots:['diner'],prep:false,opwarm:false,afhaal:true,instant:true,handmatig:true,tip:'De jongens eten iets uit de diepvries of restjes. Kies dit zelf — het voorstel stelt het nooit vanzelf voor.',ing:[]}
+];
+
+/* ============================================================
+   2. Opslag
+   Drie mogelijke bronnen, in deze volgorde:
+   - server  : eigen Cloudflare Worker met D1 (echte synchronisatie)
+   - gedeeld : gedeelde opslag van de chatomgeving
+   - lokaal  : enkel dit toestel
+   ============================================================ */
+const KEY_GEZIN='weekmenu:gezin:v1';
+const KEY_EIGEN='weekmenu:v1';
+const ZOEK_STANDAARD='https://www.collectandgo.be/nl/zoek?searchTerm={q}';
+let state={start:null,personen:4,plan:{},checked:{},custom:[],disabled:{},shopView:'alles',zoekUrl:ZOEK_STANDAARD};
+let modus='lokaal', serverRev=0, saveTimer=null, bezigMetOpslaan=false, wachtwoord=null, laatstBewaard=null;
+
+function lees(k){ try{return localStorage.getItem(k);}catch(e){return null;} }
+function schrijf(k,v){ try{localStorage.setItem(k,v);}catch(e){} }
+
+function apiHeaders(){
+  const h={'content-type':'application/json'};
+  if(wachtwoord) h['x-menu-key']=wachtwoord;
+  return h;
+}
+async function vraagWachtwoord(){
+  const w=prompt('Wachtwoord voor het gezinsmenu:');
+  if(w===null) return false;
+  wachtwoord=w; schrijf('weekmenu:pw',w); return true;
+}
+
+// Zoekt uit of deze pagina door een eigen Worker geserveerd wordt
+async function verbind(){
+  wachtwoord=lees('weekmenu:pw');
+  for(let poging=0;poging<3;poging++){
+    let r;
+    try{ r=await fetch('/api/state',{headers:apiHeaders(),cache:'no-store'}); }
+    catch(e){ return false; }
+    if(r.status===401){ if(!await vraagWachtwoord()) return false; continue; }
+    if(!r.ok) return false;
+    let j; try{ j=await r.json(); }catch(e){ return false; }
+    if(!j||typeof j.rev!=='number') return false;
+    serverRev=j.rev;
+    if(j.data) state=Object.assign(state,j.data);
+    modus='server';
+    return true;
+  }
+  return false;
+}
+
+async function load(){
+  if(!window.storage){ modus='geen'; return; }
+  let data=null, bron=null;
+  try{
+    const r=await window.storage.get(KEY_GEZIN,true);
+    if(r&&r.value){ data=JSON.parse(r.value); bron='gedeeld'; }
+  }catch(e){ /* sleutel bestaat nog niet — dat is geen probleem */ }
+  if(!data){
+    try{
+      const r=await window.storage.get(KEY_EIGEN,false);
+      if(r&&r.value){ data=JSON.parse(r.value); bron='eigen'; }
+    }catch(e){}
+  }
+  if(data) state=Object.assign(state,data);
+  bumpCache();
+  // Gedeelde opslag is beschikbaar. Lukt het schrijven toch niet,
+  // dan zet bewaar() de modus zelf terug op 'lokaal'.
+  modus='gedeeld';
+  if(bron==='eigen') save();   // oude persoonlijke gegevens meteen naar de gedeelde kant
+}
+
+function save(){
+  bumpCache();
+  clearTimeout(saveTimer);
+  setSync('bezig');
+  saveTimer=setTimeout(bewaar,500);
+}
+async function bewaar(){
+  if(modus==='server') return duwNaarServer();
+  if(!window.storage){ modus='geen'; setSync(); return; }
+  const payload=JSON.stringify(state);
+  let gelukt=true;
+  try{ await window.storage.set(KEY_GEZIN,payload,true); modus='gedeeld'; }
+  catch(e){
+    modus='lokaal';
+    try{ await window.storage.set(KEY_EIGEN,payload,false); }
+    catch(e2){ modus='geen'; gelukt=false; }
+  }
+  if(gelukt) laatstBewaard=new Date();
+  setSync(gelukt?'bewaard':undefined);
+}
+async function duwNaarServer(){
+  bezigMetOpslaan=true;
+  try{
+    const r=await fetch('/api/state',{method:'PUT',headers:apiHeaders(),body:JSON.stringify({rev:serverRev,data:state})});
+    if(r.status===401){
+      bezigMetOpslaan=false;
+      if(await vraagWachtwoord()) return duwNaarServer();
+      setSync('fout'); return;
+    }
+    if(r.status===409){                       // iemand anders was sneller
+      const j=await r.json();
+      serverRev=j.rev;
+      if(j.data) state=Object.assign(state,j.data);
+      setSync(); render();
+      toast('Iemand anders bewaarde net — jouw laatste wijziging is niet doorgevoerd.');
+      return;
+    }
+    if(!r.ok) throw new Error('status '+r.status);
+    const j=await r.json(); serverRev=j.rev; laatstBewaard=new Date(); setSync('bewaard');
+  }catch(e){ setSync('fout'); console.warn(e); }
+  finally{ bezigMetOpslaan=false; }
+}
+async function haalOp(){
+  try{
+    const r=await fetch('/api/state',{headers:apiHeaders(),cache:'no-store'});
+    if(!r.ok) return false;
+    const j=await r.json();
+    serverRev=j.rev;
+    if(j.data) state=Object.assign(state,j.data);
+    bumpCache();
+    return true;
+  }catch(e){ return false; }
+}
+function startPolling(){
+  if(modus!=='server') return;
+  setInterval(async()=>{
+    if(bezigMetOpslaan) return;
+    if(document.hidden) return;                 // scheelt verzoeken en batterij
+    const a=document.activeElement;
+    if(a&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)) return;   // niet verversen terwijl iemand typt
+    try{
+      const r=await fetch('/api/rev',{headers:apiHeaders(),cache:'no-store'});
+      if(!r.ok) return;
+      const j=await r.json();
+      if(j.rev!==serverRev && await haalOp()){ render(); toast('Bijgewerkt door iemand anders'); }
+    }catch(e){}
+  },15000);
+}
+let syncTimer=null;
+function setSync(st){
+  const el=document.getElementById('sync');
+  if(!el) return;
+  clearTimeout(syncTimer);
+
+  const rust = modus==='server' ? 'gedeeld · live'
+    : modus==='gedeeld' ? 'gedeeld'
+    : modus==='lokaal' ? 'op dit toestel'
+    : 'geen opslag';
+
+  if(st==='bezig'){ el.textContent='bewaren…'; el.dataset.st='bezig'; }
+  else if(st==='fout'){ el.textContent='bewaren mislukt'; el.dataset.st='fout'; }
+  else if(st==='bewaard'){
+    el.textContent = modus==='server' ? 'in database ✓' : 'bewaard ✓';
+    el.dataset.st = modus==='server' ? 'live' : 'ok';
+    syncTimer=setTimeout(()=>setSync(),2600);      // even bevestigen, dan terug naar rust
+  }
+  else { el.textContent=rust; el.dataset.st = modus==='geen'?'fout':(modus==='server'?'live':'ok'); }
+
+  const klok=laatstBewaard?laatstBewaard.toLocaleTimeString('nl-BE',{hour:'2-digit',minute:'2-digit'}):null;
+  const staart = klok ? ' Laatst bewaard om '+klok+(modus==='server'?' (versie '+serverRev+').':'.') : '';
+  el.title = (st==='fout' ? 'Het bewaren is mislukt. Klik om opnieuw te proberen.'
+    : modus==='server' ? 'Wijzigingen worden vanzelf bewaard op jullie Cloudflare-server.'
+    : modus==='gedeeld' ? 'Wijzigingen worden vanzelf bewaard en zijn zichtbaar voor iedereen die de app opent.'
+    : modus==='lokaal' ? 'Wijzigingen worden vanzelf bewaard, maar enkel op dit toestel.'
+    : 'Deze kopie kan niets bewaren. Klik voor uitleg.') + staart;
+}
+
+function badgeKlik(){
+  if(modus==='geen'){
+    toast('Deze kopie bewaart niets. Open de app via jullie eigen adres, of maak een back-up bij ⋯.');
+    return;
+  }
+  bewaar();
+  toast('Opnieuw geprobeerd te bewaren');
+}
+
+/* ============================================================
+   2b. Wedstrijdkalenders (ICS van de basketbalbond)
+   ============================================================ */
+const KALENDERS_STANDAARD=[
+  {wie:'Dries',url:'https://vblcal.wisseq.eu/vblcalsync/calsync.aspx?guid=BVBL1125J16002'},
+  {wie:'Bram', url:'https://vblcal.wisseq.eu/vblcalsync/calsync.aspx?guid=BVBL1125J18002'}
+];
+
+function parseICS(tekst,wie){
+  // regels die met een spatie beginnen horen bij de vorige regel
+  const regels=String(tekst||'').replace(/\r/g,'').split('\n');
+  const plat=[];
+  regels.forEach(r=>{
+    if(/^[ \t]/.test(r)&&plat.length) plat[plat.length-1]+=r.slice(1);
+    else plat.push(r);
+  });
+  const uit=[]; let ev=null;
+  plat.forEach(r=>{
+    if(r.startsWith('BEGIN:VEVENT')){ ev={}; return; }
+    if(r.startsWith('END:VEVENT')){
+      if(ev&&ev.iso) uit.push({wie,iso:ev.iso,van:ev.van,tot:ev.tot||ev.van,waar:ev.waar||'',
+                               titel:ev.titel||'Wedstrijd',link:ev.link||'',wedstrijd:true});
+      ev=null; return;
+    }
+    if(!ev) return;
+    const dp=r.indexOf(':');
+    if(dp<0) return;
+    const sleutel=r.slice(0,dp), waarde=r.slice(dp+1).trim();
+    const naam=sleutel.split(';')[0];
+    const stamp=waarde.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})/);
+    if(naam==='DTSTART'&&stamp){ ev.iso=stamp[1]+'-'+stamp[2]+'-'+stamp[3]; ev.van=stamp[4]+':'+stamp[5]; }
+    else if(naam==='DTEND'&&stamp){ ev.tot=stamp[4]+':'+stamp[5]; }
+    else if(naam==='LOCATION') ev.waar=waarde.replace(/\\,/g,',').replace(/\\n/g,' ');
+    else if(naam==='SUMMARY') ev.titel=waarde.replace(/\\,/g,',').replace(/\\n/g,' ');
+    else if(naam==='URL'&&/^https?:/.test(waarde)) ev.link=waarde;
+  });
+  return uit;
+}
+
+async function haalKalenderTekst(u){
+  // via de eigen Worker als die er is, anders rechtstreeks proberen
+  if(modus==='server'){
+    const r=await fetch('/api/kalender?url='+encodeURIComponent(u),{headers:apiHeaders()});
+    if(!r.ok){
+      let f=''; try{ f=(await r.json()).fout||''; }catch(e){}
+      throw new Error(f||('status '+r.status));
+    }
+    return r.text();
+  }
+  const r=await fetch(u);
+  if(!r.ok) throw new Error('status '+r.status);
+  return r.text();
+}
+
+async function haalWedstrijden(){
+  const lijst=(state.kalenders||[]).filter(k=>k&&k.url);
+  if(!lijst.length) return {ok:false,tekst:'Er staan nog geen kalenders ingesteld.'};
+  const alles=[]; const fouten=[];
+  for(const k of lijst){
+    try{
+      const tekst=await haalKalenderTekst(k.url);
+      const ev=parseICS(tekst,k.wie||'');
+      if(!ev.length) fouten.push((k.wie||'kalender')+': geen wedstrijden gevonden');
+      alles.push(...ev);
+    }catch(e){ fouten.push((k.wie||'kalender')+': '+(e&&e.message?e.message:'mislukt')); }
+  }
+  if(alles.length){
+    alles.sort((a,b)=>(a.iso+a.van).localeCompare(b.iso+b.van));
+    state.wedstrijden=alles;
+    state.wedstrijdenOpgehaald=new Date().toISOString();
+    save();
+  }
+  return {
+    ok:alles.length>0,
+    tekst: alles.length
+      ? alles.length+' wedstrijden opgehaald'+(fouten.length?' — maar '+fouten.join('; '):'.')
+      : 'Niets opgehaald. '+fouten.join('; ')
+  };
+}
+
+const KALENDER_MAXLEEFTIJD=12*3600*1000;
+function kalenderVerouderd(){
+  if(!(state.kalenders||[]).some(k=>k&&k.url)) return false;
+  if(!state.wedstrijdenOpgehaald) return true;
+  return (Date.now()-new Date(state.wedstrijdenOpgehaald).getTime())>KALENDER_MAXLEEFTIJD;
+}
+async function autoWedstrijden(){
+  if(!kalenderVerouderd()) return;
+  if(modus!=='server'&&modus!=='gedeeld') return;      // enkel waar we kunnen bewaren
+  try{
+    const r=await haalWedstrijden();
+    if(r.ok) render();
+  }catch(e){ /* stil: de knop bij ⋯ blijft beschikbaar */ }
+}
+
+const VOOR_WEDSTRIJD=45;   // minuten aanwezig zijn voor de aanvang
+const NA_WEDSTRIJD=30;     // douchen en iets drinken achteraf
+
+const THUIS_STANDAARD='Lostraat 32, 3212 Pellenberg';
+function thuisadres(){ return state.thuisadres||THUIS_STANDAARD; }
+
+// Ruwe schattingen vanuit Pellenberg, op basis van de naam van de zaal.
+// Aanpasbaar per zaal bij ⋯; gebruik de routelink om het echte cijfer te vinden.
+function reistijdGok(waar){
+  const w=String(waar||'').toLowerCase();
+  if(/pellenberg|lubbeek|kessel/.test(w)) return 8;
+  if(/wilsele|leuven|heverlee|korbeek|bierbeek|holsbeek/.test(w)) return 15;
+  if(/herent|rotselaar|tienen|boutersem|glabbeek|tildonk/.test(w)) return 20;
+  if(/bertem|haacht|aarschot|diest|hoegaarden|landen/.test(w)) return 25;
+  if(/tervuren|boortmeerbeek|overijse|kortenberg|zaventem|mechelen/.test(w)) return 30;
+  if(/brussel|schaarbeek|anderlecht|jette|ukkel|vilvoorde|hiel/.test(w)) return 40;
+  return 30;
+}
+function routeLink(waar){
+  return 'https://www.google.com/maps/dir/?api=1&origin='+encodeURIComponent(thuisadres())
+    +'&destination='+encodeURIComponent(String(waar||'')+', België');
+}
+function reistijdTussen(van,naar){
+  const a=String(van||'').trim(), b=String(naar||'').trim();
+  if(!a||!b) return 0;
+  if(a===b) return 0;
+  const cache=state.reisCache||{};
+  const berekend=cache[a+'|'+b];
+  if(typeof berekend==='number') return berekend;
+  // niets berekend: eigen invulling voor de rit van thuis, anders een schatting
+  if(a===thuisadres()) { const t=(state.reistijden||{})[b]; if(typeof t==='number') return t; return reistijdGok(b); }
+  if(b===thuisadres()) { const t=(state.reistijden||{})[a]; if(typeof t==='number') return t; return reistijdGok(a); }
+  return Math.max(reistijdGok(a),reistijdGok(b));
+}
+function reistijd(waar){
+  return reistijdTussen(thuisadres(),waar);
+}
+function reisIsBerekend(van,naar){
+  const k=String(van||'').trim()+'|'+String(naar||'').trim();
+  const minuten=(state.reisCache||{})[k];
+  const km=(state.kmCache||{})[k];
+  // pas volledig als zowel de tijd als de afstand bekend is
+  return typeof minuten==='number'&&typeof km==='number';
+}
+
+// Vraagt de Worker om alles wat nog niet berekend is
+async function haalReistijden(){
+  if(modus!=='server') return false;
+  const nodig=[]; const zie=new Set();
+  const voegtoe=(a,b)=>{
+    if(!a||!b||a===b) return;
+    const k=a+'|'+b;
+    if(zie.has(k)||reisIsBerekend(a,b)) return;
+    zie.add(k); nodig.push([a,b]);
+  };
+  const thuis=thuisadres();
+  (state.wedstrijden||[]).forEach(w=>{ if(w.waar){ voegtoe(thuis,w.waar); voegtoe(w.waar,thuis); } });
+  const perDag={};
+  (state.agenda||[]).filter(a=>isFluiten(a.titel)&&a.waar).forEach(a=>{ (perDag[a.iso]=perDag[a.iso]||[]).push(a); });
+  Object.values(perDag).forEach(lijst=>{
+    lijst.sort((a,b)=>(a.van||'').localeCompare(b.van||''));
+    lijst.forEach((w,i)=>{
+      voegtoe(thuis,w.waar); voegtoe(w.waar,thuis);
+      const v=lijst[i-1];
+      if(v&&v.waar!==w.waar) voegtoe(v.waar,w.waar);
+    });
+  });
+  if(!nodig.length) return false;
+  try{
+    const r=await fetch('/api/reistijden',{method:'POST',headers:apiHeaders(),body:JSON.stringify({paren:nodig.slice(0,60)})});
+    if(!r.ok) return false;
+    const d=await r.json();
+    if(!d||!d.minuten||!Object.keys(d.minuten).length) return false;
+    state.reisCache=Object.assign({},state.reisCache||{},d.minuten);
+    if(d.km) state.kmCache=Object.assign({},state.kmCache||{},d.km);
+    save();
+    return true;
+  }catch(e){ return false; }
+}
+function vertrekTijd(w){
+  const m=mins(w.van)-VOOR_WEDSTRIJD-reistijd(w.waar);
+  return hhmm(Math.max(0,m));
+}
+function aanwezigTijd(w){
+  return hhmm(Math.max(0,mins(w.van)-VOOR_WEDSTRIJD));
+}
+function thuisTijd(w){
+  return hhmm(Math.min(24*60-1,mins(w.tot)+NA_WEDSTRIJD+reistijd(w.waar)));
+}
+// zalen die nog geen eigen reistijd hebben, komen in de instellingen te staan
+function zalenUitWedstrijden(){
+  const uit=[];
+  (state.wedstrijden||[]).forEach(w=>{ if(w.waar&&!uit.includes(w.waar)) uit.push(w.waar); });
+  return uit.sort((a,b)=>a.localeCompare(b,'nl'));
+}
+
+/* ---- Persoonlijke agenda's ----------------------------------------------
+   De app kent de iCal-adressen niet: die staan als geheime variabelen bij de
+   Worker. Ze wordt hier enkel opgehaald en getoond.
+------------------------------------------------------------------------- */
+const AGENDA_MAXLEEFTIJD=6*3600*1000;
+const VERGADERWOORD_STANDAARD='zonnebloem';
+
+async function haalAgenda(){
+  if(modus!=='server') return {ok:false,tekst:'Agenda\'s komen van jullie eigen Worker; die is hier niet bereikbaar.'};
+  try{
+    const r=await fetch('/api/agenda',{headers:apiHeaders(),cache:'no-store'});
+    if(r.status===501) return {ok:false,tekst:'Er staan nog geen agenda-adressen bij de Worker. Voeg AGENDA_JURGEN en AGENDA_SARAH toe als Secret.'};
+    if(!r.ok) return {ok:false,tekst:'De Worker antwoordde met '+r.status+'.'};
+    const d=await r.json();
+    if(!d||!Array.isArray(d.events)) return {ok:false,tekst:'Onleesbaar antwoord.'};
+    state.agenda=d.events;
+    state.agendaBronnen=d.agendas||[];
+    state.agendaOpgehaald=d.opgehaald||new Date().toISOString();
+    save();
+    const f=(d.fouten||[]).length?' — maar '+d.fouten.join('; '):'';
+    return {ok:true,tekst:d.events.length+' afspraken opgehaald uit '+(d.agendas||[]).length+' agenda\'s'+f};
+  }catch(e){ return {ok:false,tekst:'Geen antwoord: '+(e&&e.message?e.message:'onbekend')}; }
+}
+
+function agendaVerouderd(){
+  if(modus!=='server') return false;
+  if(!state.agendaOpgehaald) return true;
+  return (Date.now()-new Date(state.agendaOpgehaald).getTime())>AGENDA_MAXLEEFTIJD;
+}
+async function autoAgenda(){
+  if(!agendaVerouderd()) return;
+  const r=await haalAgenda();
+  if(r.ok) render();
+}
+
+function afsprakenOp(iso){
+  return (state.agenda||[]).filter(a=>a.iso===iso);
+}
+// Dagen waarop haar vergadering het koken onmogelijk maakt
+function vergaderdagenUitAgenda(){
+  const woord=(state.vergaderwoord||VERGADERWOORD_STANDAARD).toLowerCase();
+  if(!woord) return [];
+  return [...new Set((state.agenda||[])
+    .filter(a=>(a.titel||'').toLowerCase().includes(woord))
+    .map(a=>a.iso))];
+}
+
+/* ---- Fluitopdrachten ----------------------------------------------------
+   Herkenbaar aan [Official] of [Official 2] achteraan de titel. Het startuur
+   in de agenda klopt, de duur niet: reken altijd 1u45. Erbij komen 30 minuten
+   vooraf, 30 minuten achteraf, en de rit heen en terug. Volgen er meer
+   wedstrijden binnen drie uur na de vorige start, dan blijft hij ter plaatse
+   en telt de rit naar huis pas na de laatste.
+------------------------------------------------------------------------- */
+const FLUIT_DUUR=105;      // 1u45
+const FLUIT_VOOR=30;
+const FLUIT_NA=30;
+const KETTING_VENSTER=180; // drie uur na de vorige starttijd
+const KM_TARIEF=0.40;      // euro per kilometer
+const KM_PER_MINUUT=0.9;   // ruwe omrekening als er nog niets berekend is
+
+function kmTussen(van,naar){
+  const a=String(van||'').trim(), b=String(naar||'').trim();
+  if(!a||!b||a===b) return {km:0,geschat:false};
+  const cache=state.kmCache||{};
+  const k=cache[a+'|'+b];
+  if(typeof k==='number') return {km:k,geschat:false};
+  return {km:Math.round(reistijdTussen(a,b)*KM_PER_MINUUT*10)/10,geschat:true};
+}
+function euro(bedrag){
+  return '€ '+bedrag.toFixed(2).replace('.',',');
+}
+
+function isFluiten(titel){
+  return /\[\s*official\s*\d*\s*\]\s*$/i.test(String(titel||''));
+}
+function fluitTitel(titel){
+  return String(titel||'').replace(/\[\s*official\s*\d*\s*\]\s*$/i,'').trim()||'Wedstrijd fluiten';
+}
+function fluitenOp(iso){
+  return (state.agenda||[]).filter(a=>!a.heledag&&a.van&&isFluiten(a.titel))
+    .filter(a=>a.iso===iso)
+    .sort((a,b)=>a.van.localeCompare(b.van));
+}
+
+// Groepeert de wedstrijden van een dag in kettingen die zonder tussendoor
+// naar huis te gaan aan elkaar hangen.
+function fluitKettingen(iso){
+  const lijst=fluitenOp(iso);
+  const kettingen=[];
+  lijst.forEach(w=>{
+    const laatste=kettingen[kettingen.length-1];
+    const vorige=laatste&&laatste[laatste.length-1];
+    if(vorige&&(mins(w.van)-mins(vorige.van))<=KETTING_VENSTER) laatste.push(w);
+    else kettingen.push([w]);
+  });
+  return kettingen;
+}
+
+// Van vertrek thuis tot terug thuis, per ketting.
+function fluitBlokken(iso){
+  return fluitKettingen(iso).map(k=>{
+    const eerste=k[0], laatste=k[k.length-1];
+    const thuis=thuisadres();
+    const heen=reistijdTussen(thuis,eerste.waar);
+    const terug=reistijdTussen(laatste.waar,thuis);
+
+    // het volledige traject: van huis, langs elke zaal, en terug
+    const stukken=[];
+    stukken.push(Object.assign({van:thuis,naar:eerste.waar},kmTussen(thuis,eerste.waar)));
+    for(let i=1;i<k.length;i++){
+      if(k[i].waar!==k[i-1].waar)
+        stukken.push(Object.assign({van:k[i-1].waar,naar:k[i].waar},kmTussen(k[i-1].waar,k[i].waar)));
+    }
+    stukken.push(Object.assign({van:laatste.waar,naar:thuis},kmTussen(laatste.waar,thuis)));
+
+    const totaalKm=Math.round(stukken.reduce((a,x)=>a+x.km,0)*10)/10;
+    const geschat=stukken.some(x=>x.geschat);
+    const zalen=[...new Set(k.map(w=>w.waar).filter(Boolean))];
+    const aantal=Math.max(1,k.length);   // per wedstrijd, ook als ze in dezelfde zaal zijn
+
+    return {
+      ketting:k,
+      vertrek:mins(eerste.van)-FLUIT_VOOR-heen,
+      terug:mins(laatste.van)+FLUIT_DUUR+FLUIT_NA+terug,
+      heen, terugtijd:terug,
+      stukken, totaalKm, geschat, zalen, aantal,
+      totaalKost:Math.round(totaalKm*KM_TARIEF*100)/100,
+      kmPerWedstrijd:Math.round(totaalKm/aantal*10)/10,
+      kostPerWedstrijd:Math.round(totaalKm/aantal*KM_TARIEF*100)/100
+    };
+  });
+}
+function fluitEind(w){ return hhmm(mins(w.van)+FLUIT_DUUR); }
+
+function wedstrijdenOp(iso){
+  return (state.wedstrijden||[]).filter(w=>w.iso===iso);
+}
+
+/* ============================================================
+   3. Hulpjes
+   ============================================================ */
+const $=(s,r=document)=>r.querySelector(s);
+const mins=t=>{const[a,b]=t.split(':').map(Number);return a*60+b;};
+const hhmm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1900);}
+
+function nextMonday(){
+  const d=new Date(); d.setHours(12,0,0,0);
+  const diff=(8-(d.getDay()||7))%7 || 7;
+  d.setDate(d.getDate()+diff);
+  return d.toISOString().slice(0,10);
+}
+function addDays(iso,n){const d=new Date(iso+'T12:00:00');d.setDate(d.getDate()+n);return d;}
+function fmtDate(d){return d.toLocaleDateString('nl-BE',{day:'numeric',month:'short'});}
+
+function allMeals(){
+  const ov=state.overrides||{};
+  return BASIS.map(m=>ov[m.id]?Object.assign({},m,ov[m.id]):m).concat(state.custom||[]);
+}
+function groepVan(m){
+  if(m.afhaal||m.instant) return 'bestel';
+  if(m.eigen||String(m.id).startsWith('eigen-')) return 'onze';
+  return 'ander';
+}
+const GROEPNAAM={onze:'Onze recepten',ander:'Andere recepten',bestel:'Bestellen of opwarmen'};
+function mealById(id){return allMeals().find(m=>m.id===id);}
+function activeMeals(){return allMeals().filter(m=>!state.disabled[m.id]);}
+
+function personenOp(iso){
+  const p=(state.personenPerDag||{})[iso];
+  return (typeof p==='number'&&p>0)?p:state.personen;
+}
+function scaled(q,iso){
+  if(q==null) return null;
+  const v=q*(personenOp(iso)/4);
+  return Math.round(v*100)/100;
+}
+// kg en liter worden intern altijd g en ml, zodat 800 g + 1,2 kg één regel wordt
+const OMREKEN={kg:['g',1000],l:['ml',1000]};
+const TELBAAR=new Set(['st','blik','pot','bosje','sneden','teentjes','rol','takje']);
+function normIng(q,u){
+  if(q!=null&&OMREKEN[u]) return {q:q*OMREKEN[u][1],u:OMREKEN[u][0]};
+  return {q,u};
+}
+function fmtQty(q,u){
+  if(q==null) return '';
+  let v=q,unit=u;
+  if(unit==='g'&&v>=1000){v=v/1000;unit='kg';}
+  else if(unit==='ml'&&v>=1000){v=v/1000;unit='l';}
+  if(TELBAAR.has(unit)) v=Math.ceil(v-0.001);          // geen halve uien op de lijst
+  else v=v>=10?Math.round(v):Math.round(v*10)/10;
+  return v+(unit?' '+unit:'');
+}
+function ingLine(it,iso){
+  const n=normIng(scaled(it.q,iso),it.u);
+  return esc(it.n)+(n.q!=null?' — '+fmtQty(n.q,n.u):'');
+}
+
+/* ============================================================
+   4. Dagen opbouwen
+   ============================================================ */
+const STRIP_VAN=mins('16:00'), STRIP_TOT=mins('21:30');
+function stripBereik(dag){
+  return dag.weekend ? [mins('08:00'),mins('20:00')] : [STRIP_VAN,STRIP_TOT];
+}
+const REIS=20;      // minuten heen/terug rond een training
+const ETEN_MIN=40;  // minimale duur van een eetvenster
+
+function eetvensters(wd,iso){
+  const busy=trainingenOp(wd).map(t=>[mins(t.van)-REIS,mins(t.tot)+REIS]);
+  (iso?wedstrijdenOp(iso):[]).forEach(w=>{
+    const r=reistijd(w.waar);
+    busy.push([mins(w.van)-VOOR_WEDSTRIJD-r, mins(w.tot)+NA_WEDSTRIJD+r]);   // vertrek tot thuiskomst
+  });
+  if(iso) fluitBlokken(iso).forEach(b=>busy.push([b.vertrek,b.terug]));
+  busy.sort((a,b)=>a[0]-b[0]);
+  const weekend=wd>=5;
+  let free=[[mins(weekend?'11:00':'17:00'),mins('21:00')]];
+  busy.forEach(([bs,be])=>{
+    const out=[];
+    free.forEach(([fs,fe])=>{
+      if(be<=fs||bs>=fe){out.push([fs,fe]);return;}
+      if(bs>fs) out.push([fs,Math.min(bs,fe)]);
+      if(be<fe) out.push([Math.max(be,fs),fe]);
+    });
+    free=out;
+  });
+  return free.filter(([s,e])=>e-s>=ETEN_MIN);
+}
+
+/* Belgische wettelijke feestdagen. Pasen wordt berekend, de rest volgt daaruit
+   of ligt vast op een datum. */
+function pasen(jaar){
+  const a=jaar%19,b=Math.floor(jaar/100),c=jaar%100,d=Math.floor(b/4),e=b%4,
+        f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,
+        i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),
+        maand=Math.floor((h+l-7*m+114)/31),dag=((h+l-7*m+114)%31)+1;
+  return new Date(jaar,maand-1,dag,12,0,0);
+}
+function isoV(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function plusDagen(d,n){const x=new Date(d);x.setDate(x.getDate()+n);return x;}
+
+const _feestCache={};
+function feestdagen(jaar){
+  if(_feestCache[jaar]) return _feestCache[jaar];
+  const p=pasen(jaar), m={};
+  m[jaar+'-01-01']='Nieuwjaar';
+  m[isoV(plusDagen(p,1))]='Paasmaandag';
+  m[jaar+'-05-01']='Dag van de arbeid';
+  m[isoV(plusDagen(p,39))]='O.L.H. Hemelvaart';
+  m[isoV(plusDagen(p,50))]='Pinkstermaandag';
+  m[jaar+'-07-21']='Nationale feestdag';
+  m[jaar+'-08-15']='O.L.V. Hemelvaart';
+  m[jaar+'-11-01']='Allerheiligen';
+  m[jaar+'-11-11']='Wapenstilstand';
+  m[jaar+'-12-25']='Kerstmis';
+  _feestCache[jaar]=m;
+  return m;
+}
+function feestdagNaam(iso){
+  return feestdagen(Number(iso.slice(0,4)))[iso]||null;
+}
+
+/* Vlaamse schoolvakanties. De officiële rekenregels kennen uitzonderingen die
+   in de praktijk afwijken, dus dit zijn opgezochte datums. Aanpasbaar via ⋯. */
+const VAKANTIES_STANDAARD=[
+  {naam:'Herfstvakantie',   van:'2025-10-27',tot:'2025-11-02'},
+  {naam:'Kerstvakantie',    van:'2025-12-22',tot:'2026-01-04'},
+  {naam:'Krokusvakantie',   van:'2026-02-16',tot:'2026-02-22'},
+  {naam:'Paasvakantie',     van:'2026-04-06',tot:'2026-04-19'},
+  {naam:'Zomervakantie',    van:'2026-07-01',tot:'2026-08-31'},
+  {naam:'Herfstvakantie',   van:'2026-10-26',tot:'2026-11-01'},
+  {naam:'Kerstvakantie',    van:'2026-12-21',tot:'2027-01-03'},
+  {naam:'Krokusvakantie',   van:'2027-02-15',tot:'2027-02-21'},
+  {naam:'Paasvakantie',     van:'2027-03-29',tot:'2027-04-11'},
+  {naam:'Zomervakantie',    van:'2027-07-01',tot:'2027-08-31'}
+];
+function vakantieNaam(iso){
+  const v=(state.vakanties||[]).find(x=>x&&x.van&&x.tot&&iso>=x.van&&iso<=x.tot);
+  return v?v.naam:null;
+}
+
+function vandaagIso(){
+  const n=new Date(); n.setHours(12,0,0,0);
+  return isoVan(n);
+}
+/* Wat er verondersteld wordt in huis te zijn. Die staat apart op de lijst,
+   met een knop om het toch mee te kopen. Aanpasbaar via ⋯. */
+const VOORRAAD_STANDAARD=[
+ 'olijfolie','boter','sojasaus','ketjap','mosterd','honing','currypasta','currypoeder',
+ 'komijn','ras el hanout','paprikapoeder','oregano','Italiaanse kruiden','nootmuskaat',
+ 'peper','bloem','paneermeel','sesamzaad','kappertjes','groentebouillon','bickysaus',
+ 'augurken','knoflook','rozemarijn','groene peperkorrels','diepvriesdozen'
+];
+function inVoorraad(naam){
+  const lijst=state.voorraad||[];
+  const n=String(naam||'').toLowerCase().trim();
+  return lijst.some(v=>String(v).toLowerCase().trim()===n);
+}
+function slotKey(dag,slot){ return dag.iso+'|'+slot; }
+function weekPrefix(){ return (state.start||'')+'::'; }   // vinkjes horen bij één week
+function isoVan(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+let _dagenCache=null, _cacheRev=0;
+function bumpCache(){ _cacheRev++; _dagenCache=null; _komendCache=null; }
+function buildDays(){
+  const sleutel=(state.start||'')+'#'+_cacheRev;
+  if(_dagenCache&&_dagenCache.sleutel===sleutel) return _dagenCache.dagen;
+  const dagen=bouwDagen(state.start,PERIODE);
+  _dagenCache={sleutel,dagen};
+  return dagen;
+}
+let _komendCache=null;
+function komendeDagen(n){
+  const sleutel=vandaagIso()+'#'+n+'#'+_cacheRev;
+  if(_komendCache&&_komendCache.sleutel===sleutel) return _komendCache.dagen;
+  const dagen=bouwDagen(vandaagIso(),n);
+  _komendCache={sleutel,dagen};
+  return dagen;
+}
+function bouwDagen(startIso,aantal){
+  const verg=(state.vergaderingen||[]).concat(vergaderdagenUitAgenda());
+  const out=[];
+  for(let i=0;i<aantal;i++){
+    const date=addDays(startIso,i);
+    const wd=(date.getDay()+6)%7;
+    let r=DAGREGELS[wd];
+    const iso=isoVan(date);
+    const feest=feestdagNaam(iso), vak=vakantieNaam(iso);
+    if(feest||vak){
+      // geen school, dus geen vast eetuur en geen opwarmplicht
+      r=Object.assign({},r,{samen:null,opwarmen:false,max:999,note:''});
+      if(state.vakantieLunch&&r.slots.length===1) r=Object.assign({},r,{slots:['lunch','diner']});
+    }
+    const matches=wedstrijdenOp(iso);
+    const afspraken=afsprakenOp(iso);
+    const fluit=fluitenOp(iso).map(w=>({wie:w.wie,van:w.van,tot:fluitEind(w),waar:w.waar,titel:fluitTitel(w.titel),fluiten:true}));
+    // fluiten rond etenstijd betekent dat er niet samen gegeten kan worden
+    const raaktAvond=fluitBlokken(iso).some(b=>b.terug>mins('17:30')&&b.vertrek<mins('20:30'));
+    if(raaktAvond) r=Object.assign({},r,{samen:null,opwarmen:true,
+      note:'Jij fluit rond etenstijd — het moet op te warmen zijn.'});
+    out.push({i,date,iso,wd,naam:DAGEN[wd],regels:r,
+              training:trainingenOp(wd).concat(matches).concat(fluit),wedstrijden:matches,fluit,
+              vensters:eetvensters(wd,iso),weekend:wd>=5,vergadering:verg.includes(iso),
+              feest,vakantie:vak,afspraken});
+  }
+  return out;
+}
+
+/* ============================================================
+   5. Voorstel genereren
+   ============================================================ */
+// Hoe lang geleden stond dit gerecht voor het laatst op tafel? (in dagen)
+function laatstGegeten(){
+  const uit={}; const nu=new Date(state.start+'T12:00:00');
+  Object.entries(state.plan||{}).forEach(([k,v])=>{
+    if(!v||!v.mealId) return;
+    const iso=k.split('|')[0];
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)||iso>=state.start) return;
+    const dagen=Math.round((nu-new Date(iso+'T12:00:00'))/86400000);
+    if(uit[v.mealId]===undefined||dagen<uit[v.mealId]) uit[v.mealId]=dagen;
+  });
+  return uit;
+}
+
+function past(meal,slot,dag){
+  if(!meal.slots.includes(slot)) return false;
+  // gerechten die aan een vaste dag hangen
+  if(meal.alleen==='zondag'&&dag.wd!==6) return false;
+  if(meal.alleen==='weekend'&&dag.wd<5) return false;
+  if(meal.handmatig) return true;              // altijd zelf kiesbaar, nooit automatisch
+  // vergaderavond: enkel iets dat meteen op tafel kan
+  if(dag.vergadering&&slot==='diner')
+    return !!(meal.instant||meal.afhaal||(meal.opwarm&&meal.prep));
+  if(meal.afhaal) return false;                // afhaal enkel op vergaderavonden
+  // dinsdag en vrijdag: iedereen eet op een ander uur, dus het moet op te warmen zijn
+  if(dag.regels.opwarmen&&slot==='diner'&&!meal.opwarm) return false;
+  const max = slot==='lunch' ? (dag.regels.maxLunch||45) : dag.regels.max;
+  if(meal.tijd<=max) return true;
+  // langer mag op een weekdag, zolang het vooraf gemaakt kan worden
+  if(slot==='diner'&&dag.wd<5&&meal.prep) return true;
+  return false;
+}
+
+function genereer(force){
+  const dagen=buildDays();
+  const pool=activeMeals();
+  const gebruikt=new Set();
+  const bronTeller={};
+  const geschiedenis=laatstGegeten();
+  const oordeel=state.beoordeling||{};
+  const nieuw=Object.assign({},state.plan);   // andere periodes blijven ongemoeid
+
+  const volgorde=[];
+  dagen.forEach(d=>d.regels.slots.forEach(s=>volgorde.push({key:slotKey(d,s),slot:s,dag:d})));
+
+  // dit venster leegmaken, behalve wat vastgezet is
+  volgorde.forEach(({key})=>{
+    const v=nieuw[key];
+    if(force||!(v&&v.locked)) delete nieuw[key];
+  });
+  volgorde.forEach(({key})=>{
+    const v=nieuw[key];
+    if(v&&v.mealId){
+      gebruikt.add(v.mealId);
+      const b=(mealById(v.mealId)||{}).bron;
+      bronTeller[b]=(bronTeller[b]||0)+1;
+    }
+  });
+
+  let vorigeBron=null;
+  volgorde.forEach(({key,slot,dag})=>{
+    if(nieuw[key]){ vorigeBron=(mealById(nieuw[key].mealId)||{}).bron; return; }
+    const auto=pool.filter(m=>!m.handmatig);
+    let kand=auto.filter(m=>past(m,slot,dag)&&!gebruikt.has(m.id));
+    if(!kand.length) kand=auto.filter(m=>past(m,slot,dag));
+    if(!kand.length) kand=auto.filter(m=>m.slots.includes(slot));
+    if(!kand.length){ nieuw[key]=null; return; }
+
+    const scored=kand.map(m=>{
+      let s=Math.random()*2;
+      if(m.bron===vorigeBron) s-=6;
+      s-=(bronTeller[m.bron]||0)*1.6;
+      if(gebruikt.has(m.id)) s-=10;
+      if(dag.vergadering&&m.afhaal) s-=1.5;                 // eerst de diepvries, dan pas afhaal
+      if(dag.vergadering&&m.instant&&!m.afhaal) s+=2;
+      if(dag.regels.opwarmen&&m.opwarm) s+=1.2;             // liefst iets dat écht goed opwarmt
+      if(dag.regels.samen&&m.tijd<=40) s+=0.6;              // op een samen-avond hoeft het niet te slepen
+      if(dag.wd===6&&m.prep&&m.tijd>45) s+=1;               // zondag mag een project zijn
+      if(dag.wd===5&&slot==='diner'&&m.tijd>45) s+=1;       // zaterdagavond ook
+      if(slot==='lunch'&&m.tijd<=25) s+=1;
+      if(m.eiwit==='hoog') s+=1.4;
+      // recent gegeten weegt door, tot zes weken terug
+      const gel=geschiedenis[m.id];
+      if(gel!==undefined&&gel<=42) s-=Math.max(0,5-gel/10);
+      // en wat in de smaak viel, komt vaker terug
+      if(oordeel[m.id]===1) s+=2.5;
+      if(oordeel[m.id]===-1) s-=6;
+      return {m,s};
+    }).sort((a,b)=>b.s-a.s);
+
+    const keuze=scored[0].m;
+    nieuw[key]={mealId:keuze.id,locked:false};
+    gebruikt.add(keuze.id);
+    bronTeller[keuze.bron]=(bronTeller[keuze.bron]||0)+1;
+    vorigeBron=keuze.bron;
+  });
+
+  state.plan=nieuw; save();
+}
+
+function reroll(key){
+  if(state.plan[key]&&state.plan[key].locked)
+    return toast('Deze maaltijd staat vast. Open eerst het slotje.');
+  const dagen=buildDays();
+  const [iso,slot]=key.split('|');
+  const dag=dagen.find(d=>d.iso===iso);
+  if(!dag) return;
+  const vensterKeys=new Set();
+  dagen.forEach(d=>d.regels.slots.forEach(sl=>vensterKeys.add(slotKey(d,sl))));
+  const inGebruik=new Set(Object.entries(state.plan)
+    .filter(([k,v])=>k!==key&&v&&v.mealId&&vensterKeys.has(k)).map(([,v])=>v.mealId));
+  const huidig=state.plan[key]&&state.plan[key].mealId;
+  const auto=activeMeals().filter(m=>!m.handmatig);
+  let kand=auto.filter(m=>past(m,slot,dag)&&!inGebruik.has(m.id)&&m.id!==huidig);
+  if(!kand.length) kand=auto.filter(m=>past(m,slot,dag)&&m.id!==huidig);
+  if(!kand.length) return toast('Geen ander gerecht dat in deze dag past.');
+  const keuze=kand[Math.floor(Math.random()*kand.length)];
+  state.plan[key]={mealId:keuze.id,locked:state.plan[key]?state.plan[key].locked:false};
+  save(); render();
+}
+
+/* ============================================================
+   6. Boodschappen
+   ============================================================ */
+function planEntries(vanafI,dagenLijst){
+  const dagen=dagenLijst||buildDays();
+  const out=[];
+  dagen.forEach(d=>{
+    if(vanafI!=null&&d.i<vanafI) return;
+    d.regels.slots.forEach(s=>{
+      const key=slotKey(d,s);
+      const v=state.plan[key];
+      if(v&&v.mealId){
+        const m=mealById(v.mealId);
+        if(m) out.push({dag:d,slot:s,meal:m,key,locked:!!v.locked,dubbel:!!v.dubbel});
+      }
+    });
+  });
+  return out;
+}
+
+function boodschappen(vanafI,dagenLijst){
+  const map=new Map();
+  const alleenVast=state.shopLocked!==false;
+  planEntries(vanafI,dagenLijst).filter(e=>!alleenVast||e.locked).forEach(({meal,dag,dubbel})=>{
+    const factor=dubbel?2:1;
+    meal.ing.forEach(it=>{
+      const geschaald=scaled(it.q,dag&&dag.iso);
+      const n=normIng(geschaald==null?null:geschaald*factor,it.u);
+      const k=weekPrefix()+(it.n||'').toLowerCase().trim()+'|'+(n.u||'')+'|'+(it.c||'droog');
+      if(map.has(k)){const e=map.get(k); if(e.q!=null&&n.q!=null) e.q+=n.q; e.uit.push(meal.naam);}
+      else map.set(k,{n:it.n,u:n.u,c:it.c||'droog',q:n.q,uit:[meal.naam]});
+    });
+  });
+  const per={}; const kast=[];
+  Object.keys(CATS).forEach(c=>per[c]=[]);
+  [...map.entries()].forEach(([k,v])=>{
+    const item=Object.assign({key:k},v);
+    if(inVoorraad(v.n)&&!(state.kastNodig||{})[k]) kast.push(item);
+    else (per[v.c]||per.droog).push(item);
+  });
+  Object.values(per).forEach(a=>a.sort((x,y)=>x.n.localeCompare(y.n,'nl')));
+  kast.sort((x,y)=>x.n.localeCompare(y.n,'nl'));
+  per._kast=kast;
+  return per;
+}
+
+// Diepvriesgerechten en het gerecht waarmee je ze aanmaakt
+const VOORRAAD={ sausdiepvries:'sausmaken' };
+
+function voorraadCheck(vanafI,dagenLijst){
+  const gepland=new Set(planEntries(vanafI,dagenLijst).map(e=>e.meal.id));
+  const uit=[];
+  Object.entries(VOORRAAD).forEach(([verbruik,maken])=>{
+    if(!gepland.has(verbruik)) return;
+    uit.push({verbruik:mealById(verbruik),maken:mealById(maken),ingepland:gepland.has(maken)});
+  });
+  return uit;
+}
+
+function prepLijst(dagenLijst){
+  const dagen=dagenLijst||buildDays();
+  const items=[];
+  dagen.forEach(d=>{
+    if(d.wd>=5) return;
+    const v=state.plan[slotKey(d,'diner')];
+    if(!v||!v.mealId) return;
+    const m=mealById(v.mealId);
+    if(m&&m.prep&&!m.instant&&(m.tijd>d.regels.max||d.vergadering)) items.push({dag:d,meal:m});
+  });
+  return items;
+}
+
+/* ============================================================
+   6b. Ingrediënten raden op basis van de naam
+   Een woordenlijst, geen AI: werkt overal en altijd, ook offline.
+   ============================================================ */
+const R_EIWIT=[
+ {w:['kippenbil','kippenbout'],i:[{n:'kippenbillen',q:8,u:'st',c:'vlees'}],bron:'kip'},
+ {w:['vol-au-vent','videe'],i:[{n:'kipfilet',q:600,u:'g',c:'vlees'},{n:'champignons',q:250,u:'g',c:'groenten'},{n:'bladerdeegkoekjes',q:4,u:'st',c:'diepvries'}],bron:'kip'},
+ {w:['kipfilet','kip','gyros'],i:[{n:'kipfilet',q:600,u:'g',c:'vlees'}],bron:'kip'},
+ {w:['kalkoen'],i:[{n:'kalkoenreepjes',q:600,u:'g',c:'vlees'}],bron:'kalkoen'},
+ {w:['gehakt','bolognese','balletjes','lasagne'],i:[{n:'rundsgehakt',q:600,u:'g',c:'vlees'}],bron:'rund'},
+ {w:['steak','biefstuk'],i:[{n:'steak',q:600,u:'g',c:'vlees'}],bron:'rund'},
+ {w:['hamburger','burger','bicky'],i:[{n:'hamburgers',q:4,u:'st',c:'vlees'}],bron:'rund'},
+ {w:['stoofvlees','stoverij','stoofpot'],i:[{n:'stoofvlees',q:800,u:'g',c:'vlees'}],bron:'rund'},
+ {w:['worst'],i:[{n:'braadworst',q:4,u:'st',c:'vlees'}],bron:'varken'},
+ {w:['spek'],i:[{n:'spek',q:200,u:'g',c:'vlees'}],bron:'varken'},
+ {w:['ham','croque'],i:[{n:'gekookte ham',q:8,u:'sneden',c:'vlees'}],bron:'varken'},
+ {w:['zalm'],i:[{n:'zalmfilet',q:600,u:'g',c:'vlees'}],bron:'vis'},
+ {w:['kabeljauw'],i:[{n:'kabeljauwfilet',q:600,u:'g',c:'vlees'}],bron:'vis'},
+ {w:['fishstick','visstick'],i:[{n:'fishsticks',q:16,u:'st',c:'diepvries'}],bron:'vis'},
+ {w:['tonijn'],i:[{n:'tonijn (blik)',q:3,u:'blik',c:'droog'}],bron:'vis'},
+ {w:['garnaal','garnalen','scampi'],i:[{n:'garnalen',q:500,u:'g',c:'vlees'}],bron:'garnaal'},
+ {w:['mossel'],i:[{n:'mosselen',q:2,u:'kg',c:'vlees'}],bron:'garnaal'},
+ {w:['vis'],i:[{n:'visfilet',q:600,u:'g',c:'vlees'}],bron:'vis'},
+ {w:['tofu'],i:[{n:'stevige tofu',q:500,u:'g',c:'zuivel'}],bron:'tofu'},
+ {w:['omelet','frittata','tortilla','eieren','shakshuka'],i:[{n:'eieren',q:8,u:'st',c:'zuivel'}],bron:'ei'},
+ {w:['linzen'],i:[{n:'rode linzen',q:300,u:'g',c:'droog'}],bron:'peulvrucht'},
+ {w:['kikkererwt'],i:[{n:'kikkererwten (blik)',q:2,u:'blik',c:'droog'}],bron:'peulvrucht'}
+];
+const R_KOOL=[
+ {w:['frieten','friet'],i:[{n:'frieten (diepvries)',q:1,u:'kg',c:'diepvries'}]},
+ {w:['puree','stoemp'],i:[{n:'aardappelen',q:1.2,u:'kg',c:'groenten'},{n:'melk',q:200,u:'ml',c:'zuivel'},{n:'boter',q:50,u:'g',c:'zuivel'}]},
+ {w:['krieltjes'],i:[{n:'krieltjes',q:1,u:'kg',c:'groenten'}]},
+ {w:['aardappel'],i:[{n:'aardappelen',q:1,u:'kg',c:'groenten'}]},
+ {w:['spaghetti'],i:[{n:'spaghetti',q:400,u:'g',c:'droog'}]},
+ {w:['lasagne'],i:[{n:'lasagnebladen',q:1,u:'pak',c:'droog'}]},
+ {w:['macaroni'],i:[{n:'macaroni',q:400,u:'g',c:'droog'}]},
+ {w:['penne','pasta'],i:[{n:'penne',q:400,u:'g',c:'droog'}]},
+ {w:['noedel','noodle'],i:[{n:'eiernoedels',q:300,u:'g',c:'droog'}]},
+ {w:['rijst','nasi'],i:[{n:'rijst',q:300,u:'g',c:'droog'}]},
+ {w:['couscous'],i:[{n:'couscous',q:300,u:'g',c:'droog'}]},
+ {w:['quinoa'],i:[{n:'quinoa',q:250,u:'g',c:'droog'}]},
+ {w:['wrap'],i:[{n:'wraps',q:8,u:'st',c:'brood'}]},
+ {w:['pita'],i:[{n:'pitabroodjes',q:8,u:'st',c:'brood'}]},
+ {w:['croque'],i:[{n:'boterhammen',q:12,u:'sneden',c:'brood'}]},
+ {w:['brood','boterham'],i:[{n:'volkorenbrood',q:1,u:'st',c:'brood'}]}
+];
+const R_GROENTE=[
+ ['spinazie',{n:'spinazie',q:800,u:'g',c:'groenten'}],
+ ['broccoli',{n:'broccoli',q:1,u:'st',c:'groenten'}],
+ ['bloemkool',{n:'bloemkool',q:1,u:'st',c:'groenten'}],
+ ['wortel',{n:'wortel',q:4,u:'st',c:'groenten'}],
+ ['prei',{n:'prei',q:3,u:'st',c:'groenten'}],
+ ['courgette',{n:'courgette',q:2,u:'st',c:'groenten'}],
+ ['puntpaprika',{n:'puntpaprika',q:3,u:'st',c:'groenten'}],
+ ['paprika',{n:'paprika',q:2,u:'st',c:'groenten'}],
+ ['boontjes',{n:'prinsessenboontjes',q:800,u:'g',c:'groenten'}],
+ ['witloof',{n:'witloof',q:6,u:'st',c:'groenten'}],
+ [' erwt',{n:'erwten (diepvries)',q:200,u:'g',c:'diepvries'}],
+ ['champignon',{n:'champignons',q:250,u:'g',c:'groenten'}],
+ ['spruit',{n:'spruitjes',q:800,u:'g',c:'groenten'}],
+ ['andijvie',{n:'andijvie',q:800,u:'g',c:'groenten'}],
+ ['pompoen',{n:'pompoen',q:1,u:'st',c:'groenten'}],
+ ['asperge',{n:'asperges',q:1,u:'kg',c:'groenten'}],
+ ['wokgroent',{n:'wokgroenten',q:600,u:'g',c:'groenten'}],
+ ['appelmoes',{n:'appelmoes',q:700,u:'g',c:'droog'}],
+ ['komkommer',{n:'komkommer',q:1,u:'st',c:'groenten'}],
+ ['tomaat',{n:'tomaat',q:4,u:'st',c:'groenten'}]
+];
+const R_STIJL=[
+ {w:['curry'],i:[{n:'kokosmelk',q:400,u:'ml',c:'droog'},{n:'currypasta',q:2,u:'el',c:'droog'}],opwarm:true},
+ {w:['chili'],i:[{n:'kidneybonen (blik)',q:2,u:'blik',c:'droog'},{n:'gepelde tomaten',q:800,u:'g',c:'droog'}],opwarm:true},
+ {w:['bolognese','tomatensaus','tomatensoep'],i:[{n:'gepelde tomaten',q:800,u:'g',c:'droog'}],opwarm:true},
+ {w:['stoofvlees','stoverij','stoofpot'],i:[{n:'bruin bier',q:330,u:'ml',c:'droog'},{n:'mosterd',q:2,u:'el',c:'droog'}],opwarm:true},
+ {w:['soep'],i:[{n:'groentebouillon',q:2,u:'l',c:'droog'}],opwarm:true},
+ {w:['ovenschotel','gratin','lasagne'],i:[{n:'geraspte kaas',q:150,u:'g',c:'zuivel'}],opwarm:true},
+ {w:['quiche'],i:[{n:'bladerdeeg',q:1,u:'rol',c:'diepvries'},{n:'eieren',q:4,u:'st',c:'zuivel'},{n:'kookroom',q:200,u:'ml',c:'zuivel'}],opwarm:true},
+ {w:['pepersaus'],i:[{n:'kookroom',q:250,u:'ml',c:'zuivel'},{n:'groene peperkorrels',q:2,u:'el',c:'droog'}],opwarm:false},
+ {w:['champignonsaus'],i:[{n:'kookroom',q:250,u:'ml',c:'zuivel'},{n:'champignons',q:250,u:'g',c:'groenten'}],opwarm:false},
+ {w:['roomsaus','room'],i:[{n:'kookroom',q:250,u:'ml',c:'zuivel'}],opwarm:true},
+ {w:['croque'],i:[{n:'kaas (plakken)',q:12,u:'sneden',c:'zuivel'}],opwarm:false},
+ {w:['pesto'],i:[{n:'groene pesto',q:1,u:'pot',c:'droog'}],opwarm:false},
+ {w:['teriyaki'],i:[{n:'sojasaus',q:4,u:'el',c:'droog'},{n:'honing',q:2,u:'el',c:'droog'}],opwarm:true},
+ {w:['wok','roerbak','nasi'],i:[{n:'sojasaus',q:4,u:'el',c:'droog'}],opwarm:false},
+ {w:['gyros'],i:[{n:'Griekse yoghurt',q:250,u:'g',c:'zuivel'},{n:'oregano',q:2,u:'tl',c:'droog'}],opwarm:false},
+ {w:['tajine'],i:[{n:'ras el hanout',q:2,u:'tl',c:'droog'}],opwarm:true},
+ {w:['salade','sla '],i:[{n:'kropsla',q:1,u:'st',c:'groenten'},{n:'olijfolie',q:3,u:'el',c:'droog'}],opwarm:false},
+ {w:['frieten','friet','wok','roerbak'],i:[],opwarm:false}
+];
+
+const R_UNITS=['g','kg','ml','l','st','el','tl','blik','pot','bosje','sneden','teentjes','rol','snuf',''];
+
+// Vraagt het aan Claude via de eigen Worker. Geen server of geen sleutel? Dan null,
+// en de aanroeper valt terug op de woordenlijst hieronder.
+async function raadViaServer(naam){
+  if(modus!=='server') return null;
+  try{
+    const r=await fetch('/api/suggest',{method:'POST',headers:apiHeaders(),body:JSON.stringify({naam})});
+    if(r.status===429){
+      let f='Limiet bereikt.'; try{ f=(await r.json()).fout||f; }catch(e){}
+      return {limiet:true,tekst:f};
+    }
+    if(!r.ok) return null;
+    const d=await r.json();
+    if(!d||!Array.isArray(d.ing)) return null;
+    const cats=Object.keys(CATS);
+    const ing=d.ing.slice(0,15).map(x=>({
+      n:String(x&&x.n||'').trim().slice(0,60),
+      q:(typeof x.q==='number'&&isFinite(x.q)&&x.q>0)?x.q:null,
+      u:R_UNITS.includes(x&&x.u)?x.u:'',
+      c:cats.includes(x&&x.c)?x.c:'droog'
+    })).filter(x=>x.n);
+    if(!ing.length) return null;
+
+    // Alles wat binnenkomt eerst controleren: een model kan zich vergissen
+    const bronnen=['kip','rund','varken','kalkoen','vis','garnaal','ei','peulvrucht','tofu','kaas','gemengd'];
+    const tijd=(typeof d.tijd==='number'&&d.tijd>=5&&d.tijd<=240)?Math.round(d.tijd):null;
+    let slots=null;
+    if(Array.isArray(d.slots)){
+      const s=d.slots.filter(x=>x==='lunch'||x==='diner');
+      if(s.length) slots=(s.includes('lunch')?'lunch':'')+(s.includes('lunch')&&s.includes('diner')?',':'')+(s.includes('diner')?'diner':'');
+    }
+    return {
+      ing,
+      bron:bronnen.includes(d.bron)?d.bron:null,
+      opwarm:typeof d.opwarm==='boolean'?d.opwarm:null,
+      tijd,
+      eiwit:(d.eiwit==='hoog'||d.eiwit==='gemiddeld')?d.eiwit:null,
+      slots,
+      prep:typeof d.prep==='boolean'?d.prep:null,
+      instant:typeof d.instant==='boolean'?d.instant:null,
+      alleen:(d.alleen==='weekend'||d.alleen==='zondag')?d.alleen:(d.alleen===null?'':null),
+      tip:typeof d.tip==='string'?d.tip.trim().slice(0,120):null,
+      model:typeof d._model==='string'?d._model:null,
+      gebruik:d._gebruik&&typeof d._gebruik.vandaag==='number'?d._gebruik:null,
+      via:'claude'
+    };
+  }catch(e){ return null; }
+}
+
+/* Doorlicht alle koppelingen één voor één. Elke stap geeft terug of ze werkt
+   en waarom niet, zonder ooit een sleutelwaarde te tonen. */
+async function testAlles(meld){
+  const uit=[];
+  const zeg=(naam,ok,tekst)=>{ const r={naam,ok,tekst}; uit.push(r); meld&&meld(uit); return r; };
+
+  if(modus!=='server'){
+    zeg('Eigen server',false,'Deze kopie draait niet op jullie Cloudflare-Worker, dus er valt niets te testen.');
+    return uit;
+  }
+
+  let st=null;
+  try{
+    const r=await fetch('/api/status',{headers:apiHeaders(),cache:'no-store'});
+    if(r.status===401){ zeg('Menuwachtwoord',false,'Het wachtwoord wordt geweigerd. Wis de sitegegevens en meld je opnieuw aan.'); return uit; }
+    if(!r.ok){ zeg('Worker',false,'Antwoordde met '+r.status+'. Kijk bij de Worker onder Logs.'); return uit; }
+    st=await r.json();
+    zeg('Worker',true,'Bereikbaar.');
+  }catch(e){ zeg('Worker',false,'Geen antwoord: '+(e&&e.message?e.message:'onbekend')); return uit; }
+
+  zeg('Menuwachtwoord', !!st.menuKey,
+      st.menuKey?'Ingesteld en aanvaard.':'Niet ingesteld — iedereen met de link kan meelezen en aanpassen.');
+
+  zeg('Database', !!(st.db&&st.db.ok),
+      st.db&&st.db.ok?('Werkt, staat op versie '+st.db.rev+'.'):('Fout: '+((st.db&&st.db.fout)||'onbekend')+'. Is schema.sql uitgevoerd?'));
+
+  // Agenda's
+  if(!st.agendas||!st.agendas.length){
+    zeg('Agenda\'s',false,'Geen AGENDA_-variabelen ingesteld.');
+  }else{
+    const r=await haalAgenda();
+    zeg('Agenda\'s', r.ok, (r.ok?'':'')+r.tekst+(r.ok?' ('+st.agendas.join(', ')+')':''));
+  }
+
+  // Claude
+  if(!st.anthropic){
+    zeg('Claude-suggesties',false,'Geen ANTHROPIC_API_KEY ingesteld. De app gebruikt haar eigen woordenlijst.');
+  }else{
+    const r=await testClaude();
+    zeg('Claude-suggesties', r.ok, r.tekst);
+  }
+
+  // Routeplanner
+  if(!st.ors){
+    zeg('Routeplanner',false,'Geen ORS_KEY ingesteld. Reistijden en kilometers zijn schattingen.');
+  }else{
+    const zaal=(state.wedstrijden||[]).map(w=>w.waar).find(Boolean)
+      ||(state.agenda||[]).filter(a=>isFluiten(a.titel)).map(a=>a.waar).find(Boolean)
+      ||'Sportoase Leuven';
+    try{
+      const r=await fetch('/api/reistijden',{method:'POST',headers:apiHeaders(),
+        body:JSON.stringify({paren:[[thuisadres(),zaal]]})});
+      if(!r.ok) throw new Error('status '+r.status);
+      const d=await r.json();
+      const k=d.km&&d.km[thuisadres()+'|'+zaal];
+      const m=d.minuten&&d.minuten[thuisadres()+'|'+zaal];
+      if(typeof k==='number') zeg('Routeplanner',true,'Werkt: '+zaal+' ligt op '+k+' km, '+m+' minuten rijden.');
+      else zeg('Routeplanner',false,'Antwoordde, maar zonder afstand voor '+zaal+'. Wordt het adres gevonden?');
+    }catch(e){ zeg('Routeplanner',false,'Mislukt: '+(e&&e.message?e.message:'onbekend')); }
+  }
+
+  return uit;
+}
+
+// Losse test, met duidelijke uitleg per foutgeval in plaats van stille terugval
+async function testClaude(){
+  if(modus!=='server')
+    return {ok:false,tekst:'Deze kopie draait niet op jullie eigen Worker, dus er is geen Claude-koppeling. De knop gebruikt de ingebouwde woordenlijst.'};
+  try{
+    const r=await fetch('/api/suggest',{method:'POST',headers:apiHeaders(),body:JSON.stringify({naam:'Waterzooi op Gentse wijze'})});
+    if(r.status===501) return {ok:false,tekst:'De Worker antwoordt, maar er staat geen ANTHROPIC_API_KEY ingesteld. Voeg die toe bij Settings → Variables and Secrets en publiceer opnieuw.'};
+    if(r.status===401) return {ok:false,tekst:'Het menuwachtwoord wordt geweigerd. Wis de sitegegevens en meld je opnieuw aan.'};
+    if(!r.ok){
+      let f=''; try{ f=(await r.json()).fout||''; }catch(e){}
+      return {ok:false,tekst:'De Worker antwoordde met '+r.status+(f?' — '+f:'')+'.'};
+    }
+    const d=await r.json();
+    const n=Array.isArray(d.ing)?d.ing.length:0;
+    if(!n) return {ok:false,tekst:'Claude antwoordde, maar zonder bruikbare ingrediënten.'};
+    return {ok:true,tekst:'Werkt. Model '+(d._model||'onbekend')+' stelde '+n+' ingrediënten voor: '+d.ing.slice(0,4).map(x=>x.n).join(', ')+'…'};
+  }catch(e){
+    return {ok:false,tekst:'Geen antwoord van de server: '+(e&&e.message?e.message:'onbekende fout')};
+  }
+}
+
+function raadIngredienten(naam){
+  const t=' '+(naam||'').toLowerCase()+' ';
+  const uit=[]; let bron=null, opwarm=null, treffers=0;
+  const voegToe=arr=>arr.forEach(x=>{ if(!uit.some(y=>y.n.toLowerCase()===x.n.toLowerCase())) uit.push(Object.assign({},x)); });
+
+  for(const g of R_EIWIT){ if(g.w.some(w=>t.includes(w))){ voegToe(g.i); bron=g.bron; treffers++; break; } }
+  for(const g of R_KOOL){  if(g.w.some(w=>t.includes(w))){ voegToe(g.i); treffers++; break; } }
+  R_GROENTE.forEach(([w,ing])=>{ if(t.includes(w)){ voegToe([ing]); treffers++; } });
+  R_STIJL.forEach(g=>{ if(g.w.some(w=>t.includes(w))){ voegToe(g.i); if(opwarm===null&&g.opwarm!==undefined) opwarm=g.opwarm; treffers++; } });
+
+  // ui erbij bij een warm gerecht, als er nog geen in de lijst staat
+  const geenUi=['salade','brood','boterham','croque','wrap','pita','poke'].some(w=>t.includes(w));
+  if(treffers&&!uit.some(x=>x.n==='ui')&&!geenUi)
+    uit.push({n:'ui',q:1,u:'st',c:'groenten'});
+
+  // ruwe schatting van de overige velden, zodat ook zonder Claude alles ingevuld raakt
+  let tijd=30;
+  if(['stoofvlees','stoverij','stoofpot'].some(w=>t.includes(w))) tijd=150;
+  else if(['ovenschotel','lasagne','quiche','gratin','ovenkip'].some(w=>t.includes(w))) tijd=50;
+  else if(['soep'].some(w=>t.includes(w))) tijd=40;
+  else if(['wok','roerbak','salade','wrap','pita','croque','pesto'].some(w=>t.includes(w))) tijd=20;
+  const hoogEiwit=['kip','rund','varken','kalkoen','vis','garnaal','ei','tofu'];
+  const eiwit=bron&&hoogEiwit.includes(bron)?'hoog':'gemiddeld';
+  const lunchOok=['soep','salade','wrap','pita','croque','quiche','brood','boterham'].some(w=>t.includes(w));
+  const slots=lunchOok?'lunch,diner':'diner';
+
+  return {ing:uit,bron,opwarm,treffers,tijd,eiwit,slots,prep:opwarm===true?true:null,instant:null,alleen:null,tip:null};
+}
+
+/* ============================================================
+   7. Rendering — Planning
+   ============================================================ */
+function stripHTML(dag){
+  const [VAN,TOT]=stripBereik(dag);
+  const span=TOT-VAN;
+  const pct=m=>((m-VAN)/span*100);
+  const stap=dag.weekend?120:60;
+  let h='<div class="strip">';
+  for(let t=VAN+stap;t<TOT;t+=stap) h+=`<div class="tick" style="left:${pct(t)}%"></div>`;
+  if(dag.regels.samen){
+    const s=mins(dag.regels.samen), e=Math.min(s+45,STRIP_TOT);
+    h+=`<div class="blk eat" style="left:${pct(s)}%;width:${pct(e)-pct(s)}%"><span>samen ${dag.regels.samen}</span></div>`;
+  }else if(dag.training.length&&!dag.feest&&!dag.vakantie){
+    // enkel zinvol als een training het eten écht inperkt
+    dag.vensters.forEach(([s,e])=>{
+      h+=`<div class="blk eat" style="left:${pct(s)}%;width:${pct(e)-pct(s)}%"
+            title="Ruimte om te eten, met 20 minuten verplaatsing gerekend"><span>eten ${hhmm(s)}–${hhmm(e)}</span></div>`;
+    });
+  }
+  // overlappende trainingen onder elkaar, anders valt de ene achter de andere weg
+  const tr=dag.training.map(t=>({t,s:mins(t.van),e:mins(t.tot)})).sort((a,b)=>a.s-b.s);
+  const einden=[];
+  tr.forEach(x=>{
+    let baan=einden.findIndex(eind=>eind<=x.s);
+    if(baan<0){ baan=einden.length; }
+    einden[baan]=x.e;
+    x.baan=baan;
+  });
+  const banen=Math.max(1,einden.length);
+  tr.forEach(x=>{
+    const breed=pct(x.e)-pct(x.s);
+    const hoog=100/banen;
+    const wieTekst=(x.t.fluiten?ICOON_FLUIT+' ':ICOON_BAL+' ')+esc(x.t.wie||'');
+    const label=(breed>22&&banen<3)?`${wieTekst} ${x.t.van}–${x.t.tot}`:wieTekst;
+    if(x.e<=VAN||x.s>=TOT) return;                  // valt buiten de balk, staat als label bovenaan
+    h+=`<div class="blk ${x.t.fluiten?'fluit':(x.t.wedstrijd?'wed':'tr')}" style="left:${pct(Math.max(x.s,VAN))}%;width:${breed}%;top:${x.baan*hoog}%;height:${hoog}%;bottom:auto"
+          title="${esc(x.t.titel||x.t.wie)} — ${x.t.van}–${x.t.tot}, ${esc(x.t.waar||'')}"><span style="font-size:${banen>1?9:10}px">${label}</span></div>`;
+  });
+  const merken=dag.weekend?['08:00','12:00','16:00','20:00']:['16:00','18:00','20:00','21:30'];
+  h+='</div><div class="striplabels">'+merken.map(x=>`<span>${x}</span>`).join('')+'</div>';
+  return h;
+}
+
+/* Restjes: een dubbele portie vult de volgende avond vanzelf in. */
+const RESTJES_ID='restjes';
+function zetRestjes(key){
+  const [iso]=key.split('|');
+  const morgen=isoVan(addDays(iso,1))+'|diner';
+  const bezet=state.plan[morgen];
+  if(bezet&&bezet.locked) return;                       // vastgezet blijft vastgezet
+  state.plan[morgen]={mealId:RESTJES_ID,locked:false,restVan:key};
+}
+function wisRestjes(key){
+  Object.entries(state.plan).forEach(([k,v])=>{
+    if(v&&v.restVan===key) delete state.plan[k];
+  });
+}
+function restjesNaam(v){
+  if(!v||!v.restVan) return 'Restjes';
+  const bron=state.plan[v.restVan];
+  const m=bron&&bron.mealId?mealById(bron.mealId):null;
+  return m?'Restjes van '+m.naam:'Restjes';
+}
+
+function oordeelVan(id){ return (state.beoordeling||{})[id]||0; }
+function slotHTML(dag,slot){
+  const key=slotKey(dag,slot);
+  const v=state.plan[key];
+  const gekozen=v&&v.mealId?mealById(v.mealId):null;
+  const opties=activeMeals().filter(m=>m.slots.includes(slot))
+    .sort((a,b)=>a.naam.localeCompare(b.naam,'nl'));
+  const optie=m=>{
+    const ok=past(m,slot,dag);
+    return `<option value="${m.id}" ${gekozen&&gekozen.id===m.id?'selected':''}>${esc(m.naam)}${ok?'':' ⚠︎ (past krap)'} · ${m.tijd}′</option>`;
+  };
+  let optHTML='<option value="">— nog niets —</option>';
+  ['onze','ander','bestel'].forEach(g=>{
+    const lijst=opties.filter(m=>groepVan(m)===g);
+    if(lijst.length) optHTML+=`<optgroup label="${GROEPNAAM[g]}">${lijst.map(optie).join('')}</optgroup>`;
+  });
+
+  let note='';
+  if(gekozen){
+    const badges=[`<span class="chip prot-${gekozen.eiwit}">eiwit ${gekozen.eiwit}</span>`,
+                  `<span class="chip prot-gemiddeld">${gekozen.tijd} min</span>`];
+    if(gekozen.instant) badges.push('<span class="chip verg">meteen klaar</span>');
+    else if(gekozen.opwarm) badges.push('<span class="chip prep">warmt goed op</span>');
+    if(dag.wd<5&&gekozen.prep&&gekozen.tijd>dag.regels.max)
+      badges.push('<span class="chip prep">vooraf maken in het weekend</span>');
+    note=`<div class="chips" style="margin-top:7px">${badges.join('')}</div>`;
+    if(gekozen.tip) note+=`<p class="slot-note">${esc(gekozen.tip)}</p>`;
+  }
+
+  return `<div class="slot">
+    <div class="slot-label">${slot==='lunch'?'Middag':'Avond'}</div>
+    <div class="slot-row">
+      <select data-slot="${key}" aria-label="${slot} ${dag.naam}">${optHTML}</select>
+      <button class="iconbtn" data-reroll="${key}" title="Ander gerecht">🎲</button>
+      <button class="iconbtn ${v&&v.locked?'on':''}" data-lock="${key}" title="${v&&v.locked?'Vastgezet — klik om vrij te geven':'Vastzetten'}">${v&&v.locked?'🔒':'🔓'}</button>
+    </div>
+    ${gekozen?`<div class="slot-extra">
+      <button class="mini ${oordeelVan(gekozen.id)===1?'op':''}" data-duim="${gekozen.id}|1" title="Dit viel in de smaak">👍</button>
+      <button class="mini ${oordeelVan(gekozen.id)===-1?'neer':''}" data-duim="${gekozen.id}|-1" title="Liever niet meer">👎</button>
+      ${slot==='diner'?`<button class="mini ${v&&v.dubbel?'op':''}" data-dubbel="${key}" title="Dubbele portie maken; de volgende avond zijn het restjes">×2</button>`:''}
+      ${v&&v.dubbel?'<span class="hint">dubbel — morgen restjes</span>':''}
+    </div>`:''}${note}
+  </div>`;
+}
+
+function dayHTML(dag){
+  const modus=(dag.regels.samen?`<span class="chip prep">samen ${dag.regels.samen}</span>`:'')
+            +(dag.regels.opwarmen?'<span class="chip rush">opwarmen</span>':'');
+  const verg=dag.vergadering?'<span class="chip verg">🗓 vergadering</span>':'';
+  const feest=dag.feest?`<span class="chip feest">${esc(dag.feest)}</span>`:'';
+  const vak=dag.vakantie&&!dag.feest?`<span class="chip feest">${esc(dag.vakantie)}</span>`:'';
+  const wknd=(dag.weekend&&!dag.vakantie&&!dag.feest&&!(dag.wedstrijden||[]).length)
+    ? (state.wedstrijdenOpgehaald
+        ? '<span class="chip train">geen wedstrijd</span>'
+        : '<span class="chip rush" title="Haal de wedstrijdkalenders op bij ⋯">wedstrijden onbekend</span>')
+    : '';
+  const strip=(dag.training.length||dag.regels.samen)?stripHTML(dag):'';
+  const voorbij=dag.iso<vandaagIso();
+  return `<article class="day wd${dag.wd} ${dag.weekend?'weekend':''} ${dag.vergadering?'vergaderdag':''} ${dag.feest||dag.vakantie?'vrijdag-af':''} ${voorbij?'voorbij':''}">
+    <div class="day-top">
+      <div><div class="day-name">${dag.naam}</div><div class="day-date">${fmtDate(dag.date)}</div></div>
+      <div class="chips">${feest}${vak}${verg}${modus}${wknd}</div>
+    </div>
+    ${dag.regels.slots.map(s=>slotHTML(dag,s)).join('')}
+    <div class="eters ${personenOp(dag.iso)!==state.personen?'afwijkend':''}">
+      <button class="etersknop" data-etermin="${dag.iso}" aria-label="Eén eter minder">−</button>
+      <span class="eterswaarde">${personenOp(dag.iso)}</span>
+      <button class="etersknop" data-etermeer="${dag.iso}" aria-label="Eén eter meer">+</button>
+      <span class="eterslabel">eters</span>
+      ${personenOp(dag.iso)!==state.personen?`<button class="etersknop" data-eterswis="${dag.iso}" title="Terug naar ${state.personen}">↺</button>`:''}
+    </div>
+    ${agendaKolom(dag)}
+    ${strip}
+  </article>`;
+}
+
+function renderPlan(){
+  const dagen=buildDays();
+  const prep=prepLijst();
+  const voorraad=voorraadCheck();
+  const ingevuld=dagen.reduce((a,d)=>a+d.regels.slots.filter(sl=>{
+    const v=state.plan[slotKey(d,sl)]; return v&&v.mealId;
+  }).length,0);
+
+  const totaal=dagen.reduce((a,d)=>a+d.regels.slots.length,0);
+  let h=`<div class="bar">
+    <div class="field"><label>Week van ${dagen[0].date.toLocaleDateString('nl-BE',{day:'numeric',month:'short'})} tot ${dagen[6].date.toLocaleDateString('nl-BE',{day:'numeric',month:'short',year:'numeric'})}</label>
+      <div style="display:flex;gap:4px;align-items:center">
+        <button class="iconbtn" id="vorige" title="Vorige week">‹</button>
+        <input type="date" id="start" value="${state.start}" style="min-width:150px">
+        <button class="iconbtn" id="volgende" title="Volgende week">›</button>
+        <button class="btn ghost small" id="nutoe" title="Naar deze week">nu</button>
+      </div>
+    </div>
+    <div class="field"><label for="pers">Aantal personen</label><input type="number" id="pers" min="1" max="12" value="${state.personen}"></div>
+    <button class="btn pine" id="gen">Nieuw voorstel</button>
+    <button class="btn ghost" id="genall">Alles opnieuw, ook vastgezet</button>
+    <button class="btn ghost" id="lockall">Alles vastzetten</button>
+    <button class="btn ghost" id="clear">Leegmaken</button>
+    <button class="btn ghost" id="printweek">Afdrukken</button>
+    <span class="hint" style="margin-left:auto">${ingevuld} van de ${totaal} maaltijden ingevuld</span>
+  </div>`;
+
+  if(prep.length){
+    h+=`<div class="panel" style="border-left:4px solid var(--pine)">
+      <h3>Voorbereiden in het weekend</h3>
+      <p class="hint">Deze gerechten staan op een drukke maandag of dinsdag. Maak ze zondag klaar.</p>
+      <ul class="ing" style="margin-top:8px">${prep.map(p=>`<li><b>${esc(p.meal.naam)}</b> — voor ${p.dag.naam} ${fmtDate(p.dag.date)}</li>`).join('')}</ul>
+    </div>`;
+  }
+
+  if(voorraad.length){
+    h+=`<div class="panel" style="border-left:4px solid #8B6BB1">
+      <h3>Uit de diepvries</h3>
+      <p class="hint">Deze planning rekent op voorraad. Staat er niets meer in, kies dan een ander gerecht.</p>
+      <ul class="ing" style="margin-top:8px">${voorraad.map(v=>
+        `<li><b>${esc(v.verbruik.naam)}</b> — ${v.ingepland
+          ? 'je maakt "'+esc(v.maken.naam)+'" deze twee weken, dus dat komt goed.'
+          : 'staat "'+esc(v.maken.naam)+'" nog in de diepvries? Zo niet, plan dat eerst in een weekend.'}</li>`
+      ).join('')}</ul>
+    </div>`;
+  }
+
+  h+='<div class="days">'+dagen.map(dayHTML).join('')+'</div>';
+
+  $('#tab-plan').innerHTML=h;
+
+  $('#start').onchange=e=>{ state.start=e.target.value; save(); render(); };
+  $('#pers').onchange=e=>{ state.personen=Math.max(1,Number(e.target.value)||4); save(); render(); toast('Hoeveelheden aangepast'); };
+  $('#gen').onclick=()=>{ genereer(false); render(); toast('Voorstel klaar'); };
+  $('#genall').onclick=()=>{ genereer(true); render(); toast('Alles opnieuw ingevuld'); };
+  $('#clear').onclick=()=>{
+    if(!confirm('Alle maaltijden van deze week wissen?')) return;
+    buildDays().forEach(d=>d.regels.slots.forEach(sl=>{ delete state.plan[slotKey(d,sl)]; }));
+    save(); render();
+  };
+  const schuif=n=>{ state.start=isoVan(addDays(state.start,n)); save(); render(); };
+  $('#vorige').onclick=()=>schuif(-7);
+  $('#volgende').onclick=()=>schuif(7);
+  $('#nutoe').onclick=()=>{
+    const n=new Date(); n.setHours(12,0,0,0);
+    const terug=(n.getDay()+6)%7;
+    n.setDate(n.getDate()-terug);
+    state.start=isoVan(n); save(); render(); toast('Naar de huidige week');
+  };
+  $('#printweek').onclick=()=>window.print();
+  $('#lockall').onclick=()=>{
+    let n=0;
+    buildDays().forEach(d=>d.regels.slots.forEach(sl=>{
+      const v=state.plan[slotKey(d,sl)];
+      if(v&&v.mealId&&!v.locked){ v.locked=true; n++; }
+    }));
+    save(); render(); toast(n?n+' maaltijden vastgezet':'Alles stond al vast');
+  };
+
+  $('#tab-plan').querySelectorAll('select[data-slot]').forEach(sel=>{
+    sel.onchange=()=>{
+      const k=sel.dataset.slot;
+      const cur=state.plan[k]||{};
+      state.plan[k]=sel.value?{mealId:sel.value,locked:cur.locked||false}:null;
+      save(); render();
+    };
+  });
+  $('#tab-plan').querySelectorAll('[data-eters]').forEach(el=>el.onchange=()=>{
+    zetEters(el.dataset.eters,Number(el.value)||state.personen);
+  });
+  const zetEters=(iso,n)=>{
+    n=Math.max(1,Math.min(9,n));
+    state.personenPerDag=state.personenPerDag||{};
+    if(n===state.personen) delete state.personenPerDag[iso]; else state.personenPerDag[iso]=n;
+    save(); render();
+  };
+  $('#tab-plan').querySelectorAll('[data-etermin]').forEach(b=>b.onclick=()=>zetEters(b.dataset.etermin,personenOp(b.dataset.etermin)-1));
+  $('#tab-plan').querySelectorAll('[data-etermeer]').forEach(b=>b.onclick=()=>zetEters(b.dataset.etermeer,personenOp(b.dataset.etermeer)+1));
+  $('#tab-plan').querySelectorAll('[data-eterswis]').forEach(b=>b.onclick=()=>{
+    delete (state.personenPerDag||{})[b.dataset.eterswis]; save(); render();
+  });
+  $('#tab-plan').querySelectorAll('[data-duim]').forEach(b=>b.onclick=()=>{
+    const [id,w]=b.dataset.duim.split('|');
+    state.beoordeling=state.beoordeling||{};
+    state.beoordeling[id]= state.beoordeling[id]===Number(w) ? 0 : Number(w);
+    save(); render();
+  });
+  $('#tab-plan').querySelectorAll('[data-dubbel]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.dubbel, v=state.plan[k];
+    if(!v||!v.mealId) return;
+    v.dubbel=!v.dubbel;
+    if(v.dubbel) zetRestjes(k); else wisRestjes(k);
+    save(); render();
+  });
+  $('#tab-plan').querySelectorAll('[data-reroll]').forEach(b=>b.onclick=()=>reroll(b.dataset.reroll));
+  $('#tab-plan').querySelectorAll('[data-lock]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.lock;
+    if(!state.plan[k]||!state.plan[k].mealId) return toast('Kies eerst een gerecht.');
+    state.plan[k].locked=!state.plan[k].locked; save(); render();
+  });
+}
+
+/* ============================================================
+   7b. Rendering — Vandaag
+   ============================================================ */
+function vandaagKaart(dag){
+  const chips=[];
+  if(dag.feest) chips.push(`<span class="chip feest">${esc(dag.feest)}</span>`);
+  else if(dag.vakantie) chips.push(`<span class="chip feest">${esc(dag.vakantie)}</span>`);
+  if(dag.vergadering) chips.push('<span class="chip verg">🗓 vergadering</span>');
+  if(dag.regels.samen) chips.push(`<span class="chip prep">samen ${dag.regels.samen}</span>`);
+  if(dag.regels.opwarmen) chips.push('<span class="chip rush">opwarmen</span>');
+
+  const rijen=dag.regels.slots.map(slot=>{
+    const v=state.plan[slotKey(dag,slot)];
+    const m=v&&v.mealId?mealById(v.mealId):null;
+    const naam=m?(m.id===RESTJES_ID?restjesNaam(v):m.naam):'nog niets gekozen';
+    const extra=[];
+    if(m){
+      extra.push(`<span class="chip prot-${m.eiwit}">eiwit ${m.eiwit}</span>`);
+      if(m.tijd) extra.push(`<span class="chip prot-gemiddeld">${m.tijd} min</span>`);
+      if(m.instant) extra.push('<span class="chip verg">meteen klaar</span>');
+    }
+    return `<div class="vk-rij ${m?'':'leeg'}">
+      <span class="vk-slot">${slot==='lunch'?'middag':'avond'}</span>
+      <span class="vk-naam">${esc(naam)}</span>
+      ${extra.length?`<span class="chips">${extra.join('')}</span>`:''}
+    </div>`;
+  }).join('');
+
+  return `<div class="vandaagkaart">
+    <div class="vk-top">Vandaag · ${dag.naam} ${fmtDate(dag.date)}</div>
+    ${rijen}
+    ${chips.length?`<div class="chips" style="margin-top:8px">${chips.join('')}</div>`:''}
+    ${agendaKolom(dag)}
+    ${(dag.training.length||dag.regels.samen)?stripHTML(dag):''}
+  </div>`;
+}
+
+const ICOON_FLUIT='<svg class="ic ic-fluit" viewBox="0 0 24 24" aria-hidden="true">'
+  +'<circle cx="21" cy="5.8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.7"/>'
+  +'<circle cx="15.3" cy="14.2" r="7.6"/>'
+  +'<path d="M2.2 9.6h9.2v9.2H2.2a1.2 1.2 0 0 1-1.2-1.2v-6.8a1.2 1.2 0 0 1 1.2-1.2z"/>'
+  +'<circle cx="16.4" cy="15.2" r="3.1" fill="#fff"/></svg>';
+const ICOON_BAL='🏀';
+
+function afspraakRegels(dag){
+  const rijen=[];
+  (dag.wedstrijden||[]).forEach(w=>rijen.push({
+    uur:w.van, wie:w.wie, tekst:(w.waar||'wedstrijd'), extra:'vertrek '+vertrekTijd(w), soort:'wed'
+  }));
+  (dag.afspraken||[]).filter(a=>!isFluiten(a.titel)).forEach(a=>rijen.push({
+    uur:a.heledag?'':a.van, wie:a.wie, tekst:a.titel,
+    extra:a.heledag?'hele dag':(a.tot?'tot '+a.tot:''), soort:'afspraak'
+  }));
+  fluitBlokken(dag.iso).forEach(b=>{
+    const bij=b.geschat?'≈ ':'';
+    b.ketting.forEach((w,i)=>{
+      const vorige=b.ketting[i-1];
+      const rit=vorige&&vorige.waar!==w.waar?reistijdTussen(vorige.waar,w.waar):0;
+      const vergoeding=b.aantal>1 ? ' · aandeel '+euro(b.kostPerWedstrijd) : '';
+      rijen.push({
+        uur:w.van, wie:w.wie, tekst:'fluiten — '+fluitTitel(w.titel)+(w.waar?', '+w.waar:''),
+        extra:'tot '+fluitEind(w)
+              +(i===0?' · vertrek '+hhmm(b.vertrek):(rit?' · '+rit+' min rijden vanaf de vorige zaal':' · zelfde zaal'))
+              +(i===b.ketting.length-1?' · thuis ± '+hhmm(b.terug):'')
+              +vergoeding,
+        soort:'fluit'
+      });
+    });
+    const enkel=Math.round(b.totaalKm/2*10)/10;
+    rijen.push({
+      uur:'', wie:'',
+      tekst:'rit '+bij+enkel+' km heen, '+bij+b.totaalKm+' km gereden',
+      extra:euro(b.totaalKost)+(b.aantal>1
+        ? ' totaal · '+euro(b.kostPerWedstrijd)+' per wedstrijd ('+b.aantal+'×)'
+        : ' vergoeding'),
+      soort:'fluittotaal'
+    });
+  });
+  trainingenOp(dag.wd).forEach(t=>rijen.push({
+    uur:t.van, wie:t.wie, tekst:'training, '+(t.waar||''), extra:'tot '+t.tot, soort:'training'
+  }));
+  return rijen.sort((a,b)=>(a.uur||'00:00').localeCompare(b.uur||'00:00'));
+}
+function agendaKolom(dag){
+  const rijen=afspraakRegels(dag);
+  if(!rijen.length) return '<div class="agkolom leeg">niets in de agenda</div>';
+  return '<div class="agkolom">'+rijen.map(r=>`
+    <div class="agrij ${r.soort}">
+      <span class="aguur">${esc(r.uur||'—')}</span>
+      <span class="agtekst">${r.soort==='fluit'?ICOON_FLUIT+' ':(r.soort==='training'||r.soort==='wed')?'<span class="agicoon">'+ICOON_BAL+'</span> ':''}<b>${esc(r.wie||'')}</b> ${esc(r.tekst)}${r.extra?` <span class="aghint">${esc(r.extra)}</span>`:''}</span>
+    </div>`).join('')+'</div>';
+}
+
+function renderOverzicht(){
+  const dagen=komendeDagen(7);          // vandaag plus zes, los van welke week je bewerkt
+  const vandaag=dagen[0];
+
+  let h='';
+
+  h+=vandaagKaart(vandaag);
+
+  // De rest van de week compact
+  const rest=dagen.slice(1);
+  const leeg=rest.filter(d=>d.regels.slots.every(sl=>{const v=state.plan[slotKey(d,sl)];return !(v&&v.mealId);})).length;
+  h+=`<div class="weekhead"><h2>De komende dagen</h2>
+    <span class="meta">${fmtDate(rest[0].date)} – ${fmtDate(rest[rest.length-1].date)}</span><span class="rule"></span></div>`;
+
+  h+='<div class="weeklijst">'+rest.map(d=>{
+    const regels=d.regels.slots.map(sl=>{
+      const v=state.plan[slotKey(d,sl)];
+      const m=v&&v.mealId?mealById(v.mealId):null;
+      const naam=m?(m.id===RESTJES_ID?restjesNaam(v):m.naam):'—';
+      return `<div class="wl-maaltijd ${m?'':'leeg'}">
+        ${d.regels.slots.length>1?`<span class="wl-slot">${sl==='lunch'?'mid':'av'}</span>`:''}
+        <span class="wl-naam">${esc(naam)}</span>
+      </div>`;
+    }).join('');
+    const merk=[];
+    if(d.feest) merk.push(`<span class="chip feest">${esc(d.feest)}</span>`);
+    else if(d.vakantie) merk.push(`<span class="chip feest">${esc(d.vakantie)}</span>`);
+    if(d.vergadering) merk.push('<span class="chip verg">vergadering</span>');
+    if(d.regels.samen) merk.push(`<span class="chip prep">samen ${d.regels.samen}</span>`);
+    if(d.regels.opwarmen) merk.push('<span class="chip rush">opwarmen</span>');
+    return `<article class="wl-dag ${d.weekend?'weekend':''}">
+      <div class="wl-datum"><span>${d.naam.slice(0,2)}</span><b>${d.date.getDate()}</b></div>
+      <div class="wl-body">${regels}${merk.length?`<div class="chips" style="margin-top:5px">${merk.join('')}</div>`:''}</div>
+      ${agendaKolom(d)}
+    </article>`;
+  }).join('')+'</div>';
+
+  if(leeg){
+    h+=`<p class="hint" style="margin-top:10px">${leeg} dag${leeg>1?'en':''} in deze reeks ${leeg>1?'zijn':'is'} nog niet ingevuld.
+      <button class="btn ghost small" id="naarplanning" style="margin-left:6px">Naar de planning</button></p>`;
+  }
+
+  // Alleen wat actie vraagt, over dezelfde zeven dagen
+  const prep=prepLijst(dagen);
+  const voorraad=voorraadCheck(null,dagen);
+  const bijzonder=dagen.filter(d=>d.vergadering||d.feest);
+  const per=boodschappen(null,dagen);
+  const alle=Object.keys(CATS).map(k=>per[k]||[]).flat();
+  const af=alle.filter(i=>state.checked[i.key]).length;
+
+  const punten=[];
+  prep.forEach(p=>punten.push(`<b>${esc(p.meal.naam)}</b> vooraf maken, voor ${p.dag.naam} ${fmtDate(p.dag.date)}`));
+  voorraad.filter(v=>!v.ingepland).forEach(v=>punten.push(`Staat er nog <b>${esc(v.maken.naam.toLowerCase())}</b> in de diepvries? Anders past ${esc(v.verbruik.naam)} niet.`));
+  bijzonder.forEach(d=>punten.push(`${d.naam} ${fmtDate(d.date)}: ${esc(d.feest||'vergadering')}`));
+  if(alle.length&&af<alle.length) punten.push(`Boodschappen: ${alle.length-af} van de ${alle.length} nog te halen`);
+
+  if(punten.length){
+    h+=`<div class="panel" style="margin-top:16px"><h3>Om aan te denken</h3>
+      <ul class="ing" style="margin-top:8px">${punten.map(p=>`<li>${p}</li>`).join('')}</ul></div>`;
+  }else{
+    h+=`<div class="empty" style="margin-top:16px">Alles is geregeld. Niets om aan te denken.</div>`;
+  }
+
+  $('#tab-vandaag').innerHTML=h;
+  if($('#naarplanning')) $('#naarplanning').onclick=()=>toonTab('week');
+}
+
+
+/* ============================================================
+   8. Rendering — Maaltijden
+   ============================================================ */
+let bewerkId=null;
+
+function mealCard(m,eigen){
+  const uit=state.disabled[m.id];
+  return `<article class="meal-card ${uit?'off':''}">
+    <h4>${esc(m.naam)}</h4>
+    <div class="chips">
+      <span class="chip prot-${m.eiwit}">eiwit ${m.eiwit}</span>
+      <span class="chip prot-gemiddeld">${m.tijd} min</span>
+      ${m.prep?'<span class="chip prep">vooraf te maken</span>':''}
+      ${m.alleen==='zondag'?'<span class="chip verg">enkel zondag</span>':m.alleen==='weekend'?'<span class="chip verg">enkel weekend</span>':''}
+      ${m.instant?'<span class="chip verg">meteen klaar</span>':''}
+      ${m.opwarm?'<span class="chip prep">warmt goed op</span>':'<span class="chip rush">vers eten</span>'}
+      <span class="chip prot-gemiddeld">${m.slots.join(' & ')}</span>
+      ${eigen?'<span class="chip rush">eigen recept</span>':''}
+    </div>
+    <ul class="ing">${m.ing.map(i=>`<li>${ingLine(i)}</li>`).join('')}</ul>
+    <div class="meal-actions">
+      <label class="toggle"><input type="checkbox" data-use="${m.id}" ${uit?'':'checked'}> in voorstel</label>
+      <button class="btn ghost small" data-edit="${m.id}">Bewerken</button>
+      ${eigen?`<button class="btn ghost small" data-del="${m.id}">Verwijderen</button>`
+             :`<button class="btn ghost small" data-copy="${m.id}">Kopie maken</button>`}
+    </div>
+  </article>`;
+}
+
+function formHTML(){
+  const m=bewerkId?mealById(bewerkId):null;
+  const isBasis=m&&!String(m.id).startsWith('eigen-');
+  const heeftOverride=m&&state.overrides&&state.overrides[m.id];
+  const rows=(m?m.ing:[{n:'',q:'',u:'g',c:'groenten'}]);
+  const unitOpts=['g','kg','ml','l','st','el','tl','blik','pot','bosje','sneden','teentjes','rol','snuf',''];
+  return `<div class="panel" id="mealform">
+    <h3>${m?'Recept bewerken: '+esc(m.naam):'Eigen recept toevoegen'}</h3>
+    <p class="hint">Hoeveelheden voor 4 personen. De app rekent zelf om naar ${state.personen}.${
+      isBasis?' Dit is een basisrecept — je wijzigingen komen er bovenop en het origineel blijft bewaard.':''}</p>
+    <div class="bar" style="margin:14px 0 10px;padding:0;border:0;background:transparent">
+      <div class="field" style="flex:1;min-width:280px"><label for="f-naam">Naam</label>
+        <div style="display:flex;gap:6px">
+          <input id="f-naam" style="flex:1;min-width:0" value="${m?esc(m.naam):''}" placeholder="bv. Vispannetje van oma">
+          <button class="btn ghost" id="raadknop" type="button" title="Vult alle velden in op basis van de naam">✨ Invullen</button>
+        </div>
+      </div>
+      <div class="field"><label for="f-tijd">Kooktijd (min)</label><input id="f-tijd" type="number" min="5" max="240" value="${m?m.tijd:30}"></div>
+      <div class="field"><label for="f-eiwit">Eiwit</label><select id="f-eiwit">
+        <option value="hoog" ${m&&m.eiwit==='hoog'?'selected':''}>hoog</option>
+        <option value="gemiddeld" ${m&&m.eiwit==='gemiddeld'?'selected':''}>gemiddeld</option></select></div>
+      <div class="field"><label for="f-bron">Hoofdingrediënt</label><select id="f-bron">
+        ${['kip','rund','varken','kalkoen','vis','garnaal','ei','peulvrucht','tofu','kaas','gemengd'].map(b=>`<option ${m&&m.bron===b?'selected':''}>${b}</option>`).join('')}</select></div>
+      <div class="field"><label for="f-slots">Geschikt voor</label><select id="f-slots">
+        <option value="diner" ${m&&m.slots.join()==='diner'?'selected':''}>avond</option>
+        <option value="lunch" ${m&&m.slots.join()==='lunch'?'selected':''}>middag</option>
+        <option value="lunch,diner" ${!m||m.slots.length===2?'selected':''}>middag &amp; avond</option></select></div>
+      <div class="field"><label for="f-prep">Vooraf te maken</label><select id="f-prep">
+        <option value="ja" ${m&&m.prep?'selected':''}>ja</option>
+        <option value="nee" ${!m||!m.prep?'selected':''}>nee</option></select></div>
+      <div class="field"><label for="f-opwarm">Op te warmen</label><select id="f-opwarm">
+        <option value="ja" ${!m||m.opwarm?'selected':''}>ja</option>
+        <option value="nee" ${m&&!m.opwarm?'selected':''}>nee</option></select></div>
+      <div class="field"><label for="f-alleen">Wanneer</label><select id="f-alleen">
+        <option value="" ${!m||!m.alleen?'selected':''}>elke dag</option>
+        <option value="weekend" ${m&&m.alleen==='weekend'?'selected':''}>enkel in het weekend</option>
+        <option value="zondag" ${m&&m.alleen==='zondag'?'selected':''}>enkel op zondag</option></select></div>
+      <div class="field"><label for="f-instant">Meteen klaar</label><select id="f-instant">
+        <option value="nee" ${!m||!m.instant?'selected':''}>nee</option>
+        <option value="ja" ${m&&m.instant?'selected':''}>ja — diepvries of afhaal</option></select></div>
+    </div>
+    <div class="field" style="margin-bottom:12px"><label for="f-tip">Tip (optioneel)</label><input id="f-tip" value="${m&&m.tip?esc(m.tip):''}" placeholder="bv. saus kan twee dagen vooraf"></div>
+
+    <div class="slot-label">Ingrediënten</div>
+    <div id="ingrows">${rows.map(r=>ingRow(r,unitOpts)).join('')}</div>
+    <button class="btn ghost small" id="addrow">+ ingrediënt</button>
+    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn pine" id="saverecipe">${m?'Wijzigingen opslaan':'Recept opslaan'}</button>
+      ${m?'<button class="btn ghost" id="cancelrecipe">Annuleren</button>':''}
+      ${heeftOverride?'<button class="btn ghost" id="resetrecipe">Origineel herstellen</button>':''}
+    </div>
+  </div>`;
+}
+function ingRow(r,unitOpts){
+  return `<div class="ingrow">
+    <input class="i-n" placeholder="ingrediënt" value="${r.n?esc(r.n):''}">
+    <input class="i-q" type="number" step="0.1" placeholder="aantal" value="${r.q!=null&&r.q!==''?r.q:''}">
+    <select class="i-u">${unitOpts.map(u=>`<option value="${u}" ${r.u===u?'selected':''}>${u||'—'}</option>`).join('')}</select>
+    <select class="i-c">${Object.entries(CATS).map(([k,v])=>`<option value="${k}" ${r.c===k?'selected':''}>${v}</option>`).join('')}</select>
+    <button class="iconbtn del" title="Rij weg">✕</button>
+  </div>`;
+}
+
+function tabelRij(m){
+  const eigenR=!!(m.eigen||String(m.id).startsWith('eigen-'));
+  const ja=(v)=>`<option value="ja" ${v?'selected':''}>ja</option><option value="nee" ${v?'':'selected'}>nee</option>`;
+  return `<tr>
+    <td class="naam"><button class="linkje" data-edit="${m.id}" title="Recept en hoeveelheden bewerken">${esc(m.naam)}</button>${state.overrides&&state.overrides[m.id]?' <span class="chip prep">aangepast</span>':''}</td>
+    <td><input type="number" min="0" max="240" value="${m.tijd}" data-mid="${m.id}" data-veld="tijd"></td>
+    <td><select data-mid="${m.id}" data-veld="eiwit"><option ${m.eiwit==='hoog'?'selected':''}>hoog</option><option ${m.eiwit==='gemiddeld'?'selected':''}>gemiddeld</option></select></td>
+    <td><select data-mid="${m.id}" data-veld="bron">${['kip','rund','varken','kalkoen','vis','garnaal','ei','peulvrucht','tofu','kaas','gemengd'].map(b=>`<option ${m.bron===b?'selected':''}>${b}</option>`).join('')}</select></td>
+    <td><select data-mid="${m.id}" data-veld="slots">
+      <option value="diner" ${m.slots.join()==='diner'?'selected':''}>avond</option>
+      <option value="lunch" ${m.slots.join()==='lunch'?'selected':''}>middag</option>
+      <option value="lunch,diner" ${m.slots.length===2?'selected':''}>beide</option></select></td>
+    <td><select data-mid="${m.id}" data-veld="prep">${ja(m.prep)}</select></td>
+    <td><select data-mid="${m.id}" data-veld="opwarm">${ja(m.opwarm)}</select></td>
+    <td><select data-mid="${m.id}" data-veld="instant">${ja(m.instant)}</select></td>
+    <td><select data-mid="${m.id}" data-veld="alleen">
+      <option value="" ${!m.alleen?'selected':''}>elke dag</option>
+      <option value="weekend" ${m.alleen==='weekend'?'selected':''}>weekend</option>
+      <option value="zondag" ${m.alleen==='zondag'?'selected':''}>zondag</option></select></td>
+    <td style="text-align:center"><input type="checkbox" data-use="${m.id}" ${state.disabled[m.id]?'':'checked'}></td>
+  </tr>`;
+}
+
+function renderMeals(){
+  const alles=allMeals();
+  const groepen={onze:[],ander:[],bestel:[]};
+  alles.forEach(m=>groepen[groepVan(m)].push(m));
+  const tabel=state.mealView!=='kaarten';
+  let h=formHTML();
+  h+=`<div class="weekhead">
+    <div class="seg">
+      <button data-mv="tabel" aria-pressed="${tabel}">Tabel</button>
+      <button data-mv="kaarten" aria-pressed="${!tabel}">Kaarten</button>
+    </div>
+    <span class="meta">${groepen.onze.length} eigen · ${groepen.ander.length} andere · ${groepen.bestel.length} bestellen</span><span class="rule"></span></div>`;
+
+  if(tabel){
+    h+=`<div class="panel" style="padding:12px">
+      <p class="hint" style="margin-bottom:10px">Alles is hier rechtstreeks aan te passen. Wijzigingen aan een basisrecept blijven bewaard en overschrijven het origineel niet.</p>
+      <div class="tabelwrap"><table class="rtabel">
+        <thead><tr><th>Gerecht</th><th>Min</th><th>Eiwit</th><th>Hoofd</th><th>Wanneer</th><th>Vooraf</th><th>Opwarmen</th><th>Meteen</th><th>Enkel</th><th>Aan</th></tr></thead>
+        <tbody>${['onze','ander','bestel'].map(g=>groepen[g].length
+          ? `<tr class="groeprij"><td colspan="11">${GROEPNAAM[g]}</td></tr>`+groepen[g].map(tabelRij).join('')
+          : '').join('')}</tbody>
+      </table></div>
+    </div>`;
+  }else{
+    ['onze','ander','bestel'].forEach((g,n)=>{
+      if(!groepen[g].length) return;
+      if(n) h+=`<div class="weekhead"><h2>${GROEPNAAM[g]}</h2><span class="rule"></span></div>`;
+      h+=`<div class="meal-grid">${groepen[g].map(m=>mealCard(m,String(m.id).startsWith('eigen-'))).join('')}</div>`;
+    });
+  }
+  $('#tab-meals').innerHTML=h;
+
+  if($('#cancelrecipe')) $('#cancelrecipe').onclick=()=>{ bewerkId=null; render(); };
+  if($('#resetrecipe')) $('#resetrecipe').onclick=()=>{
+    if(!confirm('Alle aanpassingen aan dit recept ongedaan maken?')) return;
+    delete state.overrides[bewerkId]; bewerkId=null; save(); render(); toast('Origineel hersteld');
+  };
+
+  $('#tab-meals').querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>{
+    state.mealView=b.dataset.mv; save(); renderMeals();
+  });
+  $('#tab-meals').querySelectorAll('[data-mid]').forEach(el=>el.onchange=()=>{
+    const id=el.dataset.mid, veld=el.dataset.veld;
+    let waarde=el.value;
+    if(veld==='tijd') waarde=Math.max(0,Math.min(240,Number(el.value)||0));
+    else if(veld==='slots') waarde=el.value.split(',');
+    else if(veld==='prep'||veld==='opwarm'||veld==='instant') waarde=(el.value==='ja');
+    else if(veld==='alleen') waarde=el.value||undefined;
+    const eigenRec=state.custom.find(m=>m.id===id);
+    if(eigenRec){ eigenRec[veld]=waarde; }
+    else { state.overrides[id]=state.overrides[id]||{}; state.overrides[id][veld]=waarde; }
+    save(); renderMeals();
+  });
+  $('#tab-meals').querySelectorAll('[data-use]').forEach(cb=>cb.onchange=()=>{
+    if(cb.checked) delete state.disabled[cb.dataset.use]; else state.disabled[cb.dataset.use]=true;
+    save(); renderMeals();
+  });
+  $('#tab-meals').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{
+    bewerkId=b.dataset.edit; renderMeals();
+    if($('#mealform')) $('#mealform').scrollIntoView({behavior:'smooth',block:'start'});
+  });
+  $('#tab-meals').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.del;
+    if(!confirm('Dit recept verwijderen?')) return;
+    state.custom=state.custom.filter(m=>m.id!==id);
+    Object.keys(state.plan).forEach(k=>{ if(state.plan[k]&&state.plan[k].mealId===id) state.plan[k]=null; });
+    save(); render(); toast('Recept verwijderd');
+  });
+  $('#tab-meals').querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>{
+    const src=mealById(b.dataset.copy);
+    const kopie=JSON.parse(JSON.stringify(src));
+    kopie.id='eigen-'+Date.now(); kopie.naam=src.naam+' (eigen versie)';
+    state.custom.push(kopie); bewerkId=kopie.id; save(); renderMeals();
+    $('#mealform').scrollIntoView({behavior:'smooth',block:'start'});
+  });
+}
+
+/* ============================================================
+   9. Rendering — Boodschappen
+   ============================================================ */
+function lijstAlsTekst(){
+  const per=boodschappen();
+  const dagen=buildDays();
+  const titel = dagen[0].date.toLocaleDateString('nl-BE',{day:'numeric',month:'short'})+' – '+dagen[6].date.toLocaleDateString('nl-BE',{day:'numeric',month:'short'});
+  const regels=[`Boodschappen — ${titel} (${state.personen} personen)`,''];
+  Object.entries(CATS).forEach(([k,label])=>{
+    const items=per[k]||[];
+    if(!items.some(i=>!inVoorraad(i.n)||state.tochKopen&&state.tochKopen[i.key])) return;
+    regels.push(label.toUpperCase());
+    items.filter(i=>!inVoorraad(i.n)||state.tochKopen&&state.tochKopen[i.key])
+         .forEach(i=>regels.push('- '+i.n+(i.q!=null?' '+fmtQty(i.q,i.u):'')));
+    regels.push('');
+  });
+  return regels.join('\n').trim();
+}
+
+async function kopieer(tekst){
+  try{
+    if(navigator.clipboard&&window.isSecureContext){
+      await navigator.clipboard.writeText(tekst);
+      return true;
+    }
+  }catch(e){}
+  try{
+    const ta=document.createElement('textarea');
+    ta.value=tekst;
+    ta.style.cssText='position:fixed;left:-9999px;top:0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok=document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  }catch(e){ return false; }
+}
+
+function zoekLink(naam){
+  const sjabloon=state.zoekUrl||'';
+  if(!sjabloon||sjabloon.indexOf('{q}')<0) return '';
+  return sjabloon.replace('{q}',encodeURIComponent(naam));
+}
+
+function renderShop(){
+  const alleenVast=state.shopLocked!==false;
+  const per=boodschappen();
+  const alleEntries=planEntries();
+  const entries=alleEntries.filter(e=>!alleenVast||e.locked);
+  const nietVast=alleEntries.filter(e=>!e.locked).length;
+
+  const alle=Object.keys(CATS).map(k=>per[k]||[]).flat();
+  const af=alle.filter(i=>state.checked[i.key]).length;
+  const pct=alle.length?Math.round(af/alle.length*100):0;
+
+  let h=`<div class="bar">
+    <label class="toggle" style="margin-right:4px">
+      <input type="checkbox" id="alleenvast" ${alleenVast?'checked':''}> enkel vastgezette maaltijden
+    </label>
+    <button class="btn ghost" id="kopieer">Lijst kopiëren</button>
+    <button class="btn ghost" id="uncheck">Vinkjes wissen</button>
+    <button class="btn ghost" id="print">Afdrukken</button>
+    <span class="hint" style="margin-left:auto">${af} van ${alle.length} in de kar</span>
+  </div>
+  <div class="progress"><i style="width:${pct}%"></i></div>`;
+
+  if(alleenVast&&nietVast){
+    h+=`<p class="hint" style="margin-top:10px">${nietVast} maaltijd${nietVast>1?'en':''} in deze periode ${nietVast>1?'staan':'staat'} nog niet vast en tel${nietVast>1?'len':'t'} dus niet mee. Zet ze vast met het slotje, of gebruik "Alles vastzetten" op de weektabs.</p>`;
+  }
+
+  if(!alle.length){
+    h+=`<div class="empty" style="margin-top:18px">${alleenVast
+      ? 'Nog niets vastgezet. Zet de maaltijden vast die je zeker gaat maken, dan verschijnen de ingrediënten hier.'
+      : 'Nog geen boodschappen. Maak eerst een planning op een van de weektabs.'}</div>`;
+  }else{
+    h+=`<div class="panel" style="margin-top:16px"><h3>Volledige lijst</h3>
+      <p class="hint">Voor ${state.personen} personen, week van ${fmtDate(buildDays()[0].date)} tot ${fmtDate(buildDays()[6].date)}.</p>
+      <div class="cats" style="margin-top:14px">`;
+    Object.entries(CATS).forEach(([k,label])=>{
+      const items=(per[k]||[]).filter(i=>!inVoorraad(i.n)||state.tochKopen&&state.tochKopen[i.key]);
+      if(!items.length) return;
+      h+=`<div class="cat"><h4>${label}</h4>`;
+      items.forEach((i,n)=>{
+        const done=!!state.checked[i.key];
+        const domId='c_'+k+'_'+n;
+        const zl=zoekLink(i.n);
+        h+=`<div class="gitem ${done?'done':''}">
+          <input type="checkbox" id="${domId}" data-check="${esc(i.key)}" ${done?'checked':''}>
+          <label for="${domId}">${esc(i.n)} ${i.q!=null?`<span class="qty">— ${fmtQty(i.q,i.u)}</span>`:''}</label>
+          ${zl?`<a class="zoek" href="${esc(zl)}" target="_blank" rel="noopener" title="Zoek ${esc(i.n)} in de winkel">🔍</a>`:''}
+        </div>`;
+      });
+      h+='</div>';
+    });
+    h+='</div>';
+    if(per._kast.length){
+      h+=`<div class="kastblok">
+        <h4>Staat normaal in huis <span class="hint">(${per._kast.length})</span></h4>
+        <p class="hint">Deze staan niet op de lijst. Is er iets op, klik dan op + om het toch mee te kopen.</p>
+        <div class="kastlijst">${per._kast.map(i=>`
+          <span class="kasttag">${esc(i.n)}${i.q!=null?` <span class="qty">${fmtQty(i.q,i.u)}</span>`:''}
+            <button data-kastadd="${esc(i.key)}" title="Toch kopen">+</button></span>`).join('')}</div>
+      </div>`;
+    }
+    const bijgezet=Object.keys(state.kastNodig||{}).length;
+    if(bijgezet) h+=`<p class="hint" style="margin-top:8px">${bijgezet} voorraaditem${bijgezet>1?'s':''} staan er extra bij. <button class="btn ghost small" id="kastreset">Terugzetten</button></p>`;
+    h+=`<details class="permeal" id="tekstblok"><summary>Lijst als tekst</summary>
+      <p class="hint" style="margin-top:8px">Om te plakken in de lijstfunctie van je winkel-app, of om door te sturen.</p>
+      <textarea id="lijsttekst" readonly rows="12" style="width:100%;margin-top:8px;border:1px solid var(--line);border-radius:9px;padding:10px;font-family:ui-monospace,monospace;font-size:13px">${esc(lijstAlsTekst())}</textarea>
+    </details>`;
+    h+='</div>';
+
+    h+=`<div class="panel"><h3>Per maaltijd</h3>
+      <p class="hint">Handig als je maar één gerecht wil inkopen of iets wil doorgeven.</p>`;
+    entries.forEach(({dag,slot,meal})=>{
+      h+=`<details class="permeal"><summary>${dag.naam} ${fmtDate(dag.date)} · ${slot==='lunch'?'middag':'avond'} — ${esc(meal.naam)}</summary>
+        <ul class="ing">${meal.ing.map(i=>`<li>${ingLine(i,dag.iso)}</li>`).join('')}</ul></details>`;
+    });
+    h+='</div>';
+  }
+
+  $('#tab-shop').innerHTML=h;
+  if($('#kopieer')) $('#kopieer').onclick=async()=>{
+    const tekst=lijstAlsTekst();
+    if(await kopieer(tekst)) return toast('Lijst gekopieerd');
+    const d=$('#tekstblok');
+    if(d){ d.open=true; d.scrollIntoView({behavior:'smooth',block:'center'}); $('#lijsttekst').select(); }
+    toast('Kopiëren lukt hier niet — selecteer de tekst hieronder.');
+  };
+  $('#tab-shop').querySelectorAll('[data-kastadd]').forEach(b=>b.onclick=()=>{
+    state.kastNodig=state.kastNodig||{};
+    state.kastNodig[b.dataset.kastadd]=true;
+    save(); renderShop(); toast('Toegevoegd aan de lijst');
+  });
+  if($('#kastreset')) $('#kastreset').onclick=()=>{ state.kastNodig={}; save(); renderShop(); };
+  $('#tab-shop').querySelectorAll('[data-koop]').forEach(b=>b.onclick=()=>{
+    state.tochKopen=state.tochKopen||{};
+    state.tochKopen[b.dataset.koop]=true;
+    save(); renderShop(); toast('Op de lijst gezet');
+  });
+  $('#alleenvast').onchange=e=>{ state.shopLocked=e.target.checked; save(); renderShop(); };
+  $('#uncheck').onclick=()=>{ state.checked={}; save(); renderShop(); };
+  $('#print').onclick=()=>window.print();
+  $('#tab-shop').querySelectorAll('[data-check]').forEach(cb=>cb.onchange=()=>{
+    const k=cb.dataset.check;
+    if(cb.checked) state.checked[k]=true; else delete state.checked[k];
+    save(); renderShop();
+  });
+}
+
+/* Deel- en back-upknoppen; gebruikt door het configuratiescherm. */
+function bindDelenKnoppen(){
+  $('#refresh').onclick=async()=>{
+    if(modus==='server'){ await haalOp(); } else { await load(); }
+    render(); toast('Laatste versie opgehaald');
+  };
+
+  $('#export').onclick=()=>{
+    const blob=new Blob([JSON.stringify({versie:1,recepten:state.custom,plan:state.plan,start:state.start,personen:state.personen},null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='whats4dinner-backup.json';
+    a.click(); URL.revokeObjectURL(a.href);
+  };
+
+  $('#importbtn').onclick=()=>$('#importfile').click();
+  $('#importfile').onchange=e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const fr=new FileReader();
+    fr.onload=()=>{
+      let d; try{ d=JSON.parse(fr.result); }catch(err){ return toast('Dit bestand kon niet gelezen worden.'); }
+      const inkomend=Array.isArray(d.recepten)?d.recepten:[];
+      const namen=new Set((state.custom||[]).map(m=>m.naam.toLowerCase()));
+      let toegevoegd=0;
+      inkomend.forEach(m=>{
+        if(!m||!m.naam||namen.has(m.naam.toLowerCase())) return;
+        m.id='eigen-'+Date.now()+'-'+(toegevoegd++);
+        state.custom.push(m); namen.add(m.naam.toLowerCase());
+      });
+      if(d.plan&&confirm('Ook de planning uit dit bestand overnemen? De huidige planning wordt vervangen.')){
+        state.plan=d.plan; if(d.start) state.start=d.start; if(d.personen) state.personen=d.personen;
+      }
+      save(); render(); toast(toegevoegd+' recept(en) toegevoegd');
+    };
+    fr.readAsText(f);
+  };
+
+  const unitOpts=['g','kg','ml','l','st','el','tl','blik','pot','bosje','sneden','teentjes','rol','snuf',''];
+  const rowsEl=$('#ingrows');
+  $('#addrow').onclick=()=>{ rowsEl.insertAdjacentHTML('beforeend',ingRow({n:'',q:'',u:'g',c:'groenten'},unitOpts)); bindDel(); };
+  function bindDel(){ rowsEl.querySelectorAll('.del').forEach(b=>b.onclick=()=>{ if(rowsEl.children.length>1) b.parentElement.remove(); }); }
+  bindDel();
+
+  $('#raadknop').onclick=async()=>{
+    const naam=$('#f-naam').value.trim();
+    if(!naam) return toast('Vul eerst de naam van het gerecht in.');
+    const knop=$('#raadknop');
+    knop.disabled=true; const oud=knop.textContent; knop.textContent='Even denken…';
+    let r=await raadViaServer(naam);
+    knop.disabled=false; knop.textContent=oud;
+    if(r&&r.limiet){ toast(r.tekst+' Er wordt nu de ingebouwde lijst gebruikt.'); r=null; }
+    if(!r) r=raadIngredienten(naam);
+    if(!r.ing.length) return toast('Geen bekende ingrediënten herkend in die naam.');
+    const gevuld=[...rowsEl.querySelectorAll('.i-n')].some(x=>x.value.trim());
+    if(gevuld&&!confirm('De ingrediëntenlijst wordt vervangen door het voorstel. Doorgaan?')) return;
+    rowsEl.innerHTML=r.ing.map(x=>ingRow(x,unitOpts)).join('');
+    bindDel();
+    if(r.bron) $('#f-bron').value=r.bron;
+    if(r.opwarm!==null&&r.opwarm!==undefined) $('#f-opwarm').value=r.opwarm?'ja':'nee';
+    if(r.tijd) $('#f-tijd').value=r.tijd;
+    if(r.eiwit) $('#f-eiwit').value=r.eiwit;
+    if(r.slots) $('#f-slots').value=r.slots;
+    if(r.prep!==null&&r.prep!==undefined) $('#f-prep').value=r.prep?'ja':'nee';
+    if(r.instant!==null&&r.instant!==undefined) $('#f-instant').value=r.instant?'ja':'nee';
+    if(r.alleen!==null&&r.alleen!==undefined) $('#f-alleen').value=r.alleen;
+    if(r.tip) $('#f-tip').value=r.tip;
+    const rest=r.gebruik?' — nog '+Math.max(0,r.gebruik.limiet-r.gebruik.vandaag)+' vandaag':'';
+    toast(r.ing.length+' ingrediënten voorgesteld'+(r.via==='claude'?' door Claude':' uit de woordenlijst')+rest);
+  };
+
+  $('#saverecipe').onclick=()=>{
+    const naam=$('#f-naam').value.trim();
+    if(!naam) return toast('Geef het recept een naam.');
+    const ing=[...rowsEl.querySelectorAll('.ingrow')].map(r=>({
+      n:r.querySelector('.i-n').value.trim(),
+      q:r.querySelector('.i-q').value===''?null:Number(r.querySelector('.i-q').value),
+      u:r.querySelector('.i-u').value,
+      c:r.querySelector('.i-c').value
+    })).filter(i=>i.n);
+    if(!ing.length) return toast('Voeg minstens één ingrediënt toe.');
+    const rec={
+      id:bewerkId||('eigen-'+Date.now()),
+      naam, tijd:Number($('#f-tijd').value)||30,
+      eiwit:$('#f-eiwit').value, bron:$('#f-bron').value,
+      slots:$('#f-slots').value.split(','), prep:$('#f-prep').value==='ja',
+      opwarm:$('#f-opwarm').value==='ja', instant:$('#f-instant').value==='ja',
+      alleen:$('#f-alleen').value||undefined,
+      tip:$('#f-tip').value.trim(), ing
+    };
+    if(bewerkId&&!String(bewerkId).startsWith('eigen-')){
+      // basisrecept: bewaar als aanpassing bovenop het origineel
+      const {id,...rest}=rec;
+      state.overrides[bewerkId]=rest;
+      bewerkId=null;
+    }
+    else if(bewerkId){ state.custom=state.custom.map(m=>m.id===bewerkId?rec:m); bewerkId=null; }
+    else state.custom.push(rec);
+    save(); render(); toast('Recept opgeslagen');
+  };
+  $('#testclaude').onclick=async()=>{
+    const uit=$('#testuit'), knop=$('#testclaude');
+    knop.disabled=true; uit.textContent='Bezig met testen…';
+    const r=await testClaude();
+    knop.disabled=false;
+    uit.textContent=(r.ok?'✓ ':'✗ ')+r.tekst;
+    uit.style.color=r.ok?'var(--pine)':'var(--ball)';
+  };
+
+}
+
+/* ============================================================
+   9b. Rendering — Configuratie (achter de ⋯)
+   ============================================================ */
+function renderConfig(){
+  const tr=state.trainingen||[];
+  const verg=(state.vergaderingen||[]).slice().sort();
+  const uitAgenda=vergaderdagenUitAgenda();
+  const agendaGekend=!!state.agendaOpgehaald&&uitAgenda.length>0;
+  const ontbrekend=agendaGekend?verg.filter(d=>!uitAgenda.includes(d)):[];
+
+  let h=`<div class="panel">
+    <h3>Koppelingen en sleutels</h3>
+    <p class="hint">Doorloopt de Worker, de database, het wachtwoord, de agenda's, Claude en de routeplanner. Sleutelwaarden worden nooit getoond.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn pine" id="testalles">Alles testen</button>
+      <button class="btn ghost" id="herbereken">Reistijden opnieuw berekenen</button>
+    </div>
+    <div id="testuitslag" class="testlijst"></div>
+  </div>
+
+  <div class="panel">
+    <h3>Trainingen</h3>
+    <p class="hint">Bepaalt de tijdbalk per dag en wanneer er gegeten kan worden. Bij een nieuw seizoen pas je het hier aan.</p>
+    <div class="cfgrow cfghead" style="margin-top:14px">
+      <span>Wie</span><span>Dag</span><span>Van</span><span>Tot</span><span>Waar</span><span></span>
+    </div>
+    <div id="trrows">${tr.map((t,n)=>`
+      <div class="cfgrow">
+        <input data-tr="${n}" data-veld="wie" value="${esc(t.wie||'')}" placeholder="naam">
+        <select data-tr="${n}" data-veld="dag">${DAGEN.map((d,i)=>`<option value="${i}" ${t.dag===i?'selected':''}>${d}</option>`).join('')}</select>
+        <input data-tr="${n}" data-veld="van" type="time" value="${esc(t.van||'')}">
+        <input data-tr="${n}" data-veld="tot" type="time" value="${esc(t.tot||'')}">
+        <input data-tr="${n}" data-veld="waar" value="${esc(t.waar||'')}" placeholder="sporthal">
+        <button class="iconbtn weg" data-trweg="${n}" title="Verwijderen">✕</button>
+      </div>`).join('')}</div>
+    ${tr.length?'':'<p class="hint">Nog geen trainingen ingesteld.</p>'}
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn ghost small" id="traddrow">+ training</button>
+      <button class="btn ghost small" id="trreset">Terug naar het huidige schema</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Wedstrijdkalenders</h3>
+    <p class="hint">De kalenderlinks van de basketbalbond. Wedstrijden verschijnen dan vanzelf op de juiste dag, met tegenstander en sporthal.</p>
+    <div class="cfgrow cfghead" style="grid-template-columns:1fr 3fr 36px"><span>Wie</span><span>Kalender-URL</span><span></span></div>
+    <div>${(state.kalenders||[]).map((k,n)=>`
+      <div class="cfgrow" style="grid-template-columns:1fr 3fr 36px">
+        <input data-kal="${n}" data-veld="wie" value="${esc(k.wie||'')}" placeholder="naam">
+        <input data-kal="${n}" data-veld="url" value="${esc(k.url||'')}" placeholder="https://vblcal.wisseq.eu/...">
+        <button class="iconbtn weg" data-kalweg="${n}" title="Verwijderen">✕</button>
+      </div>`).join('')}</div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn pine" id="kalophalen">Wedstrijden ophalen</button>
+      <button class="btn ghost small" id="kaladd">+ kalender</button>
+    </div>
+    <p class="hint" id="kaluit" style="margin-top:10px">${
+      state.wedstrijden&&state.wedstrijden.length
+        ? esc(state.wedstrijden.length+' wedstrijden bekend'+(state.wedstrijdenOpgehaald?', opgehaald op '+new Date(state.wedstrijdenOpgehaald).toLocaleString('nl-BE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'')+'.')
+        : 'Nog niets opgehaald.'}</p>
+  </div>
+
+  <div class="panel">
+    <h3>Reistijden naar de zalen</h3>
+    <p class="hint">De app rekent ${VOOR_WEDSTRIJD} minuten aanwezigheid vóór de aanvang en ${NA_WEDSTRIJD} minuten achteraf om te douchen en iets te drinken, plus de reistijd hieronder. Zo weet je wanneer jullie vertrekken en weer thuis zijn. De beginwaarden zijn schattingen vanuit jullie adres — klik op ↗ om de echte reistijd op te zoeken en vul die hier in.</p>
+    <div class="field" style="margin:12px 0">
+      <label for="thuis">Vertrekpunt</label>
+      <input id="thuis" value="${esc(thuisadres())}" style="width:100%;max-width:420px;border:1px solid var(--line);border-radius:9px;padding:8px 10px">
+    </div>
+    <div class="cfgrow cfghead" style="grid-template-columns:3fr 90px 40px"><span>Zaal</span><span>Minuten</span><span></span></div>
+    ${zalenUitWedstrijden().map(z=>`
+      <div class="cfgrow" style="grid-template-columns:3fr 90px 40px">
+        <span style="font-size:13px;align-self:center">${esc(z)}</span>
+        <input type="number" min="0" max="180" value="${reistijd(z)}" data-reis="${esc(z)}">
+        <a class="iconbtn" href="${esc(routeLink(z))}" target="_blank" rel="noopener" title="Route opzoeken" style="text-decoration:none">↗</a>
+      </div>`).join('')||'<p class="hint">Nog geen zalen bekend. Haal eerst de wedstrijdkalenders op.</p>'}
+  </div>
+
+  <div class="panel">
+    <h3>Persoonlijke agenda's</h3>
+    <p class="hint">De iCal-adressen staan als geheime variabelen bij de Worker, niet in de app — daarom kan je ze hier niet zien of wijzigen. Voeg ze toe bij <i>Settings → Variables and Secrets</i> met een naam die begint met <code>AGENDA_</code>, bijvoorbeeld <code>AGENDA_JURGEN</code> en <code>AGENDA_SARAH</code>.</p>
+    <p class="hint" style="margin-top:8px">${
+      (state.agendaBronnen||[]).length
+        ? 'Gevonden: '+state.agendaBronnen.map(a=>esc(a.naam)+' ('+a.aantal+')').join(', ')
+          +(state.agendaOpgehaald?' · opgehaald '+new Date(state.agendaOpgehaald).toLocaleString('nl-BE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'')
+        : 'Nog geen agenda opgehaald.'}</p>
+    <div class="field" style="margin-top:12px;max-width:320px">
+      <label for="vergwoord">Trefwoord voor een vergaderavond</label>
+      <input id="vergwoord" value="${esc(state.vergaderwoord!==undefined?state.vergaderwoord:VERGADERWOORD_STANDAARD)}" placeholder="zonnebloem">
+    </div>
+    <p class="hint" style="margin-top:6px">Afspraken met dit woord in de titel maken van die dag een vergaderavond. De uren in de agenda worden genegeerd: die blijken niet met de werkelijke vergadering overeen te komen.</p>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+      <button class="btn ghost" id="agophalen">Agenda's ophalen</button>
+    </div>
+    <p class="hint" id="aguit" style="margin-top:10px"></p>
+  </div>
+
+  <div class="panel">
+    <h3>Vergaderingen die je zelf toevoegt</h3>
+    <p class="hint">Naast wat uit de agenda komt. Op deze avonden stelt de app enkel afhaal voor, of iets dat meteen op tafel kan.</p>
+    ${uitAgenda.length?`<p class="hint">Uit de agenda komen er al ${uitAgenda.length} bij, herkend aan het trefwoord.</p>`:''}
+    ${agendaGekend&&ontbrekend.length?`<p class="hint" style="color:var(--ball)">${ontbrekend.length} van jouw ${verg.length} datums ${ontbrekend.length===1?'staat':'staan'} niet in Google Agenda. Misschien verplaatst of geschrapt — kijk even na.</p>`:''}
+    <div class="datumlijst">${verg.length?verg.map(d=>{
+      const mist=agendaGekend&&!uitAgenda.includes(d);
+      return `<span class="datumtag ${mist?'mist':''}" ${mist?'title="Staat niet in Google Agenda"':''}>${
+        mist?'⚠ ':''}${esc(new Date(d+'T12:00:00').toLocaleDateString('nl-BE',{day:'numeric',month:'short',year:'numeric'}))}
+        <button data-vergweg="${esc(d)}" title="Verwijderen">✕</button></span>`;}).join('')
+      :'<span class="hint">Nog geen data ingesteld.</span>'}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:6px">
+      <div class="field"><label for="vergnieuw">Datum toevoegen</label><input type="date" id="vergnieuw"></div>
+      <button class="btn ghost" id="vergadd">Toevoegen</button>
+    </div>
+    <div class="field" style="margin-top:14px">
+      <label for="vergplak">Of meerdere tegelijk plakken</label>
+      <textarea id="vergplak" rows="3" placeholder="2026-10-08&#10;2026-10-19" style="width:100%;border:1px solid var(--line);border-radius:9px;padding:9px;font-family:ui-monospace,monospace;font-size:13px"></textarea>
+      <button class="btn ghost small" id="vergplakknop" style="margin-top:8px;align-self:flex-start">Inlezen</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Schoolvakanties en feestdagen</h3>
+    <p class="hint">Op een feestdag of in een vakantie vervalt het vaste eetuur en de opwarmplicht — er is dan tijd om te koken. Wettelijke feestdagen worden berekend; de vakanties staan hieronder en zijn aanpasbaar, want scholen leggen zelf nog pedagogische studiedagen vast.</p>
+    <label class="toggle" style="margin:12px 0">
+      <input type="checkbox" id="vaklunch" ${state.vakantieLunch?'checked':''}>
+      Tijdens vakantie ook het middagmaal plannen
+    </label>
+    <div class="cfgrow cfghead" style="grid-template-columns:1.6fr 1fr 1fr 36px">
+      <span>Naam</span><span>Van</span><span>Tot</span><span></span>
+    </div>
+    <div id="vakrows">${(state.vakanties||[]).map((v,n)=>`
+      <div class="cfgrow" style="grid-template-columns:1.6fr 1fr 1fr 36px">
+        <input data-vak="${n}" data-veld="naam" value="${esc(v.naam||'')}" placeholder="naam">
+        <input data-vak="${n}" data-veld="van" type="date" value="${esc(v.van||'')}">
+        <input data-vak="${n}" data-veld="tot" type="date" value="${esc(v.tot||'')}">
+        <button class="iconbtn weg" data-vakweg="${n}" title="Verwijderen">✕</button>
+      </div>`).join('')}</div>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+      <button class="btn ghost small" id="vakadd">+ vakantie</button>
+      <button class="btn ghost small" id="vakreset">Terug naar de opgezochte datums</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Voorraadkast</h3>
+    <p class="hint">Wat hier staat, wordt verondersteld in huis te zijn en komt niet op de boodschappenlijst. Op de lijst zelf staat het apart, met een + om het toch mee te kopen.</p>
+    <div class="datumlijst">${(state.voorraad||[]).map(v=>`
+      <span class="datumtag" style="background:#F1F3EF;border-color:var(--line);color:var(--ink-2)">${esc(v)}
+        <button data-vrweg="${esc(v)}" title="Verwijderen" style="color:var(--muted)">✕</button></span>`).join('')||'<span class="hint">Leeg.</span>'}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:6px">
+      <div class="field"><label for="vrnieuw">Toevoegen</label><input id="vrnieuw" placeholder="bv. kaneel"></div>
+      <button class="btn ghost" id="vradd">Toevoegen</button>
+      <button class="btn ghost small" id="vrreset">Terug naar de standaardlijst</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Boodschappen</h3>
+    <label class="cfghead" for="zoekurl2" style="display:block;margin-bottom:5px">Zoeklink per product</label>
+    <input id="zoekurl2" value="${esc(state.zoekUrl||'')}" placeholder="${esc(ZOEK_STANDAARD)}" style="width:100%;border:1px solid var(--line);border-radius:9px;padding:8px 10px">
+    <p class="hint" style="margin-top:8px">Staat standaard op Collect&amp;Go. Voor een andere winkel: doe daar één zoekopdracht, kopieer de URL hierheen en vervang je zoekwoord door <code>{q}</code>. Leeg laten verbergt de 🔍-links.
+      <button class="btn ghost small" id="zoekreset2" style="margin-left:6px">Terug naar Collect&amp;Go</button></p>
+  </div>
+
+  <div class="panel">
+    <h3>Delen en back-up</h3>
+    <p class="hint">Er is geen bewaarknop: elke wijziging wordt vanzelf opgeslagen, een halve seconde nadat je ze maakt. Rechtsboven verschijnt dan kort <b>bewaard ✓</b>. Staat daar <b>geen opslag</b> of <b>bewaren mislukt</b>, dan klik je erop voor uitleg of een nieuwe poging.</p>
+    <p class="hint" id="cfguitleg" style="margin-top:8px"></p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn ghost" id="refresh">Vernieuwen</button>
+      <button class="btn ghost" id="export">Back-up downloaden</button>
+      <button class="btn ghost" id="importbtn">Back-up inladen</button>
+      <button class="btn ghost" id="testclaude">Claude-koppeling testen</button>
+      <input type="file" id="importfile" accept="application/json,.json" hidden>
+    </div>
+    <p class="hint" id="testuit" style="margin-top:10px"></p>
+    <details style="margin-top:14px"><summary class="hint" style="cursor:pointer">Wat is er veranderd (v${VERSIE})</summary>
+      <ul class="ing" style="margin-top:8px">${CHANGELOG.map(([v,t])=>`<li><b>${v}</b> — ${esc(t)}</li>`).join('')}</ul>
+    </details>
+  </div>`;
+
+  $('#tab-config').innerHTML=h;
+
+  $('#cfguitleg').textContent = modus==='server'
+    ? 'Alles staat op jullie eigen Cloudflare-server. Wijzigingen van de anderen verschijnen vanzelf.'
+    : modus==='gedeeld' ? 'Gedeeld opgeslagen: iedereen die deze app opent, ziet dezelfde inhoud. Klik "Vernieuwen" voor je begint.'
+    : modus==='lokaal' ? 'Er wordt enkel op dit toestel bewaard. Anderen zien jouw wijzigingen niet.'
+    : 'Deze kopie draait zonder opslag. Gebruik "Back-up downloaden", anders gaat alles verloren.';
+
+  $('#herbereken').onclick=async()=>{
+    const knop=$('#herbereken'), vak=$('#testuitslag');
+    if(!confirm('Alle bewaarde reistijden en afstanden wissen en opnieuw laten berekenen?')) return;
+    knop.disabled=true; knop.textContent='Bezig…';
+    state.reisCache={}; state.kmCache={};
+    save();
+    const ok=await haalReistijden();
+    knop.disabled=false; knop.textContent='Reistijden opnieuw berekenen';
+    const n=Object.keys(state.kmCache||{}).length;
+    vak.innerHTML=`<div class="testrij ${ok&&n?'ok':'nok'}"><span class="testmerk">${ok&&n?'✓':'✗'}</span>
+      <span>${ok&&n?('Opnieuw berekend: '+n+' trajecten met afstand.')
+        :'Er kwam niets terug. Staat ORS_KEY ingesteld en is de Worker opnieuw gepubliceerd?'}</span></div>`;
+    render();
+  };
+
+  // sleutels doorlichten
+  $('#testalles').onclick=async()=>{
+    const knop=$('#testalles'), vak=$('#testuitslag');
+    knop.disabled=true; knop.textContent='Bezig…';
+    const teken=lijst=>{
+      vak.innerHTML=lijst.map(r=>`<div class="testrij ${r.ok?'ok':'nok'}">
+        <span class="testmerk">${r.ok?'✓':'✗'}</span>
+        <span><b>${esc(r.naam)}</b> — ${esc(r.tekst)}</span></div>`).join('');
+    };
+    try{ await testAlles(teken); }
+    finally{ knop.disabled=false; knop.textContent='Alles testen'; }
+  };
+
+  // trainingen
+  $('#tab-config').querySelectorAll('[data-tr]').forEach(el=>{
+    el.onchange=()=>{
+      const n=Number(el.dataset.tr), v=el.dataset.veld;
+      state.trainingen[n][v] = v==='dag' ? Number(el.value) : el.value;
+      save(); renderConfig();
+    };
+  });
+  $('#tab-config').querySelectorAll('[data-trweg]').forEach(b=>b.onclick=()=>{
+    state.trainingen.splice(Number(b.dataset.trweg),1); save(); renderConfig();
+  });
+  $('#traddrow').onclick=()=>{
+    state.trainingen.push({wie:'',dag:0,van:'18:00',tot:'19:30',waar:''});
+    save(); renderConfig();
+  };
+  $('#trreset').onclick=()=>{
+    if(!confirm('Het trainingsschema terugzetten zoals het nu is ingesteld?')) return;
+    state.trainingen=TRAINING_STANDAARD.map(t=>Object.assign({},t));
+    save(); renderConfig(); toast('Schema hersteld');
+  };
+
+  // wedstrijdkalenders
+  $('#tab-config').querySelectorAll('[data-kal]').forEach(el=>el.onchange=()=>{
+    state.kalenders[Number(el.dataset.kal)][el.dataset.veld]=el.value.trim();
+    save(); renderConfig();
+  });
+  $('#tab-config').querySelectorAll('[data-kalweg]').forEach(b=>b.onclick=()=>{
+    state.kalenders.splice(Number(b.dataset.kalweg),1); save(); renderConfig();
+  });
+  $('#kaladd').onclick=()=>{ state.kalenders.push({wie:'',url:''}); save(); renderConfig(); };
+  $('#kalophalen').onclick=async()=>{
+    const knop=$('#kalophalen'), uit=$('#kaluit');
+    knop.disabled=true; uit.textContent='Bezig met ophalen…';
+    const r=await haalWedstrijden();
+    knop.disabled=false;
+    uit.textContent=(r.ok?'✓ ':'✗ ')+r.tekst;
+    uit.style.color=r.ok?'var(--pine)':'var(--ball)';
+    if(r.ok) toast('Wedstrijden bijgewerkt');
+  };
+
+  // agenda's
+  $('#vergwoord').onchange=e=>{ state.vergaderwoord=e.target.value.trim(); save(); render(); toast('Trefwoord aangepast'); };
+  $('#agophalen').onclick=async()=>{
+    const b=$('#agophalen'), uit=$('#aguit');
+    b.disabled=true; uit.textContent='Bezig…';
+    const r=await haalAgenda();
+    b.disabled=false;
+    uit.textContent=(r.ok?'✓ ':'✗ ')+r.tekst;
+    uit.style.color=r.ok?'var(--pine)':'var(--ball)';
+    if(r.ok) renderConfig();
+  };
+
+  // reistijden
+  $('#thuis').onchange=e=>{ state.thuisadres=e.target.value.trim()||THUIS_STANDAARD; save(); renderConfig(); toast('Vertrekpunt aangepast'); };
+  $('#tab-config').querySelectorAll('[data-reis]').forEach(el=>el.onchange=()=>{
+    state.reistijden=state.reistijden||{};
+    state.reistijden[el.dataset.reis]=Math.max(0,Math.min(180,Number(el.value)||0));
+    save(); renderConfig();
+  });
+
+  // vergaderingen
+  $('#tab-config').querySelectorAll('[data-vergweg]').forEach(b=>b.onclick=()=>{
+    state.vergaderingen=state.vergaderingen.filter(d=>d!==b.dataset.vergweg);
+    save(); renderConfig();
+  });
+  $('#vergadd').onclick=()=>{
+    const d=$('#vergnieuw').value;
+    if(!d) return toast('Kies eerst een datum.');
+    if(state.vergaderingen.includes(d)) return toast('Die datum staat er al in.');
+    state.vergaderingen.push(d); save(); renderConfig(); toast('Datum toegevoegd');
+  };
+  $('#vergplakknop').onclick=()=>{
+    const gevonden=($('#vergplak').value.match(/\d{4}-\d{2}-\d{2}/g)||[]);
+    let n=0;
+    gevonden.forEach(d=>{ if(!state.vergaderingen.includes(d)){ state.vergaderingen.push(d); n++; } });
+    if(!n) return toast('Geen nieuwe data gevonden. Gebruik de vorm 2026-10-08.');
+    save(); renderConfig(); toast(n+' datum(s) toegevoegd');
+  };
+
+  // vakanties
+  $('#vaklunch').onchange=e=>{ state.vakantieLunch=e.target.checked; save(); toast(e.target.checked?'Middagmalen worden mee gepland':'Enkel avondmalen'); };
+  $('#tab-config').querySelectorAll('[data-vak]').forEach(el=>el.onchange=()=>{
+    state.vakanties[Number(el.dataset.vak)][el.dataset.veld]=el.value;
+    save(); renderConfig();
+  });
+  $('#tab-config').querySelectorAll('[data-vakweg]').forEach(b=>b.onclick=()=>{
+    state.vakanties.splice(Number(b.dataset.vakweg),1); save(); renderConfig();
+  });
+  $('#vakadd').onclick=()=>{ state.vakanties.push({naam:'',van:'',tot:''}); save(); renderConfig(); };
+  $('#vakreset').onclick=()=>{
+    if(!confirm('De vakantielijst terugzetten?')) return;
+    state.vakanties=VAKANTIES_STANDAARD.map(v=>Object.assign({},v));
+    save(); renderConfig(); toast('Vakanties hersteld');
+  };
+
+  // voorraadkast
+  $('#tab-config').querySelectorAll('[data-vrweg]').forEach(b=>b.onclick=()=>{
+    state.voorraad=(state.voorraad||[]).filter(v=>v!==b.dataset.vrweg);
+    save(); renderConfig();
+  });
+  $('#vradd').onclick=()=>{
+    const v=$('#vrnieuw').value.trim();
+    if(!v) return toast('Typ eerst iets.');
+    state.voorraad=state.voorraad||[];
+    if(state.voorraad.some(x=>x.toLowerCase()===v.toLowerCase())) return toast('Staat er al in.');
+    state.voorraad.push(v); save(); renderConfig(); toast('Toegevoegd aan de voorraadkast');
+  };
+  $('#vrreset').onclick=()=>{
+    if(!confirm('De voorraadlijst terugzetten?')) return;
+    state.voorraad=VOORRAAD_STANDAARD.slice(); save(); renderConfig(); toast('Voorraadlijst hersteld');
+  };
+
+  // boodschappen
+  $('#zoekurl2').onchange=e=>{ state.zoekUrl=e.target.value.trim(); save(); };
+  $('#zoekreset2').onclick=()=>{ state.zoekUrl=ZOEK_STANDAARD; save(); renderConfig(); toast('Zoeklink hersteld'); };
+
+  bindDelenKnoppen();
+}
+
+/* ============================================================
+   9c. Rendering — Wedstrijden
+   ============================================================ */
+function thuiszaal(wie){
+  // de zaal waar iemand het vaakst speelt, is vrijwel zeker de eigen zaal
+  const tel={};
+  (state.wedstrijden||[]).filter(w=>w.wie===wie&&w.waar).forEach(w=>{ tel[w.waar]=(tel[w.waar]||0)+1; });
+  let beste=null,n=0;
+  Object.entries(tel).forEach(([z,c])=>{ if(c>n){n=c;beste=z;} });
+  return n>=2?beste:null;
+}
+
+function renderWedstrijden(){
+  const alles=(state.wedstrijden||[]).slice().sort((a,b)=>(a.iso+a.van).localeCompare(b.iso+b.van));
+  const vIso=vandaagIso();
+  const wie=state.wedFilter||'alle';
+  const toonVoorbij=!!state.wedVoorbij;
+  const spelers=[...new Set(alles.map(w=>w.wie).filter(Boolean))];
+  const lijst=alles.filter(w=>(wie==='alle'||w.wie===wie)&&(toonVoorbij||w.iso>=vIso));
+
+  let h=`<div class="bar">
+    <div class="seg">
+      <button data-wf="alle" aria-pressed="${wie==='alle'}">Allebei</button>
+      ${spelers.map(p=>`<button data-wf="${esc(p)}" aria-pressed="${wie===p}">${esc(p)}</button>`).join('')}
+    </div>
+    <label class="toggle"><input type="checkbox" id="wedvoorbij" ${toonVoorbij?'checked':''}> ook gespeelde</label>
+    <button class="btn ghost" id="wedvernieuw">Vernieuwen</button>
+    <span class="hint" style="margin-left:auto">${lijst.length} wedstrijd${lijst.length===1?'':'en'}${
+      state.wedstrijdenOpgehaald?' · opgehaald '+new Date(state.wedstrijdenOpgehaald).toLocaleString('nl-BE',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</span>
+  </div>`;
+
+  if(!alles.length){
+    h+=`<div class="empty">Nog geen wedstrijden opgehaald. De kalenderlinks staan bij ⋯; klik daar of hierboven op Vernieuwen.</div>`;
+  }else if(!lijst.length){
+    h+=`<div class="empty">Geen wedstrijden die aan deze selectie voldoen.</div>`;
+  }else{
+    let maand='';
+    lijst.forEach(w=>{
+      const d=new Date(w.iso+'T12:00:00');
+      const m=d.toLocaleDateString('nl-BE',{month:'long',year:'numeric'});
+      if(m!==maand){
+        maand=m;
+        h+=`<div class="weekhead"><h2 style="font-size:16px;text-transform:capitalize">${esc(m)}</h2><span class="rule"></span></div>`;
+      }
+      const thuis=thuiszaal(w.wie);
+      const isThuis=thuis&&w.waar===thuis;
+      const delen=(w.titel||'').split(' - ');
+      const tegen=delen.length===2 ? (isThuis?delen[1]:delen[0]) : (w.titel||'');
+      const voorbij=w.iso<vIso;
+      return h+=`<article class="wedkaart ${voorbij?'voorbij':''}">
+        <div class="wk-datum">
+          <span class="wk-dag">${d.toLocaleDateString('nl-BE',{weekday:'short'})}</span>
+          <span class="wk-nr">${d.getDate()}</span>
+        </div>
+        <div class="wk-body">
+          <div class="wk-top">
+            <span class="chip ${isThuis?'prot-hoog':'verg'}">${isThuis?'thuis':'uit'}</span>
+            <b>${esc(w.wie)}</b>
+            <span class="wk-uur">${w.van}–${w.tot}</span>
+          </div>
+          <div class="wk-tegen">tegen ${esc(tegen)}</div>
+          <div class="wk-zaal">${w.waar?`<a href="${esc(routeLink(w.waar))}" target="_blank" rel="noopener">${esc(w.waar)} ↗</a>`:'zaal onbekend'}
+            ${w.waar?`<span class="hint">· ${reistijd(w.waar)} min rijden</span>`:''}</div>
+          <div class="wk-vertrek">vertrek ${vertrekTijd(w)} · aanwezig ${aanwezigTijd(w)} · einde ${w.tot} · thuis ± ${thuisTijd(w)}</div>
+          ${w.link?`<a class="wk-link" href="${esc(w.link)}" target="_blank" rel="noopener">Wedstrijdblad ↗</a>`:''}
+        </div>
+      </article>`;
+    });
+  }
+
+  $('#tab-wed').innerHTML=h;
+  $('#tab-wed').querySelectorAll('[data-wf]').forEach(b=>b.onclick=()=>{ state.wedFilter=b.dataset.wf; save(); renderWedstrijden(); });
+  if($('#wedvoorbij')) $('#wedvoorbij').onchange=e=>{ state.wedVoorbij=e.target.checked; save(); renderWedstrijden(); };
+  if($('#wedvernieuw')) $('#wedvernieuw').onclick=async()=>{
+    const b=$('#wedvernieuw'); b.disabled=true; b.textContent='Ophalen…';
+    const r=await haalWedstrijden();
+    toast(r.tekst);
+    renderWedstrijden();
+  };
+}
+
+/* ============================================================
+   10. Tabs + start
+   ============================================================ */
+let actief='overzicht';
+const TABSECTIE={overzicht:'vandaag',week:'plan',meals:'meals',shop:'shop',wed:'wed',config:'config'};
+function render(){
+  if(actief==='overzicht') renderOverzicht();
+  else if(actief==='week') renderPlan();
+  else if(actief==='meals') renderMeals();
+  else if(actief==='shop') renderShop();
+  else if(actief==='wed') renderWedstrijden();
+  else if(actief==='config') renderConfig();
+}
+function toonTab(sleutel){
+  actief=sleutel;
+  document.querySelectorAll('.tab').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.tab===sleutel)));
+  const zichtbaar=TABSECTIE[sleutel];
+  ['vandaag','plan','meals','shop','wed','config'].forEach(id=>$('#tab-'+id).hidden=(id!==zichtbaar));
+  render();
+}
+document.querySelectorAll('.tab').forEach(t=>{ t.onclick=()=>toonTab(t.dataset.tab); });
+
+(async function init(){
+  const opServer=await verbind();
+  if(!opServer) await load();
+  if(!state.start) state.start=nextMonday();
+  if(!state.custom) state.custom=[];
+  if(!state.vergaderingen) state.vergaderingen=VERGADERINGEN.slice();
+  if(!state.trainingen) state.trainingen=TRAINING_STANDAARD.map(t=>Object.assign({},t));
+  if(!state.vakanties) state.vakanties=VAKANTIES_STANDAARD.map(v=>Object.assign({},v));
+  if(!state.kalenders) state.kalenders=KALENDERS_STANDAARD.map(k=>Object.assign({},k));
+  if(!state.voorraad) state.voorraad=VOORRAAD_STANDAARD.slice();
+  if(!state.kastNodig) state.kastNodig={};
+  if(!state.overrides) state.overrides={};
+  if(!state.planV2){
+    // oude planning stond op dagnummer; nu op datum, zodat periodes bewaard blijven
+    const oud=state.plan||{}, nieuw={};
+    Object.entries(oud).forEach(([k,v])=>{
+      const m=k.match(/^d(\d+)-(\w+)$/);
+      if(m&&state.start) nieuw[isoVan(addDays(state.start,Number(m[1])))+'|'+m[2]]=v;
+      else nieuw[k]=v;
+    });
+    state.plan=nieuw; state.planV2=true;
+  }
+  if(state.zoekUrl===undefined) state.zoekUrl=ZOEK_STANDAARD;
+  if(!state.plan||!Object.keys(state.plan).length) genereer(true);
+  const vb=document.getElementById('versie');
+  if(vb) vb.textContent='v'+VERSIE;
+  const sb=document.getElementById('sync');
+  if(sb) sb.onclick=badgeKlik;
+  render();
+  setSync();
+  startPolling();
+  autoWedstrijden();
+  autoAgenda().then(()=>haalReistijden().then(ok=>{ if(ok) render(); }));
+
+  // Installeerbaar maken en offline laten werken. Lukt alleen op een echte
+  // website met https; elders faalt dit stil en verandert er niets.
+  if('serviceWorker' in navigator && location.protocol==='https:'){
+    navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  }
+})();
+</script>
+</body>
+</html>
