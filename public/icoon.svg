@@ -1,16 +1,34 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <rect width="512" height="512" fill="#172622"/>
 
-  <g fill="none" stroke="#EBEEE8" stroke-width="20" stroke-linecap="round">
-    <path d="M74 120v130M74 250v148"/>
-    <path d="M46 120v74M102 120v74"/>
+  <g fill="#EBEEE8">
+    <rect x="46" y="104" width="17" height="92" rx="8"/>
+    <rect x="79" y="104" width="17" height="92" rx="8"/>
+    <rect x="112" y="104" width="17" height="92" rx="8"/>
+    <path d="M46 188h83v22a41 41 0 0 1-33 40v152a8 8 0 0 1-17 0V250a41 41 0 0 1-33-40z"/>
   </g>
-  <path d="M438 120c-26 0-40 26-40 62s14 62 40 62" fill="none" stroke="#EBEEE8" stroke-width="20" stroke-linecap="round"/>
-  <path d="M438 244v154" fill="none" stroke="#EBEEE8" stroke-width="20" stroke-linecap="round"/>
 
-  <circle cx="256" cy="262" r="126" fill="#E4572E"/>
-  <g fill="none" stroke="#172622" stroke-width="15" stroke-linecap="round">
-    <path d="M256 136v252M130 262h252"/>
-    <path d="M172 172c48 46 48 134 0 180M340 172c-48 46-48 134 0 180"/>
+  <g fill="#EBEEE8">
+    <path d="M466 104v186h-52v-96c0-44 22-79 52-90z"/>
+    <rect x="431" y="284" width="18" height="118" rx="9"/>
+  </g>
+
+  <circle cx="256" cy="256" r="132" fill="#E4572E"/>
+  <g fill="none" stroke="#172622" stroke-width="13" stroke-linecap="round">
+    <path d="M172 168c46 48 46 128 0 176M340 168c-46 48-46 128 0 176"/>
+  </g>
+  <g stroke="#172622" stroke-linecap="round" fill="none">
+    <path d="M256 152v104" stroke-width="12"/>
+    <path d="M256 256v76" stroke-width="19"/>
+  </g>
+  <circle cx="256" cy="256" r="13" fill="#172622"/>
+  <g stroke="#172622" stroke-width="9" stroke-linecap="round">
+    <path d="M256 140v16M256 356v16M140 256h16M356 256h16"/>
+  </g>
+  <g fill="#172622">
+    <circle cx="314" cy="156" r="5"/><circle cx="356" cy="198" r="5"/>
+    <circle cx="356" cy="314" r="5"/><circle cx="314" cy="356" r="5"/>
+    <circle cx="198" cy="356" r="5"/><circle cx="156" cy="314" r="5"/>
+    <circle cx="156" cy="198" r="5"/><circle cx="198" cy="156" r="5"/>
   </g>
 </svg>

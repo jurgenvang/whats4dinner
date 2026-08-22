@@ -40,7 +40,8 @@ body{
 h1,h2,h3,h4{font-family:var(--display);margin:0;letter-spacing:-0.015em}
 button,input,select,textarea{font:inherit;color:inherit}
 .wrap{max-width:1180px;margin:0 auto;padding:0 18px 80px}
-#tab-vandaag{display:block;padding-top:20px}
+#tab-vandaag{padding-top:20px}
+section[hidden]{display:none!important}
 
 /* ---------- header ---------- */
 header.top{background:var(--ink);color:#fff;padding:22px 0 0}
@@ -370,8 +371,10 @@ header.top .wrap{padding-bottom:0}
 /* ============================================================
    1. Vaste gegevens
    ============================================================ */
-const VERSIE='3.9.0';
+const VERSIE='3.9.2';
 const CHANGELOG=[
+ ['3.9.2','Nieuw icoon: een volwaardig mes, en de basketbal die tegelijk een wijzerplaat op zes uur is.'],
+ ['3.9.1','Herstel: de tabs toonden allemaal het overzicht. Reistijden worden nu ook opgehaald als enkel de afstand ontbreekt, met een knop om alles te herberekenen.'],
  ['3.9.0','Knop bij ⋯ die alle koppelingen en sleutels in één keer doorlicht.'],
  ['3.8.4','De rit toont nu de enkele afstand én de gereden kilometers, zodat het aandeel per wedstrijd niet meer te verwarren is.'],
  ['3.8.2','Kilometervergoeding verdeeld per wedstrijd in plaats van per zaal.'],
@@ -981,7 +984,11 @@ function reistijd(waar){
   return reistijdTussen(thuisadres(),waar);
 }
 function reisIsBerekend(van,naar){
-  return typeof (state.reisCache||{})[String(van||'').trim()+'|'+String(naar||'').trim()]==='number';
+  const k=String(van||'').trim()+'|'+String(naar||'').trim();
+  const minuten=(state.reisCache||{})[k];
+  const km=(state.kmCache||{})[k];
+  // pas volledig als zowel de tijd als de afstand bekend is
+  return typeof minuten==='number'&&typeof km==='number';
 }
 
 // Vraagt de Worker om alles wat nog niet berekend is
@@ -2725,7 +2732,10 @@ function renderConfig(){
   let h=`<div class="panel">
     <h3>Koppelingen en sleutels</h3>
     <p class="hint">Doorloopt de Worker, de database, het wachtwoord, de agenda's, Claude en de routeplanner. Sleutelwaarden worden nooit getoond.</p>
-    <button class="btn pine" id="testalles" style="margin-top:12px">Alles testen</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn pine" id="testalles">Alles testen</button>
+      <button class="btn ghost" id="herbereken">Reistijden opnieuw berekenen</button>
+    </div>
     <div id="testuitslag" class="testlijst"></div>
   </div>
 
@@ -2896,6 +2906,21 @@ function renderConfig(){
     : modus==='gedeeld' ? 'Gedeeld opgeslagen: iedereen die deze app opent, ziet dezelfde inhoud. Klik "Vernieuwen" voor je begint.'
     : modus==='lokaal' ? 'Er wordt enkel op dit toestel bewaard. Anderen zien jouw wijzigingen niet.'
     : 'Deze kopie draait zonder opslag. Gebruik "Back-up downloaden", anders gaat alles verloren.';
+
+  $('#herbereken').onclick=async()=>{
+    const knop=$('#herbereken'), vak=$('#testuitslag');
+    if(!confirm('Alle bewaarde reistijden en afstanden wissen en opnieuw laten berekenen?')) return;
+    knop.disabled=true; knop.textContent='Bezig…';
+    state.reisCache={}; state.kmCache={};
+    save();
+    const ok=await haalReistijden();
+    knop.disabled=false; knop.textContent='Reistijden opnieuw berekenen';
+    const n=Object.keys(state.kmCache||{}).length;
+    vak.innerHTML=`<div class="testrij ${ok&&n?'ok':'nok'}"><span class="testmerk">${ok&&n?'✓':'✗'}</span>
+      <span>${ok&&n?('Opnieuw berekend: '+n+' trajecten met afstand.')
+        :'Er kwam niets terug. Staat ORS_KEY ingesteld en is de Worker opnieuw gepubliceerd?'}</span></div>`;
+    render();
+  };
 
   // sleutels doorlichten
   $('#testalles').onclick=async()=>{
