@@ -64,6 +64,13 @@ header.top .wrap{padding-bottom:0}
 .tab:hover{color:#fff}
 .tab[aria-selected="true"]{background:var(--base);color:var(--ink)}
 .tab-config{margin-left:auto;font-size:18px;line-height:1;padding:8px 14px}
+.testlijst{margin-top:14px;display:flex;flex-direction:column;gap:2px}
+.testrij{display:flex;gap:9px;align-items:baseline;font-size:13px;padding:5px 0;border-top:1px solid #EEF0EC}
+.testrij:first-child{border-top:0}
+.testmerk{flex:0 0 16px;font-weight:700}
+.testrij.ok .testmerk{color:var(--pine)}
+.testrij.nok .testmerk{color:var(--ball)}
+.testrij.nok span:last-child{color:var(--ink-2)}
 .cfgrow{display:grid;grid-template-columns:1.2fr 1.3fr 90px 90px 1.6fr 36px;gap:6px;margin-bottom:6px;align-items:center}
 .cfgrow input,.cfgrow select{border:1px solid var(--line);border-radius:8px;padding:7px 8px;width:100%;min-width:0}
 .cfghead{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
@@ -363,8 +370,10 @@ header.top .wrap{padding-bottom:0}
 /* ============================================================
    1. Vaste gegevens
    ============================================================ */
-const VERSIE='3.8.2';
+const VERSIE='3.9.0';
 const CHANGELOG=[
+ ['3.9.0','Knop bij ⋯ die alle koppelingen en sleutels in één keer doorlicht.'],
+ ['3.8.4','De rit toont nu de enkele afstand én de gereden kilometers, zodat het aandeel per wedstrijd niet meer te verwarren is.'],
  ['3.8.2','Kilometervergoeding verdeeld per wedstrijd in plaats van per zaal.'],
  ['3.8.1','Echt app-icoon op iPhone: een PNG als apple-touch-icon, met bestek rond de bal.'],
  ['3.8.0','Kilometers en vergoeding aan € 0,40 per km bij elke fluitopdracht, met de kosten verdeeld over de zalen van dezelfde rit.'],
@@ -1713,6 +1722,70 @@ async function raadViaServer(naam){
   }catch(e){ return null; }
 }
 
+/* Doorlicht alle koppelingen één voor één. Elke stap geeft terug of ze werkt
+   en waarom niet, zonder ooit een sleutelwaarde te tonen. */
+async function testAlles(meld){
+  const uit=[];
+  const zeg=(naam,ok,tekst)=>{ const r={naam,ok,tekst}; uit.push(r); meld&&meld(uit); return r; };
+
+  if(modus!=='server'){
+    zeg('Eigen server',false,'Deze kopie draait niet op jullie Cloudflare-Worker, dus er valt niets te testen.');
+    return uit;
+  }
+
+  let st=null;
+  try{
+    const r=await fetch('/api/status',{headers:apiHeaders(),cache:'no-store'});
+    if(r.status===401){ zeg('Menuwachtwoord',false,'Het wachtwoord wordt geweigerd. Wis de sitegegevens en meld je opnieuw aan.'); return uit; }
+    if(!r.ok){ zeg('Worker',false,'Antwoordde met '+r.status+'. Kijk bij de Worker onder Logs.'); return uit; }
+    st=await r.json();
+    zeg('Worker',true,'Bereikbaar.');
+  }catch(e){ zeg('Worker',false,'Geen antwoord: '+(e&&e.message?e.message:'onbekend')); return uit; }
+
+  zeg('Menuwachtwoord', !!st.menuKey,
+      st.menuKey?'Ingesteld en aanvaard.':'Niet ingesteld — iedereen met de link kan meelezen en aanpassen.');
+
+  zeg('Database', !!(st.db&&st.db.ok),
+      st.db&&st.db.ok?('Werkt, staat op versie '+st.db.rev+'.'):('Fout: '+((st.db&&st.db.fout)||'onbekend')+'. Is schema.sql uitgevoerd?'));
+
+  // Agenda's
+  if(!st.agendas||!st.agendas.length){
+    zeg('Agenda\'s',false,'Geen AGENDA_-variabelen ingesteld.');
+  }else{
+    const r=await haalAgenda();
+    zeg('Agenda\'s', r.ok, (r.ok?'':'')+r.tekst+(r.ok?' ('+st.agendas.join(', ')+')':''));
+  }
+
+  // Claude
+  if(!st.anthropic){
+    zeg('Claude-suggesties',false,'Geen ANTHROPIC_API_KEY ingesteld. De app gebruikt haar eigen woordenlijst.');
+  }else{
+    const r=await testClaude();
+    zeg('Claude-suggesties', r.ok, r.tekst);
+  }
+
+  // Routeplanner
+  if(!st.ors){
+    zeg('Routeplanner',false,'Geen ORS_KEY ingesteld. Reistijden en kilometers zijn schattingen.');
+  }else{
+    const zaal=(state.wedstrijden||[]).map(w=>w.waar).find(Boolean)
+      ||(state.agenda||[]).filter(a=>isFluiten(a.titel)).map(a=>a.waar).find(Boolean)
+      ||'Sportoase Leuven';
+    try{
+      const r=await fetch('/api/reistijden',{method:'POST',headers:apiHeaders(),
+        body:JSON.stringify({paren:[[thuisadres(),zaal]]})});
+      if(!r.ok) throw new Error('status '+r.status);
+      const d=await r.json();
+      const k=d.km&&d.km[thuisadres()+'|'+zaal];
+      const m=d.minuten&&d.minuten[thuisadres()+'|'+zaal];
+      if(typeof k==='number') zeg('Routeplanner',true,'Werkt: '+zaal+' ligt op '+k+' km, '+m+' minuten rijden.');
+      else zeg('Routeplanner',false,'Antwoordde, maar zonder afstand voor '+zaal+'. Wordt het adres gevonden?');
+    }catch(e){ zeg('Routeplanner',false,'Mislukt: '+(e&&e.message?e.message:'onbekend')); }
+  }
+
+  return uit;
+}
+
 // Losse test, met duidelijke uitleg per foutgeval in plaats van stille terugval
 async function testClaude(){
   if(modus!=='server')
@@ -2084,8 +2157,7 @@ function afspraakRegels(dag){
     b.ketting.forEach((w,i)=>{
       const vorige=b.ketting[i-1];
       const rit=vorige&&vorige.waar!==w.waar?reistijdTussen(vorige.waar,w.waar):0;
-      const vergoeding=' · '+bij+b.kmPerWedstrijd+' km · '+euro(b.kostPerWedstrijd)
-        +(b.aantal>1?' (aandeel)':'');
+      const vergoeding=b.aantal>1 ? ' · aandeel '+euro(b.kostPerWedstrijd) : '';
       rijen.push({
         uur:w.van, wie:w.wie, tekst:'fluiten — '+fluitTitel(w.titel)+(w.waar?', '+w.waar:''),
         extra:'tot '+fluitEind(w)
@@ -2095,14 +2167,15 @@ function afspraakRegels(dag){
         soort:'fluit'
       });
     });
-    if(b.aantal>1){
-      rijen.push({
-        uur:'', wie:'', tekst:'volledig traject '+bij+b.totaalKm+' km',
-        extra:euro(b.totaalKost)+' · verdeeld over '+b.aantal+' wedstrijden'
-              +(b.zalen.length>1?' in '+b.zalen.length+' zalen':' in dezelfde zaal'),
-        soort:'fluittotaal'
-      });
-    }
+    const enkel=Math.round(b.totaalKm/2*10)/10;
+    rijen.push({
+      uur:'', wie:'',
+      tekst:'rit '+bij+enkel+' km heen, '+bij+b.totaalKm+' km gereden',
+      extra:euro(b.totaalKost)+(b.aantal>1
+        ? ' totaal · '+euro(b.kostPerWedstrijd)+' per wedstrijd ('+b.aantal+'×)'
+        : ' vergoeding'),
+      soort:'fluittotaal'
+    });
   });
   trainingenOp(dag.wd).forEach(t=>rijen.push({
     uur:t.van, wie:t.wie, tekst:'training, '+(t.waar||''), extra:'tot '+t.tot, soort:'training'
@@ -2650,6 +2723,13 @@ function renderConfig(){
   const ontbrekend=agendaGekend?verg.filter(d=>!uitAgenda.includes(d)):[];
 
   let h=`<div class="panel">
+    <h3>Koppelingen en sleutels</h3>
+    <p class="hint">Doorloopt de Worker, de database, het wachtwoord, de agenda's, Claude en de routeplanner. Sleutelwaarden worden nooit getoond.</p>
+    <button class="btn pine" id="testalles" style="margin-top:12px">Alles testen</button>
+    <div id="testuitslag" class="testlijst"></div>
+  </div>
+
+  <div class="panel">
     <h3>Trainingen</h3>
     <p class="hint">Bepaalt de tijdbalk per dag en wanneer er gegeten kan worden. Bij een nieuw seizoen pas je het hier aan.</p>
     <div class="cfgrow cfghead" style="margin-top:14px">
@@ -2816,6 +2896,19 @@ function renderConfig(){
     : modus==='gedeeld' ? 'Gedeeld opgeslagen: iedereen die deze app opent, ziet dezelfde inhoud. Klik "Vernieuwen" voor je begint.'
     : modus==='lokaal' ? 'Er wordt enkel op dit toestel bewaard. Anderen zien jouw wijzigingen niet.'
     : 'Deze kopie draait zonder opslag. Gebruik "Back-up downloaden", anders gaat alles verloren.';
+
+  // sleutels doorlichten
+  $('#testalles').onclick=async()=>{
+    const knop=$('#testalles'), vak=$('#testuitslag');
+    knop.disabled=true; knop.textContent='Bezig…';
+    const teken=lijst=>{
+      vak.innerHTML=lijst.map(r=>`<div class="testrij ${r.ok?'ok':'nok'}">
+        <span class="testmerk">${r.ok?'✓':'✗'}</span>
+        <span><b>${esc(r.naam)}</b> — ${esc(r.tekst)}</span></div>`).join('');
+    };
+    try{ await testAlles(teken); }
+    finally{ knop.disabled=false; knop.textContent='Alles testen'; }
+  };
 
   // trainingen
   $('#tab-config').querySelectorAll('[data-tr]').forEach(el=>{

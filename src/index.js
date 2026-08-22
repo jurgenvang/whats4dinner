@@ -203,6 +203,28 @@ export default {
     }
 
     try {
+      if (url.pathname === '/api/status' && request.method === 'GET') {
+        // Vertelt welke sleutels ingesteld zijn, nooit wat hun waarde is.
+        let db;
+        try {
+          const r = await env.DB.prepare('SELECT rev FROM state WHERE id = ?').bind(ROW).first();
+          db = { ok: true, rev: r ? r.rev : 0 };
+        } catch (e) {
+          db = { ok: false, fout: String((e && e.message) || e) };
+        }
+        const agendas = Object.keys(env)
+          .filter(k => k.startsWith('AGENDA_') && typeof env[k] === 'string' && env[k])
+          .map(k => k.slice(7).charAt(0) + k.slice(8).toLowerCase());
+        return json({
+          db,
+          menuKey: !!env.MENU_KEY,
+          anthropic: !!env.ANTHROPIC_API_KEY,
+          ors: !!env.ORS_KEY,
+          agendas,
+          model: env.SUGGEST_MODEL || 'claude-haiku-4-5-20251001'
+        });
+      }
+
       if (url.pathname === '/api/reistijden' && request.method === 'POST') {
         const body = await request.json();
         const paren = Array.isArray(body && body.paren) ? body.paren : [];
