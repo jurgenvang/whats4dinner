@@ -57,11 +57,13 @@ header.top .wrap{padding-bottom:0}
 .syncbadge[data-st="live"]{color:#7FD1B9;border-color:#2E5B4F}
 .syncbadge[data-st="fout"]{color:#F0A58C;border-color:#6B3A2A}
 .versiebadge{font-size:11px;color:#6B7F79;letter-spacing:.02em}
-.tabs{display:flex;gap:4px;margin-top:18px;flex-wrap:wrap}
+.tabs{display:flex;gap:2px;margin-top:18px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
 .tab{
-  background:transparent;border:0;border-radius:10px 10px 0 0;color:#9FB3AC;
-  padding:11px 16px;cursor:pointer;font-family:var(--display);font-weight:600;font-size:14px;
+  background:transparent;border:0;border-radius:10px 10px 0 0;color:#9FB3AC;white-space:nowrap;
+  padding:11px 14px;cursor:pointer;font-family:var(--display);font-weight:600;font-size:14px;flex:0 0 auto;
 }
+@media(max-width:520px){.tab{padding:10px 9px;font-size:13px}.tab-config{padding:9px 11px}}
 .tab:hover{color:#fff}
 .tab[aria-selected="true"]{background:var(--base);color:var(--ink)}
 .tab-config{margin-left:auto;font-size:18px;line-height:1;padding:8px 14px}
@@ -74,6 +76,10 @@ header.top .wrap{padding-bottom:0}
 .testrij.nok span:last-child{color:var(--ink-2)}
 .cfgrow{display:grid;grid-template-columns:1.2fr 1.3fr 90px 90px 1.6fr 36px;gap:6px;margin-bottom:6px;align-items:center}
 .cfgrow input,.cfgrow select{border:1px solid var(--line);border-radius:8px;padding:7px 8px;width:100%;min-width:0}
+.herkomst{display:block;font-size:11px;margin-top:1px}
+.herkomst.berekend{color:var(--pine)}
+.herkomst.deels{color:var(--amber)}
+.herkomst.gok{color:var(--ball)}
 .cfghead{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
 @media(max-width:760px){.cfgrow{grid-template-columns:1fr 1fr;}.cfgrow .weg{grid-column:span 2}.cfghead{display:none}}
 .datumlijst{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
@@ -122,6 +128,8 @@ header.top .wrap{padding-bottom:0}
 .day-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .day-name{font-family:var(--display);font-weight:600;font-size:16px;text-transform:capitalize}
 .day-date{font-size:12px;color:var(--muted)}
+.weer{font-size:12px;font-weight:500;color:var(--ink-2);white-space:nowrap;margin-left:4px}
+.weer.klein{display:block;font-size:10px;line-height:1.25;margin:2px 0 0;color:var(--muted)}
 .chip{
   display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
   padding:3px 8px;border-radius:99px;white-space:nowrap;
@@ -134,6 +142,9 @@ header.top .wrap{padding-bottom:0}
 .chip.wed{background:#F0E6F7;color:#6A3489}
 .wedkaart{display:flex;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:10px}
 .wedkaart.voorbij{opacity:.5}
+.wedkaart.fluitkaart .wk-datum{background:#FBF3DF;border-color:#E2C97A}
+.wedkaart.fluitkaart .wk-dag{color:#8A6400}
+.wedkaart.fluitkaart .wk-nr{color:#6B4E00}
 .wk-datum{flex:0 0 52px;text-align:center;background:#F7F2FB;border:1px solid #DCC9EC;border-radius:10px;padding:6px 0;height:fit-content}
 .wk-dag{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#7A5A96;font-weight:700}
 .wk-nr{display:block;font-family:var(--display);font-size:22px;font-weight:800;color:#4A2C63;line-height:1.1}
@@ -198,6 +209,8 @@ header.top .wrap{padding-bottom:0}
 .iconbtn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .slot-note{font-size:12px;color:var(--ink-2);margin-top:6px}
 .slot-extra{display:flex;gap:5px;align-items:center;margin-top:7px;flex-wrap:wrap}
+.kokkeuze{border:1px solid var(--line);background:#fff;border-radius:8px;padding:3px 6px;font-size:12px;color:var(--ink-2);max-width:110px}
+.kokkeuze:hover{border-color:var(--ink-2)}
 .mini{border:1px solid var(--line);background:#fff;border-radius:8px;padding:3px 8px;font-size:12px;cursor:pointer;line-height:1.4}
 .mini:hover{border-color:var(--ink-2)}
 .mini.op{background:var(--pine-soft);border-color:var(--pine)}
@@ -241,6 +254,7 @@ header.top .wrap{padding-bottom:0}
 .wl-maaltijd{display:flex;gap:8px;align-items:baseline}
 .wl-slot{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;flex:0 0 24px}
 .wl-naam{font-family:var(--display);font-weight:600;font-size:15px}
+.kok{font-size:11px;color:var(--pine);background:var(--pine-soft);border-radius:99px;padding:1px 7px;white-space:nowrap}
 .wl-maaltijd.leeg .wl-naam{color:var(--muted);font-weight:400}
 .vandaagkaart{background:var(--surface);border:1px solid #C2CFC8;border-radius:var(--radius);padding:16px 18px;margin-bottom:14px}
 .vk-top{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:10px}
@@ -348,7 +362,6 @@ header.top .wrap{padding-bottom:0}
     <div class="tabs" role="tablist">
       <button class="tab" role="tab" data-tab="overzicht" aria-selected="true">Overzicht</button>
       <button class="tab" role="tab" data-tab="week" aria-selected="false">Planning</button>
-      <button class="tab" role="tab" data-tab="meals" aria-selected="false">Maaltijden</button>
       <button class="tab" role="tab" data-tab="shop" aria-selected="false">Boodschappen</button>
       <button class="tab" role="tab" data-tab="wed" aria-selected="false">Wedstrijden</button>
       <button class="tab tab-config" role="tab" data-tab="config" aria-selected="false" title="Instellingen" aria-label="Instellingen">⋯</button>
@@ -371,8 +384,9 @@ header.top .wrap{padding-bottom:0}
 /* ============================================================
    1. Vaste gegevens
    ============================================================ */
-const VERSIE='3.9.2';
+const VERSIE='4.0.0';
 const CHANGELOG=[
+ ['4.0.0','Fluitzalen in de reistijdenlijst met de herkomst erbij, fluitopdrachten op de wedstrijdentab, weersverwachting, een kok per maaltijd, en Maaltijden verhuisd naar de instellingen.'],
  ['3.9.2','Nieuw icoon: een volwaardig mes, en de basketbal die tegelijk een wijzerplaat op zes uur is.'],
  ['3.9.1','Herstel: de tabs toonden allemaal het overzicht. Reistijden worden nu ook opgehaald als enkel de afstand ontbreekt, met een knop om alles te herberekenen.'],
  ['3.9.0','Knop bij ⋯ die alle koppelingen en sleutels in één keer doorlicht.'],
@@ -1036,10 +1050,24 @@ function thuisTijd(w){
   return hhmm(Math.min(24*60-1,mins(w.tot)+NA_WEDSTRIJD+reistijd(w.waar)));
 }
 // zalen die nog geen eigen reistijd hebben, komen in de instellingen te staan
-function zalenUitWedstrijden(){
+// Alle zalen die ergens voorkomen: wedstrijden van de jongens én eigen fluitopdrachten
+function alleZalen(){
   const uit=[];
-  (state.wedstrijden||[]).forEach(w=>{ if(w.waar&&!uit.includes(w.waar)) uit.push(w.waar); });
+  const voeg=z=>{ const n=String(z||'').trim(); if(n&&!uit.includes(n)) uit.push(n); };
+  (state.wedstrijden||[]).forEach(w=>voeg(w.waar));
+  (state.agenda||[]).filter(a=>isFluiten(a.titel)).forEach(a=>voeg(a.waar));
+  (state.trainingen||[]).forEach(t=>voeg(t.waar));
   return uit.sort((a,b)=>a.localeCompare(b,'nl'));
+}
+function zalenUitWedstrijden(){ return alleZalen(); }
+
+// Waar komt de reistijd naar deze zaal vandaan?
+function reisHerkomst(zaal){
+  const thuis=thuisadres(), k=thuis+'|'+zaal;
+  if(typeof (state.kmCache||{})[k]==='number') return {soort:'berekend',tekst:'berekend via de routeplanner'};
+  if(typeof (state.reisCache||{})[k]==='number') return {soort:'deels',tekst:'tijd berekend, afstand nog niet'};
+  if(typeof (state.reistijden||{})[zaal]==='number') return {soort:'eigen',tekst:'zelf ingevuld'};
+  return {soort:'gok',tekst:'geschat op basis van de naam'};
 }
 
 /* ---- Persoonlijke agenda's ----------------------------------------------
@@ -1087,6 +1115,54 @@ function vergaderdagenUitAgenda(){
   return [...new Set((state.agenda||[])
     .filter(a=>(a.titel||'').toLowerCase().includes(woord))
     .map(a=>a.iso))];
+}
+
+/* ---- Weer ---------------------------------------------------------------
+   Open-Meteo, gratis en zonder sleutel. Zeven tot veertien dagen vooruit;
+   verder terug of vooruit is er simpelweg niets, en dan tonen we niets.
+------------------------------------------------------------------------- */
+const THUIS_LAT=50.8622, THUIS_LON=4.7861;   // Pellenberg
+const WEER_MAXLEEFTIJD=3*3600*1000;
+const WEERCODES={
+  0:['☀️','onbewolkt'],1:['🌤️','licht bewolkt'],2:['⛅','half bewolkt'],3:['☁️','bewolkt'],
+  45:['🌫️','mist'],48:['🌫️','mist'],
+  51:['🌦️','motregen'],53:['🌦️','motregen'],55:['🌦️','motregen'],
+  61:['🌧️','regen'],63:['🌧️','regen'],65:['🌧️','zware regen'],
+  66:['🌧️','ijzel'],67:['🌧️','ijzel'],
+  71:['🌨️','sneeuw'],73:['🌨️','sneeuw'],75:['🌨️','zware sneeuw'],77:['🌨️','sneeuw'],
+  80:['🌦️','buien'],81:['🌦️','buien'],82:['⛈️','zware buien'],
+  85:['🌨️','sneeuwbuien'],86:['🌨️','sneeuwbuien'],
+  95:['⛈️','onweer'],96:['⛈️','onweer'],99:['⛈️','onweer']
+};
+async function haalWeer(){
+  const oud=state.weerOpgehaald&&(Date.now()-new Date(state.weerOpgehaald).getTime())<WEER_MAXLEEFTIJD;
+  if(oud&&state.weer) return false;
+  try{
+    const u='https://api.open-meteo.com/v1/forecast?latitude='+THUIS_LAT+'&longitude='+THUIS_LON
+      +'&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Europe%2FBrussels&forecast_days=16';
+    const r=await fetch(u);
+    if(!r.ok) return false;
+    const d=await r.json();
+    if(!d||!d.daily||!Array.isArray(d.daily.time)) return false;
+    const w={};
+    d.daily.time.forEach((iso,i)=>{
+      w[iso]={code:d.daily.weather_code[i],max:Math.round(d.daily.temperature_2m_max[i]),min:Math.round(d.daily.temperature_2m_min[i])};
+    });
+    state.weer=w; state.weerOpgehaald=new Date().toISOString();
+    save();
+    return true;
+  }catch(e){ return false; }
+}
+function weerVan(iso){
+  const w=(state.weer||{})[iso];
+  if(!w) return null;
+  const c=WEERCODES[w.code]||['','onbekend'];
+  return {icoon:c[0],tekst:c[1],max:w.max,min:w.min};
+}
+function weerBadge(iso){
+  const w=weerVan(iso);
+  if(!w) return '';
+  return `<span class="weer" title="${esc(w.tekst)}, ${w.min}° tot ${w.max}°">${w.icoon} ${w.max}°</span>`;
 }
 
 /* ---- Fluitopdrachten ----------------------------------------------------
@@ -1908,6 +1984,9 @@ function restjesNaam(v){
   return m?'Restjes van '+m.naam:'Restjes';
 }
 
+const KOKS_STANDAARD=['Jurgen','Sarah','Bram','Dries'];
+function koks(){ return (state.koks&&state.koks.length)?state.koks:KOKS_STANDAARD; }
+
 function oordeelVan(id){ return (state.beoordeling||{})[id]||0; }
 function slotHTML(dag,slot){
   const key=slotKey(dag,slot);
@@ -1945,6 +2024,10 @@ function slotHTML(dag,slot){
       <button class="iconbtn ${v&&v.locked?'on':''}" data-lock="${key}" title="${v&&v.locked?'Vastgezet — klik om vrij te geven':'Vastzetten'}">${v&&v.locked?'🔒':'🔓'}</button>
     </div>
     ${gekozen?`<div class="slot-extra">
+      <select class="kokkeuze" data-kok="${key}" title="Wie kookt er?">
+        <option value="">wie kookt?</option>
+        ${koks().map(k=>`<option value="${esc(k)}" ${v&&v.kok===k?'selected':''}>${esc(k)}</option>`).join('')}
+      </select>
       <button class="mini ${oordeelVan(gekozen.id)===1?'op':''}" data-duim="${gekozen.id}|1" title="Dit viel in de smaak">👍</button>
       <button class="mini ${oordeelVan(gekozen.id)===-1?'neer':''}" data-duim="${gekozen.id}|-1" title="Liever niet meer">👎</button>
       ${slot==='diner'?`<button class="mini ${v&&v.dubbel?'op':''}" data-dubbel="${key}" title="Dubbele portie maken; de volgende avond zijn het restjes">×2</button>`:''}
@@ -1968,7 +2051,7 @@ function dayHTML(dag){
   const voorbij=dag.iso<vandaagIso();
   return `<article class="day wd${dag.wd} ${dag.weekend?'weekend':''} ${dag.vergadering?'vergaderdag':''} ${dag.feest||dag.vakantie?'vrijdag-af':''} ${voorbij?'voorbij':''}">
     <div class="day-top">
-      <div><div class="day-name">${dag.naam}</div><div class="day-date">${fmtDate(dag.date)}</div></div>
+      <div><div class="day-name">${dag.naam} ${weerBadge(dag.iso)}</div><div class="day-date">${fmtDate(dag.date)}</div></div>
       <div class="chips">${feest}${vak}${verg}${modus}${wknd}</div>
     </div>
     ${dag.regels.slots.map(s=>slotHTML(dag,s)).join('')}
@@ -2085,6 +2168,12 @@ function renderPlan(){
   $('#tab-plan').querySelectorAll('[data-eterswis]').forEach(b=>b.onclick=()=>{
     delete (state.personenPerDag||{})[b.dataset.eterswis]; save(); render();
   });
+  $('#tab-plan').querySelectorAll('[data-kok]').forEach(sel=>sel.onchange=()=>{
+    const v=state.plan[sel.dataset.kok];
+    if(!v) return;
+    if(sel.value) v.kok=sel.value; else delete v.kok;
+    save(); render();
+  });
   $('#tab-plan').querySelectorAll('[data-duim]').forEach(b=>b.onclick=()=>{
     const [id,w]=b.dataset.duim.split('|');
     state.beoordeling=state.beoordeling||{};
@@ -2135,7 +2224,7 @@ function vandaagKaart(dag){
   }).join('');
 
   return `<div class="vandaagkaart">
-    <div class="vk-top">Vandaag · ${dag.naam} ${fmtDate(dag.date)}</div>
+    <div class="vk-top">Vandaag · ${dag.naam} ${fmtDate(dag.date)} ${weerBadge(dag.iso)}</div>
     ${rijen}
     ${chips.length?`<div class="chips" style="margin-top:8px">${chips.join('')}</div>`:''}
     ${agendaKolom(dag)}
@@ -2221,6 +2310,7 @@ function renderOverzicht(){
       return `<div class="wl-maaltijd ${m?'':'leeg'}">
         ${d.regels.slots.length>1?`<span class="wl-slot">${sl==='lunch'?'mid':'av'}</span>`:''}
         <span class="wl-naam">${esc(naam)}</span>
+        ${v&&v.kok?`<span class="kok">${esc(v.kok)}</span>`:''}
       </div>`;
     }).join('');
     const merk=[];
@@ -2230,7 +2320,8 @@ function renderOverzicht(){
     if(d.regels.samen) merk.push(`<span class="chip prep">samen ${d.regels.samen}</span>`);
     if(d.regels.opwarmen) merk.push('<span class="chip rush">opwarmen</span>');
     return `<article class="wl-dag ${d.weekend?'weekend':''}">
-      <div class="wl-datum"><span>${d.naam.slice(0,2)}</span><b>${d.date.getDate()}</b></div>
+      <div class="wl-datum"><span>${d.naam.slice(0,2)}</span><b>${d.date.getDate()}</b>
+        ${weerVan(d.iso)?`<span class="weer klein">${weerVan(d.iso).icoon}<br>${weerVan(d.iso).max}°</span>`:''}</div>
       <div class="wl-body">${regels}${merk.length?`<div class="chips" style="margin-top:5px">${merk.join('')}</div>`:''}</div>
       ${agendaKolom(d)}
     </article>`;
@@ -2384,10 +2475,11 @@ function tabelRij(m){
 
 function renderMeals(){
   const alles=allMeals();
+  let terug='<button class="btn ghost small" id="terugconfig" style="margin-bottom:14px">&lsaquo; Terug naar instellingen</button>';
   const groepen={onze:[],ander:[],bestel:[]};
   alles.forEach(m=>groepen[groepVan(m)].push(m));
   const tabel=state.mealView!=='kaarten';
-  let h=formHTML();
+  let h=terug+formHTML();
   h+=`<div class="weekhead">
     <div class="seg">
       <button data-mv="tabel" aria-pressed="${tabel}">Tabel</button>
@@ -2420,6 +2512,7 @@ function renderMeals(){
     delete state.overrides[bewerkId]; bewerkId=null; save(); render(); toast('Origineel hersteld');
   };
 
+  if($('#terugconfig')) $('#terugconfig').onclick=()=>toonTab('config');
   $('#tab-meals').querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>{
     state.mealView=b.dataset.mv; save(); renderMeals();
   });
@@ -2729,7 +2822,13 @@ function renderConfig(){
   const agendaGekend=!!state.agendaOpgehaald&&uitAgenda.length>0;
   const ontbrekend=agendaGekend?verg.filter(d=>!uitAgenda.includes(d)):[];
 
-  let h=`<div class="panel">
+  let h=`<div class="panel" style="border-left:4px solid var(--pine)">
+    <h3>Maaltijden</h3>
+    <p class="hint">De receptenbibliotheek: gerechten toevoegen, aanpassen, aan- of uitzetten.</p>
+    <button class="btn pine" id="naarmaaltijden" style="margin-top:12px">Naar de maaltijden</button>
+  </div>
+
+  <div class="panel">
     <h3>Koppelingen en sleutels</h3>
     <p class="hint">Doorloopt de Worker, de database, het wachtwoord, de agenda's, Claude en de routeplanner. Sleutelwaarden worden nooit getoond.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
@@ -2788,13 +2887,22 @@ function renderConfig(){
       <label for="thuis">Vertrekpunt</label>
       <input id="thuis" value="${esc(thuisadres())}" style="width:100%;max-width:420px;border:1px solid var(--line);border-radius:9px;padding:8px 10px">
     </div>
-    <div class="cfgrow cfghead" style="grid-template-columns:3fr 90px 40px"><span>Zaal</span><span>Minuten</span><span></span></div>
-    ${zalenUitWedstrijden().map(z=>`
-      <div class="cfgrow" style="grid-template-columns:3fr 90px 40px">
-        <span style="font-size:13px;align-self:center">${esc(z)}</span>
+    <div class="cfgrow cfghead" style="grid-template-columns:3fr 80px 70px 40px"><span>Zaal</span><span>Minuten</span><span>Km</span><span></span></div>
+    ${alleZalen().map(z=>{
+      const h=reisHerkomst(z);
+      const km=(state.kmCache||{})[thuisadres()+'|'+z];
+      return `<div class="cfgrow" style="grid-template-columns:3fr 80px 70px 40px">
+        <span style="font-size:13px;align-self:center">${esc(z)}<br><span class="hint herkomst ${h.soort}">${esc(h.tekst)}</span></span>
         <input type="number" min="0" max="180" value="${reistijd(z)}" data-reis="${esc(z)}">
+        <span style="font-size:13px;align-self:center;color:var(--muted)">${typeof km==='number'?km:'—'}</span>
         <a class="iconbtn" href="${esc(routeLink(z))}" target="_blank" rel="noopener" title="Route opzoeken" style="text-decoration:none">↗</a>
-      </div>`).join('')||'<p class="hint">Nog geen zalen bekend. Haal eerst de wedstrijdkalenders op.</p>'}
+      </div>`;}).join('')||'<p class="hint">Nog geen zalen bekend. Haal eerst de wedstrijdkalenders en de agenda\'s op.</p>'}
+  </div>
+
+  <div class="panel">
+    <h3>Wie kan er koken</h3>
+    <p class="hint">Deze namen verschijnen in de keuzelijst bij elke maaltijd. Eén naam per regel.</p>
+    <textarea id="kokslijst" rows="4" style="width:100%;max-width:320px;margin-top:10px;border:1px solid var(--line);border-radius:9px;padding:9px;font-size:13px">${esc(koks().join('\n'))}</textarea>
   </div>
 
   <div class="panel">
@@ -2975,6 +3083,14 @@ function renderConfig(){
     if(r.ok) toast('Wedstrijden bijgewerkt');
   };
 
+  $('#naarmaaltijden').onclick=()=>toonTab('meals');
+
+  // koks
+  $('#kokslijst').onchange=e=>{
+    state.koks=e.target.value.split('\n').map(x=>x.trim()).filter(Boolean);
+    save(); toast('Namen bijgewerkt');
+  };
+
   // agenda's
   $('#vergwoord').onchange=e=>{ state.vergaderwoord=e.target.value.trim(); save(); render(); toast('Trefwoord aangepast'); };
   $('#agophalen').onclick=async()=>{
@@ -3067,17 +3183,26 @@ function thuiszaal(wie){
 }
 
 function renderWedstrijden(){
-  const alles=(state.wedstrijden||[]).slice().sort((a,b)=>(a.iso+a.van).localeCompare(b.iso+b.van));
+  const fluit=(state.agenda||[]).filter(a=>!a.heledag&&a.van&&isFluiten(a.titel)).map(a=>({
+    wie:a.wie||'Jurgen', iso:a.iso, van:a.van, tot:fluitEind(a),
+    waar:a.waar||'', titel:fluitTitel(a.titel), fluiten:true
+  }));
+  const alles=(state.wedstrijden||[]).concat(fluit)
+    .sort((a,b)=>(a.iso+a.van).localeCompare(b.iso+b.van));
   const vIso=vandaagIso();
   const wie=state.wedFilter||'alle';
   const toonVoorbij=!!state.wedVoorbij;
   const spelers=[...new Set(alles.map(w=>w.wie).filter(Boolean))];
-  const lijst=alles.filter(w=>(wie==='alle'||w.wie===wie)&&(toonVoorbij||w.iso>=vIso));
+  const lijst=alles.filter(w=>{
+    if(wie==='fluiten') return w.fluiten&&(toonVoorbij||w.iso>=vIso);
+    return (wie==='alle'||w.wie===wie)&&(toonVoorbij||w.iso>=vIso);
+  });
 
   let h=`<div class="bar">
     <div class="seg">
       <button data-wf="alle" aria-pressed="${wie==='alle'}">Allebei</button>
       ${spelers.map(p=>`<button data-wf="${esc(p)}" aria-pressed="${wie===p}">${esc(p)}</button>`).join('')}
+      ${fluit.length?`<button data-wf="fluiten" aria-pressed="${wie==='fluiten'}">fluiten</button>`:''}
     </div>
     <label class="toggle"><input type="checkbox" id="wedvoorbij" ${toonVoorbij?'checked':''}> ook gespeelde</label>
     <button class="btn ghost" id="wedvernieuw">Vernieuwen</button>
@@ -3099,25 +3224,31 @@ function renderWedstrijden(){
         h+=`<div class="weekhead"><h2 style="font-size:16px;text-transform:capitalize">${esc(m)}</h2><span class="rule"></span></div>`;
       }
       const thuis=thuiszaal(w.wie);
-      const isThuis=thuis&&w.waar===thuis;
+      const isThuis=!w.fluiten&&thuis&&w.waar===thuis;
       const delen=(w.titel||'').split(' - ');
-      const tegen=delen.length===2 ? (isThuis?delen[1]:delen[0]) : (w.titel||'');
+      const tegen=w.fluiten ? (w.titel||'') : (delen.length===2 ? (isThuis?delen[1]:delen[0]) : (w.titel||''));
       const voorbij=w.iso<vIso;
-      return h+=`<article class="wedkaart ${voorbij?'voorbij':''}">
+      const blok=w.fluiten?fluitBlokken(w.iso).find(b=>b.ketting.some(x=>x.van===w.van)):null;
+      return h+=`<article class="wedkaart ${voorbij?'voorbij':''} ${w.fluiten?'fluitkaart':''}">
         <div class="wk-datum">
           <span class="wk-dag">${d.toLocaleDateString('nl-BE',{weekday:'short'})}</span>
           <span class="wk-nr">${d.getDate()}</span>
         </div>
         <div class="wk-body">
           <div class="wk-top">
-            <span class="chip ${isThuis?'prot-hoog':'verg'}">${isThuis?'thuis':'uit'}</span>
+            ${w.fluiten
+              ? '<span class="chip rush">'+ICOON_FLUIT+' fluiten</span>'
+              : `<span class="chip ${isThuis?'prot-hoog':'verg'}">${isThuis?'thuis':'uit'}</span>`}
             <b>${esc(w.wie)}</b>
             <span class="wk-uur">${w.van}–${w.tot}</span>
           </div>
-          <div class="wk-tegen">tegen ${esc(tegen)}</div>
+          <div class="wk-tegen">${w.fluiten?'':'tegen '}${esc(tegen)}</div>
           <div class="wk-zaal">${w.waar?`<a href="${esc(routeLink(w.waar))}" target="_blank" rel="noopener">${esc(w.waar)} ↗</a>`:'zaal onbekend'}
             ${w.waar?`<span class="hint">· ${reistijd(w.waar)} min rijden</span>`:''}</div>
-          <div class="wk-vertrek">vertrek ${vertrekTijd(w)} · aanwezig ${aanwezigTijd(w)} · einde ${w.tot} · thuis ± ${thuisTijd(w)}</div>
+          <div class="wk-vertrek">${w.fluiten&&blok
+            ? 'vertrek '+hhmm(blok.vertrek)+' · thuis ± '+hhmm(blok.terug)
+              +(blok.kmGekend===false?'':' · '+blok.totaalKm+' km · '+euro(blok.aantal>1?blok.kostPerWedstrijd:blok.totaalKost))
+            : 'vertrek '+vertrekTijd(w)+' · aanwezig '+aanwezigTijd(w)+' · einde '+w.tot+' · thuis ± '+thuisTijd(w)}</div>
           ${w.link?`<a class="wk-link" href="${esc(w.link)}" target="_blank" rel="noopener">Wedstrijdblad ↗</a>`:''}
         </div>
       </article>`;
@@ -3139,7 +3270,7 @@ function renderWedstrijden(){
    10. Tabs + start
    ============================================================ */
 let actief='overzicht';
-const TABSECTIE={overzicht:'vandaag',week:'plan',meals:'meals',shop:'shop',wed:'wed',config:'config'};
+const TABSECTIE={overzicht:'vandaag',week:'plan',shop:'shop',wed:'wed',config:'config',meals:'meals'};
 function render(){
   if(actief==='overzicht') renderOverzicht();
   else if(actief==='week') renderPlan();
@@ -3188,6 +3319,7 @@ document.querySelectorAll('.tab').forEach(t=>{ t.onclick=()=>toonTab(t.dataset.t
   render();
   setSync();
   startPolling();
+  haalWeer().then(ok=>{ if(ok) render(); });
   autoWedstrijden();
   autoAgenda().then(()=>haalReistijden().then(ok=>{ if(ok) render(); }));
 
